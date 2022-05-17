@@ -14,6 +14,8 @@ import java.sql.Connection
 import javax.sql.DataSource
 
 class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
+    def getDB: DB = db
+    
     override def run(query: ReviseQuery): Int = exec(conn => jdbcExec(conn, query.sql(db)))
 
     override def runAndReturnKey(query: Insert[_, _]): List[Long] = exec(conn => jdbcExecReturnKey(conn, query.sql(db)))
