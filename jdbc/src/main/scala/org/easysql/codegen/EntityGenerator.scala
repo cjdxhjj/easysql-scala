@@ -116,7 +116,7 @@ def generateEntityForMysql(dbConnection: JdbcConnection, dbName: String, path: S
         val entity = mutable.StringBuilder()
         entity.append(s"package $packageName")
         entity.append("\n\n")
-        entity.append("import org.easysql.dsl.TableSchema")
+        entity.append("import org.easysql.dsl._")
         if (haveDate) {
             entity.append("\n\nimport java.util.Date")
         }
@@ -238,7 +238,7 @@ def generateEntityForPgsql(dbConnection: JdbcConnection, dbName: String, path: S
         val entity = mutable.StringBuilder()
         entity.append(s"package $packageName")
         entity.append("\n\n")
-        entity.append("import org.easysql.dsl.TableSchema")
+        entity.append("import org.easysql.dsl._")
         if (haveDate) {
             entity.append("\n\nimport java.util.Date")
         }
