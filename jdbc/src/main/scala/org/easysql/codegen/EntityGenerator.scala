@@ -102,7 +102,7 @@ def generateEntityForMysql(dbConnection: JdbcConnection, dbName: String, path: S
                 }
             } else {
                 if (col("IS_NULLABLE").toString.toUpperCase() == "YES") {
-                    entityCode.append(".haveNull")
+                    entityCode.append(".nullable")
                 }
             }
         }
@@ -224,7 +224,7 @@ def generateEntityForPgsql(dbConnection: JdbcConnection, dbName: String, path: S
                 }
             } else {
                 if (col("is_nullable").toString.toUpperCase() == "YES") {
-                    entityCode.append(".haveNull")
+                    entityCode.append(".nullable")
                 }
             }
         }

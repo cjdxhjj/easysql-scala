@@ -179,7 +179,7 @@ case class TableColumnExpr[T <: SqlSingleConstType | Null](table: String,
         PrimaryKeyColumnExpr(table, column)
     }
 
-    def haveNull: TableColumnExpr[T | Null] = {
+    def nullable: TableColumnExpr[T | Null] = {
         val copy: TableColumnExpr[T | Null] = this.copy()
         copy
     }

@@ -71,13 +71,13 @@ object User extends TableSchema {
 }
 ```
 
-对可空类型的字段，我们添加`.haveNull`，并在类型参数中添加（| Null）：
+对可空类型的字段，我们添加`.nullable`，并在类型参数中添加（| Null）：
 
 ```scala
 object User extends TableSchema {
     override val tableName: String = "user"
     val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("name").haveNull
+    val name: TableColumnExpr[String | Null] = varcharColumn("name").nullable
 }
 ```
 
@@ -86,7 +86,7 @@ object User extends TableSchema {
 object User extends TableSchema {
     override val tableName: String = "user"
     val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("name").haveNull
+    val name: TableColumnExpr[String | Null] = varcharColumn("name").nullable
     def * = (id, name)
 }
 ```
@@ -235,7 +235,7 @@ select(User.*)
     .where(User.name.isNotNull)
 ```
 
-上文中`object`里未使用`haveNull`来标注的字段，使用`isNull`或`isNotNull`时，产生一个**编译错误**。
+上文中`object`里未使用`nullable`来标注的字段，使用`isNull`或`isNotNull`时，产生一个**编译错误**。
 
 这些运算符不仅可以代入数值，字符串等常量，表达式类型的子类也可以代入其中，比如我们需要做一个需求，查询当前的时间在表的两个字段范围内的数据，我们可以这样写：
 
@@ -703,7 +703,7 @@ case class User(id: Int = 123, name: Option[String] = Some("")) extends TableEnt
 object User extends TableSchema {
     override val tableName: String = "user"
     val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("user_name").haveNull
+    val name: TableColumnExpr[String | Null] = varcharColumn("user_name").nullable
     def * = (id, name)
 }
 ```
