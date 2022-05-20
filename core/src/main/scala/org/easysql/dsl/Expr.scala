@@ -171,10 +171,6 @@ case class ColumnExpr[T <: SqlSingleConstType | Null](column: String) extends Ex
 
 case class TableColumnExpr[T <: SqlSingleConstType | Null](table: String,
                                                     column: String) extends Expr[T]() {
-    def incr: PrimaryKeyColumnExpr[T & SqlSingleConstType] = {
-        PrimaryKeyColumnExpr(table, column, true)
-    }
-
     def primaryKey: PrimaryKeyColumnExpr[T & SqlSingleConstType] = {
         PrimaryKeyColumnExpr(table, column)
     }
@@ -188,6 +184,12 @@ case class TableColumnExpr[T <: SqlSingleConstType | Null](table: String,
         val copy: TableColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
+    }
+}
+
+extension [T <: Int | Long](t: TableColumnExpr[T]) {
+    def incr: PrimaryKeyColumnExpr[T] = {
+        PrimaryKeyColumnExpr(t.table, t.column, true)
     }
 }
 

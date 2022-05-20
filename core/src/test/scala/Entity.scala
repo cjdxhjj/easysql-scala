@@ -1,5 +1,5 @@
 import org.easysql.database.TableEntity
-import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, TableSchema}
+import org.easysql.dsl._
 
 import java.util.Date
 
@@ -7,9 +7,9 @@ case class User(id: Int, key: String, name: Option[String]) extends TableEntity[
 
 object User extends TableSchema {
     override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").primaryKey
-    val key: PrimaryKeyColumnExpr[String] = varcharColumn("key").primaryKey
-    val name: TableColumnExpr[String | Null] = varcharColumn("user_name").nullable
+    val id = intColumn("id").primaryKey
+    val key = varcharColumn("key").primaryKey
+    val name = varcharColumn("user_name").nullable
     def * = (id, key, name)
 }
 
@@ -17,8 +17,8 @@ case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
 
 object Post extends TableSchema {
     override val tableName: String = "post"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").primaryKey
-    val userId: TableColumnExpr[Int] = intColumn("user_id")
-    val name: TableColumnExpr[String] = varcharColumn("post_name")
+    val id = intColumn("id").incr
+    val userId = intColumn("user_id")
+    val name = varcharColumn("post_name")
     def * = (id, userId, name)
 }
