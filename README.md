@@ -2,7 +2,7 @@
 
 easysql-scala是一个使用Scala3编写的完全面向对象的sql构造框架。
 
-我们可以使用原生sql风格的dsl，构造出复杂的查询：
+我们可以使用原生sql风格的dsl构造查询（**主要支持**）：
 
 ```scala
 val s = (select (User.*, Post.*)
