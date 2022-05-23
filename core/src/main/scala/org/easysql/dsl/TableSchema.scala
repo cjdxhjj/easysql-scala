@@ -5,7 +5,7 @@ import org.easysql.dsl.{AllColumnExpr, TableColumnExpr}
 import org.easysql.ast.SqlSingleConstType
 import org.easysql.ast.table.SqlJoinType
 import org.easysql.macros.columnsMacro
-import org.easysql.query.select.SelectQuery
+import org.easysql.query.select.{SelectQuery, Query}
 
 import java.util.Date
 import scala.collection.mutable.ListBuffer
@@ -35,6 +35,10 @@ abstract class TableSchema {
     def booleanColumn(name: String): TableColumnExpr[Boolean] = this.column[Boolean](name)
 
     def dateColumn(name: String): TableColumnExpr[Date] = this.column[Date](name)
+}
+
+object TableSchema {
+    inline given tableToQuery[T <: TableSchema]: Conversion[T, Query[T]] = Query[T](_)
 }
 
 extension[T <: TableSchema] (t: T) {

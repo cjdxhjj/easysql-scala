@@ -2,22 +2,43 @@
 
 easysql-scala是一个使用Scala3编写的完全面向对象的sql构造框架。
 
-我们可以使用接近于原生sql的dsl构建跨数据库的sql语句，**无需任何代码以外的配置，就能构造出复杂的查询**，比如：
+我们可以使用原生sql风格的dsl，构造出复杂的查询：
 
 ```scala
-val select = (select (User.*, Post.*)
+val s = (select (User.*, Post.*)
         from User 
         leftJoin Post on User.id === Post.uid
         orderBy User.id.asc
         limit 10 offset 10)
 ```
 
-使用这种dsl，有下面的好处：
+或是使用集合函数风格：
+
+```scala
+val s = User
+    .joinLeft(Post)
+    .on((u, p) => u.id === p.userId)
+    .sortBy((u, _) => u.id.asc)
+    .map((u, p) => u.* -> p.*)
+    .drop(10)
+    .take(10)
+```
+
+或是使用monadic风格：
+
+```scala
+val s = for {
+    u <- User if u.name === "xxx"
+    p <- Post if u.id === p.userId
+} yield (u.*, p.*)
+```
+
+使用这些dsl来替代sql字符串，有下面的好处：
 1. 类型安全：将表达式与错误类型的值或者表达式比较，更新主键等场景，将会编译失败；
 2. 防注入：dsl的背后是sql语法树，并非是单纯字符串拼接，静态的语法树类型可以防止绝大多数sql注入；
-3. 查询的任何部分都可以被封装到方法或变量中，我们可以用来动态构建sql；
-4. 对于同一套查询，使用不同的数据库枚举值，就可以方便地生成不同数据库的sql；
-5. 获得ide提示。
+3. 可组合性：查询的任何部分都可以被封装到方法或变量中，我们可以用来动态构建sql；
+4. 可移植性：对于同一套查询，使用不同的数据库枚举值，就可以方便地生成不同数据库的sql；
+5. 方便性：可以获得ide提示。
 
 
 支持mysql、postgres sql、oracle、sqlserver、sqlite在内的多种数据库，并且封装出了统一的api。（**mysql与pgsql为第一优先级支持**）
@@ -503,25 +524,13 @@ select(User.name).from(User).distinct
 
 ### limit子句
 
-使用`limit(count, offset)`来做数据条数筛选（**注意此处与mysql的参数顺序不一样**），如：
-
-```scala
-select(User.*).from(User).limit(1, 100)
-```
-
-limit中第二个参数也可以不填，即为默认值0：
-
-```scala
-select(User.*).from(User).limit(1)
-```
-
-我们也可以使用中缀函数limit和offset组合调用
+我们可以使用中缀函数`limit`和`offset`组合调用
 
 ```scala
 select (User.*) from User limit 1 offset 10
 ```
 
-也可以不调用offset函数，即为默认值0。
+offset默认值为0，limit默认值为1。
 
 **limit语句并不是sql标准用法，因此每个数据库厂商采用的语法都有差异，生成sql时会根据数据源的数据库类型进行方言适配。**
 
