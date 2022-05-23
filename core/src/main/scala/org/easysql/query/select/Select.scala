@@ -81,16 +81,12 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
-        
-        val select = new Select[Tuple.Concat[T, RecursiveInverseMap[U, Expr]]]()
-        select.sqlSelect = this.sqlSelect
-        select.joinLeft = this.joinLeft
 
         def addItem(column: Expr[_]): Unit = {
             if (column.alias.isEmpty) {
-                select.sqlSelect.addSelectItem(visitExpr(column))
+                sqlSelect.addSelectItem(visitExpr(column))
             } else {
-                select.sqlSelect.addSelectItem(visitExpr(column), column.alias)
+                sqlSelect.addSelectItem(visitExpr(column), column.alias)
             }
         }
 
@@ -102,7 +98,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         }
 
         spread(items)
-        select
+        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U, Expr]]]]
     }
 
     infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]] = {
@@ -110,16 +106,12 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             this.sqlSelect.selectList.clear()
         }
 
-        val select = new Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]]()
-        select.sqlSelect = this.sqlSelect
-        select.joinLeft = this.joinLeft
-
         if (item.alias.isEmpty) {
-            select.sqlSelect.addSelectItem(visitExpr(item))
+            sqlSelect.addSelectItem(visitExpr(item))
         } else {
-            select.sqlSelect.addSelectItem(visitExpr(item), item.alias)
+            sqlSelect.addSelectItem(visitExpr(item), item.alias)
         }
-        select
+        this.asInstanceOf[Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]]]
     }
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
@@ -127,19 +119,15 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             this.sqlSelect.selectList.clear()
         }
 
-        val select = new Select[Tuple1[Nothing]]()
-        select.sqlSelect = this.sqlSelect
-        select.joinLeft = this.joinLeft
-
         columns.foreach { item =>
             if (item.alias.isEmpty) {
-                select.sqlSelect.addSelectItem(visitExpr(item))
+                sqlSelect.addSelectItem(visitExpr(item))
             } else {
-                select.sqlSelect.addSelectItem(visitExpr(item), item.alias)
+                sqlSelect.addSelectItem(visitExpr(item), item.alias)
             }
         }
 
-        select
+        this.asInstanceOf[Select[Tuple1[Nothing]]]
     }
 
     def distinct: Select[T] = {
@@ -180,12 +168,20 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
     }
 
     infix def limit(count: Int): Select[T] = {
-        this.sqlSelect.limit = Some(SqlLimit(count, 0))
+        if (this.sqlSelect.limit.isEmpty) {
+            this.sqlSelect.limit = Some(SqlLimit(count, 0))
+        } else {
+            this.sqlSelect.limit.get.limit = count
+        }
         this
     }
 
     infix def offset(offset: Int): Select[T] = {
-        this.sqlSelect.limit.get.offset = offset
+        if (this.sqlSelect.limit.isEmpty) {
+            this.sqlSelect.limit = Some(SqlLimit(1, offset))
+        } else {
+            this.sqlSelect.limit.get.offset = offset
+        }
         this
     }
 

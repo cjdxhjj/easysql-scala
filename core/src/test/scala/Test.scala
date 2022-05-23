@@ -1,7 +1,7 @@
 import org.easysql.dsl.*
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
-import org.easysql.query.select.{Select, UnionSelect}
+import org.easysql.query.select.{Select, UnionSelect, Query}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
 import org.easysql.ast.SqlSingleConstType
@@ -99,8 +99,34 @@ object Test extends App {
 
     given DB = DB.PGSQL
 
-    val i = insertInto(User)(User.id, User.name).values((1, ""))
+//    val i = insertInto(User)(User.id, User.name).values((1, ""))
+//
+//    i.values((1, ""))
+//    println(i.toSql)
 
-    i.values((1, ""))
-    println(i.toSql)
+//    val s = for {
+//        u <- Query(User) if u.id === 1
+//        p <- Query(Post) if u.id === p.userId
+//    } yield (u.id, p.name)
+//    import org.easysql.dsl.given
+
+
+//    val s = for {
+//        u <- User if u.name === "xxx"
+//        p <- Post if u.id === p.userId
+//    } yield (u.id, p.name)
+//    println(s.toSql)
+
+//    val s = select (User.id, User.name) from User where User.id === 1
+//
+//
+    val s1 = User
+        .joinLeft(Post)
+        .on((u, p) => u.id === p.userId)
+        .sortBy((u, _) => u.id.asc)
+        .map((u, p) => u.* -> p.*)
+        .drop(10)
+        .take(10)
+
+    println(s1.toSql)
 }
