@@ -7,7 +7,7 @@ easysql-scala是一个使用Scala3编写的完全面向对象的sql构造框架�
 ```scala
 val s = (select (User.*, Post.*)
         from User 
-        leftJoin Post on User.id === Post.uid
+        leftJoin Post on User.id === Post.userId
         orderBy User.id.asc
         limit 10 offset 10)
 ```
@@ -28,7 +28,7 @@ val s = User
 
 ```scala
 val s = for {
-    u <- User if u.name === "xxx"
+    u <- User
     p <- Post if u.id === p.userId
 } yield (u.*, p.*)
 ```
