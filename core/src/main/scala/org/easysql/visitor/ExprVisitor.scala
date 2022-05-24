@@ -79,6 +79,7 @@ def getExpr(value: SqlSingleConstType | Null | Expr[_] | SelectQuery[_]): SqlExp
         case number: Long => SqlNumberExpr(number)
         case number: Float => SqlNumberExpr(number)
         case number: Double => SqlNumberExpr(number)
+        case number: BigDecimal => SqlNumberExpr(number)
         case boolean: Boolean => SqlBooleanExpr(boolean)
         case date: Date => SqlDateExpr(date)
         case expr: Expr[_] => visitExpr(expr)

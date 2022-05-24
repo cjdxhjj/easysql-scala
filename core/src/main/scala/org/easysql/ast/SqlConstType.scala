@@ -6,4 +6,4 @@ import java.util.Date
 
 type SqlConstType = String | Int | Long | Double | Float | Boolean | List[String | Int | Long | Double | Float | Boolean | Date] | Date | Null
 
-type SqlSingleConstType = String | Int | Long | Double | Float | Boolean | Date
+type SqlSingleConstType = String | Int | Long | Double | Float | Boolean | Date | BigDecimal

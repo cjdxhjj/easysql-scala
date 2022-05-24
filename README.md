@@ -59,7 +59,7 @@ object User extends TableSchema {
 
 给伴生对象的属性赋值成column()类型，在column()函数中添加数据库列名。
 
-column类型支持：`intColumn`、`longColumn`、`varcharColumn`、`floatColumn`、`doubleColumn`、`booleanColumn`、`dateColumn`。
+column类型支持：`intColumn`、`longColumn`、`varcharColumn`、`floatColumn`、`doubleColumn`、`booleanColumn`、`dateColumn`、`decimalColumn`。
 
 然后我们就可以使用`select`方法创建一个`Select`实例，并编写一个简单的查询：
 

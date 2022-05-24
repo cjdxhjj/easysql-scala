@@ -206,6 +206,34 @@ def bindEntityMacroImpl[A <: TableEntity[_]](using q: Quotes, tpe: Type[A]): Exp
                                     nonContain
                                 }
 
+                            case '[BigDecimal] =>
+                                val nonContain = {
+                                    if (symbol.flags.is(Flags.HasDefault)) {
+                                        defaultMap(vd.name).asInstanceOf[Expr[BigDecimal]]
+                                    } else {
+                                        '{ 0 }
+                                    }
+                                }
+                                if (columnsMap.contains(vd.name)) {
+                                    val column = columnsMap(vd.name)
+                                    '{
+                                        val columnName = $column.column
+                                        if (map.contains(columnName)) {
+                                            map(columnName).asInstanceOf[BigDecimal]
+                                        } else { $nonContain }
+                                    }
+                                } else if (pkColumnsMap.contains(vd.name)) {
+                                    val column = pkColumnsMap(vd.name)
+                                    '{
+                                        val columnName = $column.column
+                                        if (map.contains(columnName)) {
+                                            map(columnName).asInstanceOf[BigDecimal]
+                                        } else { $nonContain }
+                                    }
+                                } else {
+                                    nonContain
+                                }
+
                             case '[Boolean] =>
                                 val nonContain = {
                                     if (symbol.flags.is(Flags.HasDefault)) {
@@ -380,6 +408,31 @@ def bindEntityMacroImpl[A <: TableEntity[_]](using q: Quotes, tpe: Type[A]): Exp
                                                 None
                                             } else {
                                                 Some(cell.asInstanceOf[Float])
+                                            }
+                                        } else { $nonContain }
+                                    }
+                                } else {
+                                    nonContain
+                                }
+
+                            case '[Option[BigDecimal]] =>
+                                val nonContain = {
+                                    if (symbol.flags.is(Flags.HasDefault)) {
+                                        defaultMap(vd.name).asInstanceOf[Expr[Option[BigDecimal]]]
+                                    } else {
+                                        '{ None }
+                                    }
+                                }
+                                if (columnsMap.contains(vd.name)) {
+                                    val column = columnsMap(vd.name)
+                                    '{
+                                        val columnName = $column.column
+                                        if (map.contains(columnName)) {
+                                            val cell = map(columnName)
+                                            if (cell == null) {
+                                                None
+                                            } else {
+                                                Some(cell.asInstanceOf[BigDecimal])
                                             }
                                         } else { $nonContain }
                                     }

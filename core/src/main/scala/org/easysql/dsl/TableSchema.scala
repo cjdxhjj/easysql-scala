@@ -16,7 +16,7 @@ abstract class TableSchema {
 
     var $columns: ListBuffer[TableColumnExpr[?]] = ListBuffer[TableColumnExpr[?]]()
 
-    private def column[T <: SqlSingleConstType](name: String): TableColumnExpr[T] = {
+    def column[T <: SqlSingleConstType](name: String): TableColumnExpr[T] = {
         val c = TableColumnExpr[T](tableName, name)
         $columns.addOne(c)
         c
@@ -35,6 +35,8 @@ abstract class TableSchema {
     def booleanColumn(name: String): TableColumnExpr[Boolean] = this.column[Boolean](name)
 
     def dateColumn(name: String): TableColumnExpr[Date] = this.column[Date](name)
+
+    def decimalColumn(name: String): TableColumnExpr[BigDecimal] = this.column[BigDecimal](name)
 }
 
 object TableSchema {
