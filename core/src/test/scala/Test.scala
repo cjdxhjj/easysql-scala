@@ -128,7 +128,7 @@ object Test extends App {
 //        .map((u, p) => u.* -> p.*)
 //        .drop(10)
 //        .take(10)
-    val s1 = User.filter(_.id === 2).map(u => u.id -> u.name)
-
-    println(s1.toSql)
+    val s1 = User.filter(_.id === 1).map(u => u.id -> u.name)
+    val s2 = User.filter(_.id === 2).map(u => u.id -> u.name)
+    println((s1 union s2).toSql)
 }
