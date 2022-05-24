@@ -116,19 +116,4 @@ object Test extends App {
 //        p <- Post if u.id === p.userId
 //    } yield (u.id, p.name)
 //    println(s.toSql)
-
-//    val s = select (User.id, User.name) from User where User.id === 1
-//    println(s.toSql)
-//
-//
-//    val s1 = User
-//        .joinLeft(Post)
-//        .on((u, p) => u.id === p.userId)
-//        .sortBy((u, _) => u.id.asc)
-//        .map((u, p) => u.* -> p.*)
-//        .drop(10)
-//        .take(10)
-    val s1 = User.filter(_.id === 1).map(u => u.id -> u.name)
-    val s2 = User.filter(_.id === 2).map(u => u.id -> u.name)
-    println((s1 union s2).toSql)
 }

@@ -35,8 +35,9 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
         this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
     }
 
-    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
-        val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, f(t).sqlSelect.from.get))
+    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
+        val join = f(t).sqlSelect.from.get
+        val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
         val where = if (f(t).sqlSelect.where.nonEmpty) {
             val expr = SqlBinaryExpr(this.sqlSelect.where.get, SqlBinaryOperator.AND, f(t).sqlSelect.where.get)
             Some(expr)
@@ -44,7 +45,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
             this.sqlSelect.where
         }
         this.sqlSelect = f(t).sqlSelect.copy(from = from, where = where)
-        this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
+        this.asInstanceOf[Query[R]]
     }
 
     def distinct: Query[T] = {
@@ -70,35 +71,29 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
         this
     }
 
-    def joinInner[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = {
+    private def join[JT <: TableSchema | AliasedTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
         val query = new Query[(T, JT)]((t, joinTable))
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, SqlIdentifierTableSource(joinTable.tableName)))
+        val join = joinTable match {
+            case t: TableSchema => SqlIdentifierTableSource(t.tableName)
+            case a: AliasedTableSchema => {
+                val table = SqlIdentifierTableSource(a.tableName)
+                table.alias = Some(a.aliasName)
+                table
+            }
+        }
+        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
         query
     }
 
-    def joinLeft[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = {
-        val query = new Query[(T, JT)]((t, joinTable))
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.LEFT_JOIN, SqlIdentifierTableSource(joinTable.tableName)))
-        query
-    }
+    def joinInner[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
 
-    def joinRight[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = {
-        val query = new Query[(T, JT)]((t, joinTable))
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.RIGHT_JOIN, SqlIdentifierTableSource(joinTable.tableName)))
-        query
-    }
+    def joinLeft[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
 
-    def joinCross[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = {
-        val query = new Query[(T, JT)]((t, joinTable))
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.CROSS_JOIN, SqlIdentifierTableSource(joinTable.tableName)))
-        query
-    }
+    def joinRight[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
 
-    def joinFull[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = {
-        val query = new Query[(T, JT)]((t, joinTable))
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.FULL_JOIN, SqlIdentifierTableSource(joinTable.tableName)))
-        query
-    }
+    def joinCross[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
+
+    def joinFull[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
     def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {
@@ -159,7 +154,8 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
 object Query {
     inline def apply[T <: TableSchema](table: T): Query[T] = {
         val query = new Query[T](table)
-        query.sqlSelect.from = Some(SqlIdentifierTableSource(table.tableName))
+        val from = SqlIdentifierTableSource(table.tableName)
+        query.sqlSelect.from = Some(from)
         query
     }
 }
