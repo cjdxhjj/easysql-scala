@@ -118,19 +118,17 @@ object Test extends App {
 //    println(s.toSql)
 
 //    val s = select (User.id, User.name) from User where User.id === 1
+//    println(s.toSql)
 //
 //
-    val s1 = User
-        .joinLeft(Post)
-        .on((u, p) => u.id === p.userId)
-        .sortBy((u, _) => u.id.asc)
-        .map((u, p) => u.* -> p.*)
-        .drop(10)
-        .take(10)
+//    val s1 = User
+//        .joinLeft(Post)
+//        .on((u, p) => u.id === p.userId)
+//        .sortBy((u, _) => u.id.asc)
+//        .map((u, p) => u.* -> p.*)
+//        .drop(10)
+//        .take(10)
+    val s1 = User.filter(_.id === 2).map(u => u.id -> u.name)
 
     println(s1.toSql)
-    
-    val x: java.math.BigDecimal = java.math.BigDecimal.valueOf(1).nn
-    
-    val y: BigDecimal = x
 }

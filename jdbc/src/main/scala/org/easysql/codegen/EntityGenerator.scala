@@ -21,6 +21,7 @@ extension (dbc: JdbcConnection) {
         dbc.getDB match {
             case DB.MYSQL => generateEntityForMysql(dbc, dbName, path, packageName)
             case DB.PGSQL => generateEntityForPgsql(dbc, dbName, path, packageName)
+            case _ =>
         }
     }
 }
