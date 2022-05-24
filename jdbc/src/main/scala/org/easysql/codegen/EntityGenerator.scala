@@ -55,6 +55,7 @@ def generateEntityForMysql(dbConnection: JdbcConnection, dbName: String, path: S
                     haveDate = true
                     "Date"
                 }
+                case "DECIMAL" | "NUMERIC" => "BigDecimal"
                 case _ => "Any"
             }
         }
@@ -77,7 +78,7 @@ def generateEntityForMysql(dbConnection: JdbcConnection, dbName: String, path: S
         entityCode.append(s"    override val tableName: String = \"$it\"")
         val cols = columns.filter { col =>
             getDataType(col("DATA_TYPE").toString.toUpperCase().nn) match {
-                case "String" | "Int" | "Long" | "Boolean" | "Float" | "Double" | "Date" => true
+                case "String" | "Int" | "Long" | "Boolean" | "Float" | "Double" | "Date" | "BigDecimal" => true
                 case _ => false
             }
         }
@@ -91,6 +92,7 @@ def generateEntityForMysql(dbConnection: JdbcConnection, dbName: String, path: S
                 case "Float" => entityCode.append("float")
                 case "Double" => entityCode.append("double")
                 case "Date" => entityCode.append("date")
+                case "BigDecimal" => entityCode.append("decimal")
             }
             entityCode.append(s"Column(\"${col("COLUMN_NAME").toString}\")")
 
@@ -177,6 +179,7 @@ def generateEntityForPgsql(dbConnection: JdbcConnection, dbName: String, path: S
                     haveDate = true
                     "Date"
                 }
+                case "NUMERIC" => "BigDecimal"
                 case _ => "Any"
             }
         }
@@ -199,7 +202,7 @@ def generateEntityForPgsql(dbConnection: JdbcConnection, dbName: String, path: S
         entityCode.append(s"    override val tableName: String = \"$it\"")
         val cols = columns.filter { col =>
             getDataType(col("udt_name").toString.toUpperCase().nn) match {
-                case "String" | "Int" | "Long" | "Boolean" | "Float" | "Double" | "Date" => true
+                case "String" | "Int" | "Long" | "Boolean" | "Float" | "Double" | "Date" | "BigDecimal" => true
                 case _ => false
             }
         }
@@ -213,6 +216,7 @@ def generateEntityForPgsql(dbConnection: JdbcConnection, dbName: String, path: S
                 case "Float" => entityCode.append("float")
                 case "Double" => entityCode.append("double")
                 case "Date" => entityCode.append("date")
+                case "BigDecimal" => entityCode.append("decimal")
             }
             entityCode.append(s"Column(\"${col("column_name").toString}\")")
 

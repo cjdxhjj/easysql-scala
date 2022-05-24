@@ -129,4 +129,8 @@ object Test extends App {
         .take(10)
 
     println(s1.toSql)
+    
+    val x: java.math.BigDecimal = java.math.BigDecimal.valueOf(1).nn
+    
+    val y: BigDecimal = x
 }

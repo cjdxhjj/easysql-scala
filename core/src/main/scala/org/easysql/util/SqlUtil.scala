@@ -34,6 +34,7 @@ def anyToExpr(value: Any): Expr[_] = {
         case f: Float => const(f)
         case b: Boolean => const(b)
         case d: Date => const(d)
+        case dc: BigDecimal => const(dc)
         case o: Option[_] => {
             if (o.isEmpty) {
                 const(null)
