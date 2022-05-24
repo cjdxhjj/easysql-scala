@@ -37,9 +37,8 @@ type RecursiveInverseMap[X <: Tuple, F[_ <: SqlSingleConstType | Null]] <: Tuple
 }
 
 type QueryType[T <: Tuple | Expr[_] | TableSchema] <: Tuple = T match {
-    case Expr[_] => Tuple1[T]
-    case TableSchema => Tuple1[T]
     case h *: t => h *: t
+    case _ => Tuple1[T]
 }
 
 type MapUnionNull[T <: Tuple] <: Tuple = T match {
