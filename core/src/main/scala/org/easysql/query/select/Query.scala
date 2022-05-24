@@ -3,8 +3,8 @@ package org.easysql.query.select
 import org.easysql.ast.expr.{SqlAllColumnExpr, SqlBinaryExpr, SqlBinaryOperator}
 import org.easysql.ast.limit.SqlLimit
 import org.easysql.ast.order.SqlOrderBy
-import org.easysql.dsl.{Expr, OrderBy, TableSchema}
-import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem}
+import org.easysql.dsl.*
+import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem, SqlSelectQuery}
 import org.easysql.ast.table.*
 import org.easysql.database.DB
 import org.easysql.visitor.visitExpr
@@ -12,9 +12,12 @@ import org.easysql.util.toSqlString
 import org.easysql.macros.columnsMacro
 
 import scala.collection.mutable.ListBuffer
+import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_] | TableSchema](t: T) {
+class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+
+    def getSelect: SqlSelectQuery = sqlSelect
 
     def filter(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
@@ -24,15 +27,15 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) {
 
     def withFilter(f: T => Expr[Boolean]): Query[T] = filter(f)
 
-    def map[R <: Tuple | Expr[_]](f: T => R): Query[R] = {
+    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
         spread(f(t))(addItem)
-        this.asInstanceOf[Query[R]]
+        this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
     }
 
-    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
+    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
         val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, f(t).sqlSelect.from.get))
         val where = if (f(t).sqlSelect.where.nonEmpty) {
             val expr = SqlBinaryExpr(this.sqlSelect.where.get, SqlBinaryOperator.AND, f(t).sqlSelect.where.get)
@@ -41,7 +44,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) {
             this.sqlSelect.where
         }
         this.sqlSelect = f(t).sqlSelect.copy(from = from, where = where)
-        this.asInstanceOf[Query[R]]
+        this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
     }
 
     def distinct: Query[T] = {
@@ -100,6 +103,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) {
     def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {
             case j: SqlJoinTableSource => j.on = Some(visitExpr(f(t)))
+            case _ => 
         }
         this
     }
@@ -139,10 +143,10 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) {
         this.sqlSelect.orderBy.append(sqlOrderBy)
     }
 
-    private def spread[T](items: Any)(handler: T => Unit): Unit = {
+    private def spread[K](items: Any)(handler: K => Unit)(using ClassTag[K]): Unit = {
         items match {
             case tu: Tuple => tu.toArray.foreach(spread(_)(handler))
-            case t: T => handler(t)
+            case k: K => handler(k)
             case _ =>
         }
     }
