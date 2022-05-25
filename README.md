@@ -394,8 +394,6 @@ select(User.id, User.name)
 
 链式调用多个`select`，会在生成sql时依次拼接进sql语句。
 
-由于需要对查询类型校验，每次调用`select`都会产生一个新的`Select`对象，如无必要，请**慎用**多次select。
-
 上面的`select`，对于union和子查询是**类型安全**的，但是查询字段需要在编译期确定，
 虽然安全，但在select的字段列表在运行期才能确定时并不方便，在这种动态sql的场景里，我们可以使用`dynamicSelect`：
 
@@ -579,7 +577,15 @@ select (**) from User leftJoin sub on User.id === sub.id
 select(User.*) from User where (User.id in select(User.id).from(User).limit(10))
 ````
 
-支持`exists`、`notExists`、`any`、`all`、`some`这五个子查询谓词，使用对应的全局函数把查询调用链代入即可：
+标量子查询：
+
+```scala
+import org.easysql.dsl.given
+val sub: Expr[Int] = select (User.id) from User
+val s = select (sub as "x", User.id) from User
+```
+
+子查询谓词：支持`exists`、`notExists`、`any`、`all`、`some`这五个子查询谓词，使用对应的全局函数把查询调用链代入即可：
 
 ```scala
 select (User.*) from User where exists(select (max(User.id)) from User)
