@@ -16,7 +16,31 @@ val s = (select (User.*, Post.*)
         limit 10 offset 10)
 ```
 
-或是使用集合函数风格：
+我们可以灵活的构建sql，比如下面的例子：
+
+```scala
+val s = select (User.*)
+
+// 根据不同条件查询不同表
+if (true) {
+    s from User
+    // 把条件封装在变量
+    val condition = User.id === 1
+    s where condition
+    // 动态拼装order by
+    s orderBy User.id.asc
+} else {
+    s from User leftJoin Post on User.id === Post.userId
+    // 动态添加查询列
+    s select Post.*
+    s where User.name === ""
+    s orderBy User.name.desc
+}
+```
+
+我们可以通过代码定制sql的任何部分，可以发挥想象力。
+
+也可以使用集合函数风格构建sql：
 
 ```scala
 val s = User
