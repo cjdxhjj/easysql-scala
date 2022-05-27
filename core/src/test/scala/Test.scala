@@ -116,4 +116,33 @@ object Test extends App {
 //        p <- Post if u.id === p.userId
 //    } yield (u.id, p.name)
 //    println(s.toSql)
+
+
+    val s = select (User.*)
+
+    // 根据不同条件查询不同表
+    if (true) {
+        s from User
+        // 把条件封装在变量
+        val condition = User.id === 1
+        s where condition
+        // 动态拼装order by
+        s orderBy User.id.asc
+    } else {
+        s from User leftJoin Post on User.id === Post.userId
+        // 动态添加查询列
+        s select Post.*
+        s where User.name === ""
+        s orderBy User.name.desc
+    }
+
+    val nameList = List("x", "y")
+    val sql = sql"select * from user where name in $nameList"
+    println(sql)
+}
+
+def xxx(t: TableSchema, conditions: Expr[Boolean]*) = {
+    val s = select (**) from t
+    conditions.foreach(it => s.where(it))
+    s
 }
