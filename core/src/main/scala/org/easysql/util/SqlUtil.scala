@@ -2,7 +2,7 @@ package org.easysql.util
 
 import org.easysql.ast.statement.SqlStatement
 import org.easysql.database.DB
-import org.easysql.dsl.{Expr, const}
+import org.easysql.dsl.{Expr, ListExpr, const}
 import org.easysql.visitor.outputVisitor.*
 
 import java.sql.SQLException
@@ -51,6 +51,7 @@ def anyToExpr(value: Any): Expr[_] = {
                 }
             }
         }
+        case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
         case _ => throw SQLException("实体类中存在无法转换为sql表达式的属性类型")
     }
 }

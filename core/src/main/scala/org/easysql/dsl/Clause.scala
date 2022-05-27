@@ -62,7 +62,7 @@ inline def delete[T <: TableEntity[_]](pk: PK[T]): Delete = Delete().delete[T](p
 def truncate(table: TableSchema | String): Truncate = Truncate().truncate(table)
 
 extension (s: StringContext) {
-    def sql(args: SqlSingleConstType*): String = {
+    def sql(args: (SqlSingleConstType | List[SqlSingleConstType])*): String = {
         import org.easysql.util.*
         import org.easysql.visitor.*
 
@@ -70,7 +70,7 @@ extension (s: StringContext) {
         val builder = StringBuilder(pit.next())
         args.foreach { arg =>
             val visitor = getOutPutVisitor(DB.MYSQL)
-            val expr = getExpr(arg)
+            val expr = getExpr(anyToExpr(arg))
             visitor.visitSqlExpr(expr)
             builder.append(visitor.sql())
             builder.append(pit.next())
