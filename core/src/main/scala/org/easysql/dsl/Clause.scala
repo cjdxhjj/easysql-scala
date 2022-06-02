@@ -53,7 +53,7 @@ inline def save[T <: TableEntity[_]](entity: T): Save = Save().save(entity)
 
 def update(table: TableSchema | String): Update = Update().update(table)
 
-inline def update[T <: TableEntity[_]](entity: T): Update = Update().update(entity)
+inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = Update().update(entity, skipNull)
 
 def deleteFrom(table: TableSchema | String): Delete = Delete().deleteFrom(table)
 

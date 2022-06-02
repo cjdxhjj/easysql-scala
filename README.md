@@ -837,6 +837,12 @@ val user = User(1, Some("x"))
 update(user)
 ```
 
+上面的用法，遇到值为`null`和`None`的字段会跳过，如果不希望跳过，可以将`skipNull`参数指定为`false`:
+
+```scala
+update(user, skipNull = false)
+```
+
 ## 删除语句
 
 我们这样创建一个删除语句：

@@ -27,8 +27,8 @@ class Update extends ReviseQuery {
         this
     }
 
-    inline infix def update[T <: TableEntity[_]](entity: T): Update = {
-        updateMacro(this, entity)
+    inline infix def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = {
+        updateMacro(this, entity, skipNull)
 
         this
     }
