@@ -31,7 +31,6 @@ def deleteMacroImpl[T <: TableEntity[_]](delete: Expr[Delete], primaryKey: Expr[
             .map(it => it.asInstanceOf[PrimaryKeyColumnExpr[_]])
 
         if (pkCols.isEmpty) {
-            // todo 将报错提升到编译期
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")
         }
     

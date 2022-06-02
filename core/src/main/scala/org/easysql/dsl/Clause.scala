@@ -10,6 +10,7 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
+import org.easysql.macros.findMacro
 
 def const[T <: SqlSingleConstType | Null](value: T) = ConstExpr[T](value)
 
@@ -44,6 +45,8 @@ def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U, Expr]] = Select(
 def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]], Expr]] = Select().select(item)
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
+
+inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_] = findMacro[T](Select(), pk)
 
 def insertInto(table: TableSchema)(columns: Tuple) = Insert().insertInto(table)(columns)
 
