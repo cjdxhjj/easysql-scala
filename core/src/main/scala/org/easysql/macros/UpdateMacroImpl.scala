@@ -8,7 +8,7 @@ import org.easysql.util.anyToExpr
 import java.sql.SQLException
 import scala.quoted.{Expr, Quotes, Type}
 
-def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T])(using quotes: Quotes, tpe: Type[T]): Expr[Update] = {
+def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T], skipNull: Expr[Boolean])(using quotes: Quotes, tpe: Type[T]): Expr[Update] = {
     import quotes.reflect.*
 
     val sym = TypeTree.of[T].symbol
@@ -38,7 +38,7 @@ def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T])(
         val values = $namesExpr.zip($fieldExprs).toMap
         val columnExprs = $compNamesExpr.zip($identsExpr).toMap
 
-        val columns = columnExprs
+        var columns = columnExprs
             .filter(it => it._2.isInstanceOf[TableColumnExpr[_]])
             .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_]])
             .toMap
@@ -53,11 +53,19 @@ def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T])(
         }
 
         pkCols.foreach { it =>
-            if (it._2 == null) {
-                throw SQLException("主键字段的值为null")
+            if (it._2 == null || it._2 == None) {
+                throw SQLException("主键字段的值为空")
             } else {
                 $update.where(it._1.equal(it._2))
             }
+        }
+
+        if ($skipNull) {
+            columns = columns.filter(it => values(it._1) != null && values(it._1) != None)
+        }
+
+        if (columns.isEmpty) {
+            throw SQLException("更新的字段列表为空")
         }
 
         columns
