@@ -33,7 +33,7 @@ case class SqlDateExpr(date: Date) extends SqlExpr {
 }
 
 case class SqlCharExpr(text: String) extends SqlExpr {
-    override def toString = s"'${text.replace("'", " '' ")}'"
+    override def toString = s"'${text.replace("'", "''")}'"
 }
 
 case class SqlBooleanExpr(boolean: Boolean) extends SqlExpr {
