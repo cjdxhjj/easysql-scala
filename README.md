@@ -144,6 +144,8 @@ object User extends TableSchema {
 
 后续的查询构造器中，将会利用`object`中的配置，进行类型检查。
 
+## 代码生成
+
 如果你使用的是mysql或者postgresql数据库，可以使用`jdbc`子项目中的工具来自动生成这些样板代码:
 
 ```scala
@@ -156,6 +158,32 @@ db.generateEntity("postgres", "src/main/scala/codegen/")
 ```
 
 根据实际需要进行微调即可。
+
+## 表结构继承
+
+实际开发中，可能有很多表有一些共有字段，比如状态，创建时间等，如果每张表都需要显式写出这些共有字段，会显得有些不方便。
+
+这个时候我们可以编写一个`trait`继承`TableSchema`：
+
+```scala
+trait BaseTable extends TableSchema {
+   lazy val dataState = intColumn("data_state")
+   lazy val createTime = dateColumn("create_time")
+}
+```
+
+这里，我们创建了一个名为BaseTable的trait，其他表继承这个trait即可（需要注意的是，基表的所有字段需要指定成`lazy val`）：
+
+```scala
+object User extends BaseTable {
+    override val tableName: String = "user"
+    val id = intColumn("id").incr
+    val name = varcharColumn("name").nullable
+    def * = (id, name, dataState, createTime)
+}
+```
+
+这样，我们就可以达到继承共有字段的目的了。
 
 # 查询构造器
 
