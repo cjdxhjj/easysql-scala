@@ -12,7 +12,7 @@ import java.util.Date
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
-sealed class Expr[T <: SqlSingleConstType | Null](var alias: Option[String] = None) {
+sealed trait Expr[T <: SqlSingleConstType | Null](var alias: Option[String] = None) {
     def +[V <: T & SqlSingleConstType](value: V): BinaryExpr[T] = BinaryExpr[T](this, SqlBinaryOperator.ADD, const(value))
 
     def +[V <: T | Null](expr: Expr[V]): BinaryExpr[T] = BinaryExpr[T](this, SqlBinaryOperator.ADD, expr)
@@ -226,7 +226,7 @@ case class CaseExpr[T <: SqlSingleConstType | Null](conditions: List[CaseBranch[
     }
 }
 
-case class ListExpr[T <: SqlSingleConstType | Null](list: List[T | Expr[_] | SelectQuery[_]]) extends Expr[T]
+case class ListExpr[T <: SqlSingleConstType | Null](list: List[T | Expr[_] | SelectQuery[_]]) extends Expr[T]()
 
 case class InListExpr[T <: SqlSingleConstType | Null](query: Expr[_],
                                                       list: List[T | Expr[_] | SelectQuery[_]],

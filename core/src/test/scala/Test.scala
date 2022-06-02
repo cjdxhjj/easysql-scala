@@ -140,9 +140,3 @@ object Test extends App {
     val sql = sql"select * from user where name in $nameList"
     println(sql)
 }
-
-def xxx(t: TableSchema, conditions: Expr[Boolean]*) = {
-    val s = select (**) from t
-    conditions.foreach(it => s.where(it))
-    s
-}

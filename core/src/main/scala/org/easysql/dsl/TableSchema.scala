@@ -11,7 +11,7 @@ import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
-abstract class TableSchema {
+trait TableSchema {
     val tableName: String
 
     var $columns: ListBuffer[TableColumnExpr[?]] = ListBuffer[TableColumnExpr[?]]()
