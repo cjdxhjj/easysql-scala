@@ -327,7 +327,7 @@ abstract class SqlVisitor {
                 expr.owner.foreach(it => sqlBuilder.append(s"$quote$it$quote."))
                 sqlBuilder.append("*")
 
-            case expr: SqlListExpr[_] =>
+            case expr: SqlListExpr =>
                 sqlBuilder.append("(")
                 printList(expr.items, visitSqlExpr)
                 sqlBuilder.append(")")
@@ -340,7 +340,7 @@ abstract class SqlVisitor {
                 sqlBuilder.append(" IN ")
                 visitSqlExpr(expr.inExpr)
 
-            case expr: SqlBetweenExpr[_] =>
+            case expr: SqlBetweenExpr =>
                 visitSqlExpr(expr.expr)
                 if (expr.isNot) {
                     sqlBuilder.append(" NOT")

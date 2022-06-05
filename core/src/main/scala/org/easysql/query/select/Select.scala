@@ -16,9 +16,9 @@ import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
 class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
-    private var sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+    private var sqlSelect = SqlSelect(false, List(SqlSelectItem(SqlAllColumnExpr(None), None)), None, None, List(), List(), false, None, None)
 
-    private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
+    private var joinLeft: SqlTableSource = SqlIdentifierTableSource("", None, List())
 
     private var aliasName: Option[String] = None
 
@@ -29,44 +29,40 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             case string: String => string
         }
 
-        val from = Some(SqlIdentifierTableSource(tableName))
-        if (table.isInstanceOf[AliasedTableSchema]) {
-            from.get.alias = Some(table.asInstanceOf[AliasedTableSchema].aliasName)
+        val alias = if (table.isInstanceOf[AliasedTableSchema]) {
+            Some(table.asInstanceOf[AliasedTableSchema].aliasName)
+        } else {
+            None
         }
+        val from = Some(SqlIdentifierTableSource(tableName, alias, List()))
         joinLeft = from.get
         sqlSelect.from = from
         this
     }
 
     infix def from(table: SelectQuery[_]): Select[T] = {
-        val from = Some(SqlSubQueryTableSource(table.getSelect))
+        val from = Some(SqlSubQueryTableSource(table.getSelect, false, None, List()))
         joinLeft = from.get
         sqlSelect.from = from
         this
     }
 
     infix def from(table: Select[_]): Select[T] = {
-        val from = SqlSubQueryTableSource(table.getSelect)
-        if (table.aliasName.nonEmpty) {
-            from.alias = table.aliasName
-        }
+        val from = SqlSubQueryTableSource(table.getSelect, false, table.aliasName, List())
         joinLeft = from
         sqlSelect.from = Some(from)
         this
     }
 
     infix def fromLateral(query: SelectQuery[_]): Select[T] = {
-        val from = Some(SqlSubQueryTableSource(query.getSelect, true))
+        val from = Some(SqlSubQueryTableSource(query.getSelect, true, None, List()))
         joinLeft = from.get
         sqlSelect.from = from
         this
     }
 
     infix def fromLateral(table: Select[_]): Select[T] = {
-        val from = SqlSubQueryTableSource(table.getSelect, true)
-        if (table.aliasName.nonEmpty) {
-            from.alias = table.aliasName
-        }
+        val from = SqlSubQueryTableSource(table.getSelect, true, table.aliasName, List())
         joinLeft = from
         sqlSelect.from = Some(from)
         this
@@ -79,7 +75,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U, Expr]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
+            this.sqlSelect.selectList = List()
         }
 
         def addItem(column: Expr[_]): Unit = {
@@ -103,7 +99,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
+            this.sqlSelect.selectList = List()
         }
 
         if (item.alias.isEmpty) {
@@ -116,7 +112,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
+            this.sqlSelect.selectList = List()
         }
 
         columns.foreach { item =>
@@ -162,7 +158,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
     infix def orderBy(items: OrderBy*): Select[T] = {
         items.foreach { it =>
             val sqlOrderBy = SqlOrderBy(visitExpr(it.query), it.order)
-            this.sqlSelect.orderBy.append(sqlOrderBy)
+            this.sqlSelect.orderBy = this.sqlSelect.orderBy ::: List(sqlOrderBy)
         }
         this
     }
@@ -186,9 +182,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
     }
 
     infix def groupBy(items: Expr[_]*): Select[T] = {
-        items.foreach { it =>
-            this.sqlSelect.groupBy.append(visitExpr(it))
-        }
+        this.sqlSelect.groupBy = this.sqlSelect.groupBy ::: items.toList.map(it => visitExpr(it))
         this
     }
 
@@ -198,22 +192,27 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             case tableSchema: TableSchema => tableSchema.tableName
             case aliasedTableSchema: AliasedTableSchema => aliasedTableSchema.tableName
         }
-        val joinTable = SqlIdentifierTableSource(tableName)
-        if (table.isInstanceOf[AliasedTableSchema]) {
-            joinTable.alias = Some(table.asInstanceOf[AliasedTableSchema].aliasName)
+
+        val alias = if (table.isInstanceOf[AliasedTableSchema]) {
+            Some(table.asInstanceOf[AliasedTableSchema].aliasName)
+        } else {
+            None
         }
+        val joinTable = SqlIdentifierTableSource(tableName, alias, List())
         
-        val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
+        val join = SqlJoinTableSource(joinLeft, joinType, joinTable, None, None, List())
         sqlSelect.from = Some(join)
         joinLeft = join
         this
     }
 
     private def joinClause(table: SelectQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T] = {
-        val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral))
-        if (table.isInstanceOf[Select[_]]) {
-            join.alias = table.asInstanceOf[Select[_]].aliasName
+        val alias = if (table.isInstanceOf[Select[_]]) {
+            table.asInstanceOf[Select[_]].aliasName
+        } else {
+            None
         }
+        val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral, None, List()), None, alias, List())
         sqlSelect.from = Some(join)
         joinLeft = join
         this
@@ -222,18 +221,14 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
     private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T] = {
         def unapplyTable(t: TableSchema | JoinTableSchema | AliasedTableSchema): SqlTableSource = {
             t match {
-                case table: TableSchema => SqlIdentifierTableSource(table.tableName)
-                case a: AliasedTableSchema => {
-                    val ts = SqlIdentifierTableSource(a.tableName)
-                    ts.alias = Some(a.aliasName)
-                    ts
-                }
-                case j: JoinTableSchema => SqlJoinTableSource(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr))
+                case table: TableSchema => SqlIdentifierTableSource(table.tableName, None, List())
+                case a: AliasedTableSchema => SqlIdentifierTableSource(a.tableName, Some(a.aliasName), List())
+                case j: JoinTableSchema => SqlJoinTableSource(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr), None, List())
             }
         }
 
-        val joinTableSource = SqlJoinTableSource(unapplyTable(table.left), table.joinType, unapplyTable(table.right), table.onCondition.map(getExpr))
-        val join = SqlJoinTableSource(joinLeft, joinType, joinTableSource)
+        val joinTableSource = SqlJoinTableSource(unapplyTable(table.left), table.joinType, unapplyTable(table.right), table.onCondition.map(getExpr), None, List())
+        val join = SqlJoinTableSource(joinLeft, joinType, joinTableSource, None, None, List())
 
         sqlSelect.from = Some(join)
         joinLeft = join
@@ -351,15 +346,15 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
     }
 
     override def getSelect: SqlSelectQuery = sqlSelect
+    
+    inline def getInlineSelect: SqlSelect = sqlSelect.copy()
 
     override def sql(db: DB): String = toSqlString(sqlSelect, db)
 
     override def toSql(using db: DB): String = toSqlString(sqlSelect, db)
 
     def fetchCountSql(db: DB): String = {
-        val selectCopy = this.sqlSelect.copy(selectList = ListBuffer(), limit = None, orderBy = ListBuffer())
-        selectCopy.selectList.clear()
-        selectCopy.orderBy.clear()
+        val selectCopy = this.sqlSelect.copy(selectList = List(), limit = None, orderBy = List())
         selectCopy.addSelectItem(visitExpr(count()), Some("count"))
 
         toSqlString(selectCopy, db)

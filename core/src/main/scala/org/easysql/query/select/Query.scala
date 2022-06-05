@@ -3,7 +3,7 @@ package org.easysql.query.select
 import org.easysql.ast.expr.{SqlAllColumnExpr, SqlBinaryExpr, SqlBinaryOperator}
 import org.easysql.ast.limit.SqlLimit
 import org.easysql.ast.order.SqlOrderBy
-import org.easysql.dsl.*
+import org.easysql.dsl.{Expr, *}
 import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem, SqlSelectQuery}
 import org.easysql.ast.table.*
 import org.easysql.database.DB
@@ -14,42 +14,40 @@ import org.easysql.macros.columnsMacro
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[QueryType[T]] {
-    private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
-
-    def getSelect: SqlSelectQuery = sqlSelect
+class Query[T <: Tuple | Expr[_] | TableSchema](t: T, var ast: SqlSelect) extends SelectQueryImpl[QueryType[T]] {
+    inline def getSelect: SqlSelect = ast
 
     def filter(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
-        sqlSelect.addCondition(visitExpr(expr))
+        ast.addCondition(visitExpr(expr))
         this
     }
 
     def withFilter(f: T => Expr[Boolean]): Query[T] = filter(f)
 
-    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
+    inline def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
+        if (ast.selectList.size == 1 && ast.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
+            ast.selectList = List()
         }
         spread(f(t))(addItem)
         this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
     }
 
     def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
-        val join = f(t).sqlSelect.from.get
-        val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
-        val where = if (f(t).sqlSelect.where.nonEmpty) {
-            val expr = SqlBinaryExpr(this.sqlSelect.where.get, SqlBinaryOperator.AND, f(t).sqlSelect.where.get)
+        val join = f(t).ast.from.get
+        val from = Some(SqlJoinTableSource(ast.from.get, SqlJoinType.INNER_JOIN, join, None, None, List()))
+        val where = if (f(t).ast.where.nonEmpty) {
+            val expr = SqlBinaryExpr(ast.where.get, SqlBinaryOperator.AND, f(t).ast.where.get)
             Some(expr)
         } else {
-            this.sqlSelect.where
+            ast.where
         }
-        this.sqlSelect = f(t).sqlSelect.copy(from = from, where = where)
+        ast = f(t).ast.copy(from = from, where = where)
         this.asInstanceOf[Query[R]]
     }
 
     def distinct: Query[T] = {
-        this.sqlSelect.distinct = true
+        ast.distinct = true
         this
     }
 
@@ -60,28 +58,26 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
 
     def groupBy[R <: Tuple | Expr[_]](f: T => R): Query[(R, T)] = {
         spread(f(t))(addGroupBy)
-        val query = new Query[(R, T)](f(t) -> t)
-        query.sqlSelect = this.sqlSelect
+        val query = new Query[(R, T)](f(t) -> t, ast)
         query
     }
 
     def having(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
-        sqlSelect.addHaving(visitExpr(expr))
+        ast.addHaving(visitExpr(expr))
         this
     }
 
     private def join[JT <: TableSchema | AliasedTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
-        val query = new Query[(T, JT)]((t, joinTable))
+        val query = new Query[(T, JT)]((t, joinTable), ast)
         val join = joinTable match {
-            case t: TableSchema => SqlIdentifierTableSource(t.tableName)
+            case t: TableSchema => SqlIdentifierTableSource(t.tableName, None, List())
             case a: AliasedTableSchema => {
-                val table = SqlIdentifierTableSource(a.tableName)
-                table.alias = Some(a.aliasName)
+                val table = SqlIdentifierTableSource(a.tableName, Some(a.aliasName), List())
                 table
             }
         }
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
+        query.ast.from = Some(SqlJoinTableSource(ast.from.get, SqlJoinType.INNER_JOIN, join, None, None, List()))
         query
     }
 
@@ -96,7 +92,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
     def joinFull[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
     def on(f: T => Expr[Boolean]): Query[T] = {
-        this.sqlSelect.from.get match {
+        ast.from.get match {
             case j: SqlJoinTableSource => j.on = Some(visitExpr(f(t)))
             case _ => 
         }
@@ -104,38 +100,38 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
     }
 
     def take(n: Int): Query[T] = {
-        if (this.sqlSelect.limit.isEmpty) {
-            this.sqlSelect.limit = Some(SqlLimit(n, 0))
+        if (ast.limit.isEmpty) {
+            ast.limit = Some(SqlLimit(n, 0))
         } else {
-            this.sqlSelect.limit.get.limit = n
+            ast.limit.get.limit = n
         }
         this
     }
 
     def drop(n: Int): Query[T] = {
-        if (this.sqlSelect.limit.isEmpty) {
-            this.sqlSelect.limit = Some(SqlLimit(1, n))
+        if (ast.limit.isEmpty) {
+            ast.limit = Some(SqlLimit(1, n))
         } else {
-            this.sqlSelect.limit.get.offset = n
+            ast.limit.get.offset = n
         }
         this
     }
 
     private def addGroupBy(column: Expr[_]): Unit = {
-        this.sqlSelect.groupBy.append(visitExpr(column))
+        ast.groupBy = ast.groupBy ::: List(visitExpr(column))
     }
 
     private def addItem(column: Expr[_]): Unit = {
         if (column.alias.isEmpty) {
-            this.sqlSelect.addSelectItem(visitExpr(column))
+            ast.addSelectItem(visitExpr(column))
         } else {
-            this.sqlSelect.addSelectItem(visitExpr(column), column.alias)
+            ast.addSelectItem(visitExpr(column), column.alias)
         }
     }
 
     private def addSortBy(sortBy: OrderBy): Unit = {
         val sqlOrderBy = SqlOrderBy(visitExpr(sortBy.query), sortBy.order)
-        this.sqlSelect.orderBy.append(sqlOrderBy)
+        ast.orderBy = ast.orderBy ::: List(sqlOrderBy)
     }
 
     private def spread[K](items: Any)(handler: K => Unit)(using ClassTag[K]): Unit = {
@@ -146,16 +142,14 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
         }
     }
 
-    def sql(db: DB): String = toSqlString(this.sqlSelect, db)
+    def sql(db: DB): String = toSqlString(ast, db)
 
-    def toSql(using db: DB): String = toSqlString(this.sqlSelect, db)
+    def toSql(using db: DB): String = toSqlString(ast, db)
 }
 
 object Query {
     inline def apply[T <: TableSchema](table: T): Query[T] = {
-        val query = new Query[T](table)
-        val from = SqlIdentifierTableSource(table.tableName)
-        query.sqlSelect.from = Some(from)
+        val query = new Query[T](table, SqlSelect(false, List(SqlSelectItem(SqlAllColumnExpr(None), None)), Some(SqlIdentifierTableSource(table.tableName, None, List())), None, List(), List(), false, None, None))
         query
     }
 }

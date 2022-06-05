@@ -60,7 +60,7 @@ def visitColumnExpr(column: ColumnExpr[_]): SqlExpr = {
         }
     } else {
         if (column.column.contains("*")) {
-            SqlAllColumnExpr()
+            SqlAllColumnExpr(None)
         } else {
             SqlIdentifierExpr(column.column)
         }

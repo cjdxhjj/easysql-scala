@@ -1,10 +1,13 @@
 import org.easysql.dsl.*
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
-import org.easysql.query.select.{Select, UnionSelect, Query}
+import org.easysql.query.select.{Query, Select, UnionSelect}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
 import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.expr.*
+import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem}
+import org.easysql.ast.table.SqlIdentifierTableSource
 
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
@@ -139,4 +142,16 @@ object Test extends App {
     val nameList = List("x", "y")
     val sql = sql"select * from user where name in $nameList"
     println(sql)
+
+    inline def ast = (select (User.*) from User where User.id === 1).getInlineSelect
+
+    inline def ast1 = SqlSelect(false, List(SqlSelectItem(SqlAllColumnExpr(None), None)), Some(SqlIdentifierTableSource("t1", None, List())), None, List(), List(), false, None, None)
+    inline def ast2 = {
+        val a = ast1
+        a.distinct = true
+        a
+    }
+
+    astMacro(ast1)
+
 }

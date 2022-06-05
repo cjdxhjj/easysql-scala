@@ -1,32 +1,47 @@
 package org.easysql.ast.statement.select
 
-import org.easysql.ast.expr._
+import org.easysql.ast.expr.*
 import org.easysql.ast.order.SqlOrderBy
 import org.easysql.ast.statement.SqlStatement
 import org.easysql.ast.table.SqlTableSource
 import org.easysql.ast.limit.SqlLimit
-import org.easysql.ast.statement.select._
+import org.easysql.ast.statement.select.*
+import org.easysql.ast.statement.select.SqlSelectItem.SqlSelectItemFromExpr
 
+import scala.quoted.*
 import scala.collection.mutable.ListBuffer
 
 sealed class SqlSelectQuery extends SqlStatement
 
-case class SqlSelect(var distinct: Boolean = false,
-                     selectList: ListBuffer[SqlSelectItem] = ListBuffer(),
-                     var from: Option[SqlTableSource] = None,
-                     var where: Option[SqlExpr] = None,
-                     groupBy: ListBuffer[SqlExpr] = ListBuffer(),
-                     orderBy: ListBuffer[SqlOrderBy] = ListBuffer(),
-                     var forUpdate: Boolean = false,
-                     var limit: Option[SqlLimit] = None,
-                     var having: Option[SqlExpr] = None
+object SqlSelectQuery {
+    given FromExpr[SqlSelectQuery] with {
+        override def unapply(x: Expr[SqlSelectQuery])(using Quotes): Option[SqlSelectQuery] = x match {
+            // todo
+            case '{ $x: SqlSelect } => x.value
+//            case '{ $x: SqlUnionSelect } => x.value
+//            case '{ $x: SqlWithSelect } => x.value
+//            case '{ $x: SqlValuesSelect } => x.value
+            case _ => None
+        }
+    }
+}
+
+case class SqlSelect(var distinct: Boolean,
+                     var selectList: List[SqlSelectItem],
+                     var from: Option[SqlTableSource],
+                     var where: Option[SqlExpr],
+                     var groupBy: List[SqlExpr],
+                     var orderBy: List[SqlOrderBy],
+                     var forUpdate: Boolean,
+                     var limit: Option[SqlLimit],
+                     var having: Option[SqlExpr]
                     ) extends SqlSelectQuery() {
     def addSelectItem(expr: SqlExpr | String, alias: Option[String] = None): Unit = {
         val sqlExpr = expr match {
             case e: SqlExpr => e
             case s: String => SqlIdentifierExpr(s)
         }
-        selectList += SqlSelectItem(sqlExpr, alias)
+        selectList = selectList ::: List(SqlSelectItem(sqlExpr, alias))
     }
 
     def addCondition(condition: SqlExpr): Unit = {
@@ -42,6 +57,16 @@ case class SqlSelect(var distinct: Boolean = false,
             Some(condition)
         } else  {
             Some(SqlBinaryExpr(having.get, SqlBinaryOperator.AND, condition))
+        }
+    }
+}
+
+object SqlSelect {
+    given FromExpr[SqlSelect] with {
+        override def unapply(x: Expr[SqlSelect])(using Quotes): Option[SqlSelect] = x match {
+            case '{ SqlSelect(${Expr(d)}, ${Expr(s)}, ${Expr(f)}, ${Expr(w)}, ${Expr(g)}, ${Expr(o)}, ${Expr(fu)}, ${Expr(l)}, ${Expr(h)}) } => Some(SqlSelect(d, s, f, w, g, o, fu, l, h))
+            case '{ new SqlSelect(${Expr(d)}, ${Expr(s)}, ${Expr(f)}, ${Expr(w)}, ${Expr(g)}, ${Expr(o)}, ${Expr(fu)}, ${Expr(l)}, ${Expr(h)}) } => Some(SqlSelect(d, s, f, w, g, o, fu, l, h))
+            case _ => None
         }
     }
 }
