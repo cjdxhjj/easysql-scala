@@ -72,7 +72,12 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this
     }
 
-    infix def as(name: String): Select[T] = {
+    infix def as(name: String)(using NonEmpty[name.type]): Select[T] = {
+        this.aliasName = Some(name)
+        this
+    }
+    
+    infix def unsafeAs(name: String): Select[T] = {
         this.aliasName = Some(name)
         this
     }

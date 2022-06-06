@@ -125,7 +125,12 @@ sealed trait Expr[T <: SqlSingleConstType | Null](var alias: Option[String] = No
 
     def desc: OrderBy = OrderBy(this, SqlOrderByOption.DESC)
 
-    infix def as(name: String): Expr[T] = {
+    infix def as(name: String)(using NonEmpty[name.type]): Expr[T] = {
+        this.alias = Some(name)
+        this
+    }
+
+    infix def unsafeAs(name: String): Expr[T] = {
         this.alias = Some(name)
         this
     }
@@ -180,7 +185,13 @@ case class TableColumnExpr[T <: SqlSingleConstType | Null](table: String,
         copy
     }
 
-    override infix def as(name: String): Expr[T] = {
+    override infix def as(name: String)(using NonEmpty[name.type]): Expr[T] = {
+        val copy: TableColumnExpr[T] = this.copy()
+        copy.alias = Some(name)
+        copy
+    }
+
+    override infix def unsafeAs(name: String): Expr[T] = {
         val copy: TableColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
@@ -196,7 +207,13 @@ extension [T <: Int | Long](t: TableColumnExpr[T]) {
 case class PrimaryKeyColumnExpr[T <: SqlSingleConstType](table: String,
                                                          column: String,
                                                          var isIncr: Boolean = false) extends Expr[T]() {
-    override infix def as(name: String): Expr[T] = {
+    override infix def as(name: String)(using NonEmpty[name.type]): Expr[T] = {
+        val copy: PrimaryKeyColumnExpr[T] = this.copy()
+        copy.alias = Some(name)
+        copy
+    }
+
+    override infix def unsafeAs(name: String): Expr[T] = {
         val copy: PrimaryKeyColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy

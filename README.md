@@ -244,11 +244,27 @@ select (col[Int]("c1")) from User
 
 ### 表达式别名
 
-表达式类型可以使用中缀函数`as`来起别名，我们在此以字段类型为例，后文的其他表达式类型也支持这个功能：
+表达式类型可以使用中缀方法`as`来起别名，我们在此以字段类型为例，后文的其他表达式类型也支持这个功能：
 
 ```scala
-select(User.id as "c1") from User
+select (User.id as "c1") from User
 ```
+
+`as`方法携带了编译期校验，如果参数传入一个空字符串，将会产生编译错误：
+
+```scala
+// 编译错误，as的参数不能为空字符串
+select (User.id as "") from User
+```
+
+如果别名需要运行期动态确定，我们需要使用`unsafeAs`方法：
+
+```scala
+val alias: String = ???
+select (User.id unsafeAs "") from User
+```
+
+**这可能在运行期产生sql异常，请谨慎使用。**
 
 ### 常量
 
@@ -504,6 +520,8 @@ select (sub.c1) from sub where sub.c2 === "小黑"
 ```
 
 子查询的表，需要手动展开查询字段，**并对每个字段起别名**，在下面引述子查询的时候，便可以通过别名字符串推断出属性名。
+
+**与表达式别名一样，上述的`as`是安全的，如果传入空字符串会产生编译错误，我们可以使用`unsafeAs`来传入运行期确定的别名。**
 
 ### where子句
 
