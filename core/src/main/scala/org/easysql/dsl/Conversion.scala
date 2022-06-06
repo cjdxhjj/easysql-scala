@@ -73,3 +73,8 @@ type MatchTypeRight[L, R] <: Boolean = R match {
     case L | Null => true
     case _ => false
 }
+
+type NonEmpty[T <: String] = T == "" match {
+    case false => Any
+    case true => Nothing
+}
