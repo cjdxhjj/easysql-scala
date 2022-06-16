@@ -44,7 +44,7 @@ object TableSchema {
 }
 
 extension[T <: TableSchema] (t: T) {
-    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type]): AliasedTableSchema = {
+    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): AliasedTableSchema = {
         val columns = columnsMacro[T](t)
         AliasedTableSchema(t.tableName, aliasName, columns)
     }
