@@ -261,7 +261,7 @@ select (User.id as "") from User
 
 ```scala
 val alias: String = ???
-select (User.id unsafeAs "") from User
+select (User.id unsafeAs alias) from User
 ```
 
 **这可能在运行期产生sql异常，请谨慎使用。**
