@@ -35,7 +35,7 @@ def table(name: String) = new TableSchema {
 }
 
 extension [T <: SqlSingleConstType | Null](e: TableColumnExpr[T] | ColumnExpr[T]) {
-    def to(value: T | Expr[T] | SelectQuery[Tuple1[T]]) = e -> value
+    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
 def ** = AllColumnExpr()
