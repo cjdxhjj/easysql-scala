@@ -43,7 +43,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
 
     override def fetchCount(query: Select[_]): Int = exec(conn => jdbcQueryCount(conn, query.fetchCountSql(db)))
 
-    def transaction(isolation: Int, query: JdbcTransaction => Unit): Unit = {
+    def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection
         conn.setAutoCommit(false)
         conn.setTransactionIsolation(isolation)
