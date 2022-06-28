@@ -36,7 +36,7 @@ def table(name: String) = new TableSchema {
     override val tableName: String = name
 }
 
-extension [T <: SqlSingleConstType | Null](e: TableColumnExpr[T] | ColumnExpr[T]) {
+extension[T <: SqlSingleConstType | Null] (e: TableColumnExpr[T] | ColumnExpr[T]) {
     def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
@@ -44,7 +44,13 @@ def ** = AllColumnExpr()
 
 def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = Select().select(items)
 
-def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]]]] = Select().select(item)
+def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]]]] {
+    type FromTables = EmptyTuple.type
+    type QuoteTables = item.QuoteTables
+} = Select().select(item).asInstanceOf[Select[InverseMap[Tuple1[Expr[I]]]] {
+    type FromTables = EmptyTuple.type
+    type QuoteTables = item.QuoteTables
+}]
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 

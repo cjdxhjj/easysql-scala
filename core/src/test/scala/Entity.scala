@@ -9,7 +9,7 @@ object User extends TableSchema {
     override val tableName: String = "user"
     val id = intColumn("id").primaryKey
     val key = varcharColumn("key").primaryKey
-    val name = varcharColumn("user_name").nullable
+    val name = varcharColumn("user_name")
     def * = (id, key, name)
 }
 

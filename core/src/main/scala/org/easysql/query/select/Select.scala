@@ -16,15 +16,37 @@ import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
 class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
-    private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+    self =>
+    private var sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
 
     private var aliasName: Option[String] = None
 
-    infix def from(table: TableSchema | AliasedTableSchema | String): Select[T] = {
+    type FromTables <: Tuple
+
+    type QuoteTables <: Tuple
+
+    infix def from[Table <: TableSchema](table: Table): Select[T] {
+        type FromTables = Tuple1[Table]
+        type QuoteTables = self.QuoteTables
+    } = {
+        val from = Some(SqlIdentifierTableSource(table.tableName))
+        joinLeft = from.get
+        sqlSelect.from = from
+
+        val s = new Select[T] {
+            override type FromTables = Tuple1[Table]
+            override type QuoteTables = self.QuoteTables
+        }
+        s.sqlSelect = this.sqlSelect
+        s.joinLeft = this.joinLeft
+        s.aliasName = this.aliasName
+        s
+    }
+
+    infix def from(table: AliasedTableSchema | String): Select[T] = {
         val tableName = table match {
-            case tableSchema: TableSchema => tableSchema.tableName
             case aliasedTableSchema: AliasedTableSchema => aliasedTableSchema.tableName
             case string: String => string
         }
@@ -76,7 +98,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this.aliasName = Some(name)
         this
     }
-    
+
     infix def unsafeAs(name: String): Select[T] = {
         this.aliasName = Some(name)
         this
@@ -106,7 +128,10 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]]]]
     }
 
-    infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] = {
+    infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] {
+        type FromTables = self.FromTables
+        type QuoteTables = item.QuoteTables
+    } = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -116,7 +141,14 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         } else {
             sqlSelect.addSelectItem(visitExpr(item), item.alias)
         }
-        this.asInstanceOf[Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]]]
+        val s = new Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] {
+            override type FromTables = self.FromTables
+            override type QuoteTables = item.QuoteTables
+        }
+        s.sqlSelect = this.sqlSelect
+        s.joinLeft = this.joinLeft
+        s.aliasName = this.aliasName
+        s
     }
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
@@ -207,7 +239,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         table match
             case a: AliasedTableSchema => joinTable.alias = Some(a.aliasName)
             case _ =>
-        
+
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
         joinLeft = join
@@ -360,6 +392,8 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     override def toSql(using db: DB): String = toSqlString(sqlSelect, db)
 
+    def asSql(using db: DB)(using QuoteInFrom[self.QuoteTables, self.FromTables] =:= Any): String = toSqlString(sqlSelect, db)
+
     def fetchCountSql(db: DB): String = {
         val selectCopy = this.sqlSelect.copy(selectList = ListBuffer(), limit = None, orderBy = ListBuffer())
         selectCopy.selectList.clear()
@@ -368,7 +402,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
         toSqlString(selectCopy, db)
     }
-    
+
     def toFetchCountSql(using db: DB): String = fetchCountSql(db)
 
     def pageSql(pageSize: Int, pageNumber: Int)(db: DB): String = {
@@ -383,7 +417,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
         toSqlString(selectCopy, db)
     }
-    
+
     def toPageSql(pageSize: Int, pageNumber: Int)(using db: DB): String = pageSql(pageSize, pageNumber)(db)
 
     def selectDynamic(name: String): Expr[Nothing] = TableColumnExpr[Nothing](aliasName.get, name)

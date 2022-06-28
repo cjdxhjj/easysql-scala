@@ -14,31 +14,36 @@ import scala.language.dynamics
 trait AnyTable
 
 trait TableSchema extends AnyTable {
+    self =>
     val tableName: String
 
     var $columns: ListBuffer[TableColumnExpr[?]] = ListBuffer[TableColumnExpr[?]]()
 
-    def column[T <: SqlSingleConstType](name: String): TableColumnExpr[T] = {
-        val c = TableColumnExpr[T](tableName, name)
+    def column[T <: SqlSingleConstType](name: String): TableColumnExpr[T] {
+        type QuoteTables = Tuple1[self.type]
+    } = {
+        val c = new TableColumnExpr[T](tableName, name) {
+            override type QuoteTables = Tuple1[self.type]
+        }
         $columns.addOne(c)
         c
     }
 
-    def intColumn(name: String): TableColumnExpr[Int] = this.column[Int](name)
-    
-    def varcharColumn(name: String): TableColumnExpr[String] = this.column[String](name)
+    def intColumn(name: String): TableColumnExpr[Int] { type QuoteTables = Tuple1[self.type] } = column[Int](name)
 
-    def longColumn(name: String): TableColumnExpr[Long] = this.column[Long](name)
+    def varcharColumn(name: String): TableColumnExpr[String] { type QuoteTables = Tuple1[self.type] } = column[String](name)
 
-    def floatColumn(name: String): TableColumnExpr[Float] = this.column[Float](name)
+    def longColumn(name: String): TableColumnExpr[Long] { type QuoteTables = Tuple1[self.type] } = column[Long](name)
 
-    def doubleColumn(name: String): TableColumnExpr[Double] = this.column[Double](name)
+    def floatColumn(name: String): TableColumnExpr[Float] { type QuoteTables = Tuple1[self.type] } = column[Float](name)
 
-    def booleanColumn(name: String): TableColumnExpr[Boolean] = this.column[Boolean](name)
+    def doubleColumn(name: String): TableColumnExpr[Double] { type QuoteTables = Tuple1[self.type] } = column[Double](name)
 
-    def dateColumn(name: String): TableColumnExpr[Date] = this.column[Date](name)
+    def booleanColumn(name: String): TableColumnExpr[Boolean] { type QuoteTables = Tuple1[self.type] } = column[Boolean](name)
 
-    def decimalColumn(name: String): TableColumnExpr[BigDecimal] = this.column[BigDecimal](name)
+    def dateColumn(name: String): TableColumnExpr[Date] { type QuoteTables = Tuple1[self.type] } = column[Date](name)
+
+    def decimalColumn(name: String): TableColumnExpr[BigDecimal] { type QuoteTables = Tuple1[self.type] } = column[BigDecimal](name)
 }
 
 object TableSchema {
@@ -52,12 +57,12 @@ extension[T <: TableSchema] (t: T) {
         val columns = columnsMacro[T](t)
         AliasedTableSchema(t.tableName, aliasName, columns)
     }
-    
+
     inline infix def unsafeAs(aliasName: String): AliasedTableSchema = {
         val columns = columnsMacro[T](t)
         AliasedTableSchema(t.tableName, aliasName, columns)
     }
-    
+
     infix def join(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.JOIN, table)
 
     infix def leftJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.LEFT_JOIN, table)

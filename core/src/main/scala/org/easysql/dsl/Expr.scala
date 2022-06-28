@@ -13,6 +13,8 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 
 sealed trait Expr[T <: SqlSingleConstType | Null](var alias: Option[String] = None) {
+    type QuoteTables <: Tuple
+
     def +[V <: T & SqlSingleConstType](value: V): BinaryExpr[T] = BinaryExpr[T](this, SqlBinaryOperator.ADD, const(value))
 
     def +[V <: T | Null](expr: Expr[V]): BinaryExpr[T] = BinaryExpr[T](this, SqlBinaryOperator.ADD, expr)
@@ -154,14 +156,6 @@ extension[T <: String | Null] (e: Expr[T]) {
     }
 }
 
-extension[T <: SqlSingleConstType] (e: Expr[T | Null]) {
-    @deprecated("请使用expr === null")
-    def isNull: BinaryExpr[Boolean] = BinaryExpr[Boolean](e, SqlBinaryOperator.IS, const(null))
-
-    @deprecated("请使用expr <> null")
-    def isNotNull: BinaryExpr[Boolean] = BinaryExpr[Boolean](e, SqlBinaryOperator.IS_NOT, const(null))
-}
-
 case class ConstExpr[T <: SqlSingleConstType | Null](value: T) extends Expr[T]()
 
 case class BinaryExpr[T <: SqlSingleConstType | Null](left: Expr[_],
@@ -175,7 +169,7 @@ case class BinaryExpr[T <: SqlSingleConstType | Null](left: Expr[_],
 case class ColumnExpr[T <: SqlSingleConstType | Null](column: String) extends Expr[T]()
 
 case class TableColumnExpr[T <: SqlSingleConstType | Null](table: String,
-                                                    column: String) extends Expr[T]() {
+                                                           column: String) extends Expr[T]() {
     def primaryKey: PrimaryKeyColumnExpr[T & SqlSingleConstType] = {
         PrimaryKeyColumnExpr(table, column)
     }

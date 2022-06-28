@@ -118,28 +118,17 @@ object Test extends App {
 //    } yield (u.id, p.name)
 //    println(s.toSql)
 
+//    val nameList = List("x", "y")
+//    val sql = sql"select * from user where name in $nameList"
+//    println(sql)
 
-    val s = select (User.*)
+//    val tables: Post.userId.QuoteTables = Tuple1(Post)
 
-    // 根据不同条件查询不同表
-    if (true) {
-        s from User
-        // 把条件封装在变量
-        val condition = User.id === 1
-        s where condition
-        // 动态拼装order by
-        s orderBy User.id.asc
-    } else {
-        s from User leftJoin Post on User.id === Post.userId
-        // 动态添加查询列
-        s select Post.*
-        s where User.name === ""
-        s orderBy User.name.desc
-    }
+    val s = select (Post.userId) from Post
+    println(s.asSql)
 
-    val nameList = List("x", "y")
-    val sql = sql"select * from user where name in $nameList"
-    println(sql)
+
+
 
 //    val in: TableInTuple[User.type, (Post.type, User.type)] = true
 //    val check: Post.type *: EmptyTuple QuoteInFrom User.type *: Post.type *: EmptyTuple = false
