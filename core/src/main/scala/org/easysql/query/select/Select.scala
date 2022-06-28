@@ -16,7 +16,7 @@ import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
 class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
-    private var sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+    private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
 
@@ -30,9 +30,9 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         }
 
         val from = Some(SqlIdentifierTableSource(tableName))
-        if (table.isInstanceOf[AliasedTableSchema]) {
-            from.get.alias = Some(table.asInstanceOf[AliasedTableSchema].aliasName)
-        }
+        table match
+            case a: AliasedTableSchema => from.get.alias = Some(a.aliasName)
+            case _ =>
         joinLeft = from.get
         sqlSelect.from = from
         this
@@ -82,7 +82,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this
     }
 
-    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U, Expr]]] = {
+    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -103,10 +103,10 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         }
 
         spread(items)
-        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U, Expr]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]]]]
     }
 
-    infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]] = {
+    infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -116,7 +116,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         } else {
             sqlSelect.addSelectItem(visitExpr(item), item.alias)
         }
-        this.asInstanceOf[Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]], Expr]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]]]
     }
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
@@ -204,9 +204,9 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             case aliasedTableSchema: AliasedTableSchema => aliasedTableSchema.tableName
         }
         val joinTable = SqlIdentifierTableSource(tableName)
-        if (table.isInstanceOf[AliasedTableSchema]) {
-            joinTable.alias = Some(table.asInstanceOf[AliasedTableSchema].aliasName)
-        }
+        table match
+            case a: AliasedTableSchema => joinTable.alias = Some(a.aliasName)
+            case _ =>
         
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
@@ -216,9 +216,9 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     private def joinClause(table: SelectQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T] = {
         val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral))
-        if (table.isInstanceOf[Select[_]]) {
-            join.alias = table.asInstanceOf[Select[_]].aliasName
-        }
+        table match
+            case s: Select[_] => join.alias = s.aliasName
+            case _ =>
         sqlSelect.from = Some(join)
         joinLeft = join
         this
@@ -228,11 +228,10 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         def unapplyTable(t: TableSchema | JoinTableSchema | AliasedTableSchema): SqlTableSource = {
             t match {
                 case table: TableSchema => SqlIdentifierTableSource(table.tableName)
-                case a: AliasedTableSchema => {
+                case a: AliasedTableSchema =>
                     val ts = SqlIdentifierTableSource(a.tableName)
                     ts.alias = Some(a.aliasName)
                     ts
-                }
                 case j: JoinTableSchema => SqlJoinTableSource(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr))
             }
         }

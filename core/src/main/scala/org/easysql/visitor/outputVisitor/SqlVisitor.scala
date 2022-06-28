@@ -14,9 +14,10 @@ import org.easysql.ast.statement.upsert.SqlUpsert
 import org.easysql.ast.table.{SqlIdentifierTableSource, SqlJoinTableSource, SqlSubQueryTableSource, SqlTableSource}
 
 import java.sql.SQLException
+import scala.collection.mutable
 
 abstract class SqlVisitor {
-    val sqlBuilder: StringBuilder = StringBuilder()
+    val sqlBuilder: mutable.StringBuilder = mutable.StringBuilder()
 
     val quote = "\""
 
@@ -251,12 +252,10 @@ abstract class SqlVisitor {
 
             if (parent.operator == SqlBinaryOperator.XOR) {
                 child match {
-                    case expr: SqlBinaryExpr => {
+                    case expr: SqlBinaryExpr => 
                         if (expr.operator == SqlBinaryOperator.OR) {
                             return true
                         }
-                    }
-
                     case _ =>
                 }
             }
@@ -321,7 +320,7 @@ abstract class SqlVisitor {
 
             case expr: SqlPropertyExpr => sqlBuilder.append(s"$quote${expr.owner}$quote.$quote${expr.name}$quote")
 
-            case expr: SqlNullExpr => sqlBuilder.append("NULL")
+            case _: SqlNullExpr => sqlBuilder.append("NULL")
 
             case expr: SqlAllColumnExpr =>
                 expr.owner.foreach(it => sqlBuilder.append(s"$quote$it$quote."))
@@ -364,7 +363,6 @@ abstract class SqlVisitor {
             case expr: SqlSelectQueryExpr =>
                 sqlBuilder.append("(")
                 spaceNum += 4
-                val a = (1 to spaceNum).toList
                 sqlBuilder.append("\n")
                 printSpace(spaceNum)
                 visitSqlSelectQuery(expr.query)
@@ -493,7 +491,7 @@ abstract class SqlVisitor {
 
     def printSpace(num: Int): Unit = {
         if (num > 0) {
-            for (i <- 1 to num) {
+            for (_ <- 1 to num) {
                 sqlBuilder.append(" ")
             }
         }

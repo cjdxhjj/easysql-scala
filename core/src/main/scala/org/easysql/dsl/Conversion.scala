@@ -23,15 +23,15 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
 given queryToExpr[T <: SqlSingleConstType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
 
-type InverseMap[X <: Tuple, F[_ <: SqlSingleConstType | Null]] <: Tuple = X match {
-    case F[x] *: t => x *: InverseMap[t, F]
+type InverseMap[X <: Tuple] <: Tuple = X match {
+    case Expr[x] *: t => x *: InverseMap[t]
     case EmptyTuple => EmptyTuple
 }
 
-type RecursiveInverseMap[X <: Tuple, F[_ <: SqlSingleConstType | Null]] <: Tuple = X match {
+type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
     case x *: t => x match {
-        case Tuple => Tuple.Concat[RecursiveInverseMap[x, F], RecursiveInverseMap[t, F]]
-        case F[y] => y *: RecursiveInverseMap[t, F]
+        case Tuple => Tuple.Concat[RecursiveInverseMap[x], RecursiveInverseMap[t]]
+        case Expr[y] => y *: RecursiveInverseMap[t]
     }
     case EmptyTuple => EmptyTuple
 }
