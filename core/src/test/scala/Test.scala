@@ -1,7 +1,7 @@
 import org.easysql.dsl.*
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
-import org.easysql.query.select.{Select, UnionSelect, Query}
+import org.easysql.query.select.{Query, Select, UnionSelect}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
 import org.easysql.ast.SqlSingleConstType
@@ -9,6 +9,7 @@ import org.easysql.ast.SqlSingleConstType
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
 import java.util.Date
+import scala.annotation.tailrec
 
 object Test extends App {
 //    val select = Select() select(User.name, User.id) from User
@@ -139,4 +140,8 @@ object Test extends App {
     val nameList = List("x", "y")
     val sql = sql"select * from user where name in $nameList"
     println(sql)
+
+//    val in: TableInTuple[User.type, (Post.type, User.type)] = true
+//    val check: Post.type *: EmptyTuple QuoteInFrom User.type *: Post.type *: EmptyTuple = false
+//    val check: TableCheck[User.type, AnyTable] = true
 }

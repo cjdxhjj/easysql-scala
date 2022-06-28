@@ -62,19 +62,25 @@ type UnionTo[A, B] = A match {
     }
 }
 
-type MatchTypeLeft[L, R] <: Boolean = L match {
-    case R => true
-    case R | Null => true
-    case _ => false
-}
-
-type MatchTypeRight[L, R] <: Boolean = R match {
-    case L => true
-    case L | Null => true
-    case _ => false
-}
-
 type NonEmpty[T <: String] = T == "" match {
     case false => Any
     case true => Nothing
+}
+
+type QuoteInFrom[Quote <: Tuple, From <: Tuple] = Quote match {
+    case h *: t => h match {
+        case TableSchema => TableInTuple[h, From] match {
+            case true => QuoteInFrom[t, From]
+            case false => Nothing
+        }
+    }
+    case EmptyTuple => Any
+}
+
+type TableInTuple[Table <: TableSchema, T <: Tuple] <: Boolean = T match {
+    case h *: t => Table match {
+        case h => true
+        case _ => TableInTuple[Table, t]
+    }
+    case EmptyTuple => false
 }

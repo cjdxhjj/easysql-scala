@@ -11,7 +11,9 @@ import java.util.Date
 import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
-trait TableSchema {
+trait AnyTable
+
+trait TableSchema extends AnyTable {
     val tableName: String
 
     var $columns: ListBuffer[TableColumnExpr[?]] = ListBuffer[TableColumnExpr[?]]()
@@ -42,6 +44,8 @@ trait TableSchema {
 object TableSchema {
     inline given tableToQuery[T <: TableSchema]: Conversion[T, Query[T]] = Query[T](_)
 }
+
+type NothingTable <: TableSchema
 
 extension[T <: TableSchema] (t: T) {
     inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): AliasedTableSchema = {
