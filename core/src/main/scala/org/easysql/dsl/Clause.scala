@@ -12,6 +12,8 @@ import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
 import org.easysql.macros.findMacro
 
+import scala.collection.mutable
+
 def const[T <: SqlSingleConstType | Null](value: T) = ConstExpr[T](value)
 
 def col[T <: SqlSingleConstType | Null](column: String) = ColumnExpr[T](column)
@@ -40,9 +42,9 @@ extension [T <: SqlSingleConstType | Null](e: TableColumnExpr[T] | ColumnExpr[T]
 
 def ** = AllColumnExpr()
 
-def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U, Expr]] = Select().select(items)
+def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = Select().select(items)
 
-def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]], Expr]] = Select().select(item)
+def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]]]] = Select().select(item)
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
@@ -70,7 +72,7 @@ extension (s: StringContext) {
         import org.easysql.visitor.*
 
         val pit = s.parts.iterator
-        val builder = StringBuilder(pit.next())
+        val builder = mutable.StringBuilder(pit.next())
         args.foreach { arg =>
             val visitor = getOutPutVisitor(DB.MYSQL)
             val expr = getExpr(anyToExpr(arg))

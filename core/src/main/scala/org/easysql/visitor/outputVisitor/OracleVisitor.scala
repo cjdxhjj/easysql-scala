@@ -13,7 +13,7 @@ class OracleVisitor extends SqlVisitor {
     override def visitSqlUpsert(sqlUpsert: SqlUpsert): Unit = {
         sqlBuilder.append("MERGE INTO ")
         visitSqlExpr(sqlUpsert.table.get)
-        sqlBuilder.append(s" ${quote}t1${quote}")
+        sqlBuilder.append(s" ${quote}t1$quote")
 
         sqlBuilder.append(" USING (")
         sqlBuilder.append("SELECT ")
@@ -26,14 +26,14 @@ class OracleVisitor extends SqlVisitor {
                 sqlBuilder.append(" ")
             }
         }
-        sqlBuilder.append(s" FROM ${quote}dual${quote}) ${quote}t2${quote}")
+        sqlBuilder.append(s" FROM ${quote}dual$quote) ${quote}t2$quote")
 
         sqlBuilder.append("\nON (")
         for (index <- sqlUpsert.primaryColumns.indices) {
-            sqlBuilder.append(s"${quote}t1${quote}.")
+            sqlBuilder.append(s"${quote}t1$quote.")
             visitSqlExpr(sqlUpsert.primaryColumns(index))
             sqlBuilder.append(" = ")
-            sqlBuilder.append(s"${quote}t2${quote}.")
+            sqlBuilder.append(s"${quote}t2$quote.")
             visitSqlExpr(sqlUpsert.primaryColumns(index))
             if (index < sqlUpsert.primaryColumns.size - 1) {
                 sqlBuilder.append(" AND ")
@@ -43,17 +43,17 @@ class OracleVisitor extends SqlVisitor {
 
         sqlBuilder.append("\nWHEN MATCHED THEN UPDATE SET ")
         printList(sqlUpsert.updateColumns.toList, { it =>
-            sqlBuilder.append(s"${quote}t1${quote}.")
+            sqlBuilder.append(s"${quote}t1$quote.")
             visitSqlExpr(it)
             sqlBuilder.append(" = ")
-            sqlBuilder.append(s"${quote}t2${quote}.")
+            sqlBuilder.append(s"${quote}t2$quote.")
             visitSqlExpr(it)
         })
 
         sqlBuilder.append("\nWHEN NOT MATCHED THEN INSERT")
         sqlBuilder.append(" (")
         printList(sqlUpsert.columns.toList, { it =>
-            sqlBuilder.append(s"${quote}t1${quote}.")
+            sqlBuilder.append(s"${quote}t1$quote.")
             visitSqlExpr(it)
         })
         sqlBuilder.append(")")

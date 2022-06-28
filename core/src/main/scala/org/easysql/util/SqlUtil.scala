@@ -35,7 +35,7 @@ def anyToExpr(value: Any): Expr[_] = {
         case b: Boolean => const(b)
         case d: Date => const(d)
         case dc: BigDecimal => const(dc)
-        case o: Option[_] => {
+        case o: Option[_] =>
             if (o.isEmpty) {
                 const(null)
             } else {
@@ -50,7 +50,6 @@ def anyToExpr(value: Any): Expr[_] = {
                     case _ => throw SQLException("实体类中存在无法转换为sql表达式的属性类型")
                 }
             }
-        }
         case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
         case _ => throw SQLException("实体类中存在无法转换为sql表达式的属性类型")
     }

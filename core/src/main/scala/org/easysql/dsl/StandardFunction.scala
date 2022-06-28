@@ -31,7 +31,7 @@ def groupingSets(expr: (Expr[_] | Tuple)*) = {
     val name = "GROUPING SETS"
     val args = expr.toList.map {
         case e: Expr[_] => ListExpr(List(e))
-        case t: Tuple => {
+        case t: Tuple =>
             val list = t.toList
             val exprList: List[Expr[_]] = list.map {
                 case v: SqlSingleConstType => const(v)
@@ -39,7 +39,6 @@ def groupingSets(expr: (Expr[_] | Tuple)*) = {
                 case _ => const(null)
             }
             ListExpr(exprList)
-        }
     }
     NormalFunctionExpr(name, args)
 }

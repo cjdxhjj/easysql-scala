@@ -39,25 +39,25 @@ object Test extends App {
 //    println(i.sql(DB.MYSQL))
 
     val a = (User.*, User.id)
-    val b: RecursiveInverseMap[a.type, Expr] = (1, "", "", 1)
+    val b: RecursiveInverseMap[a.type] = (1, "", "", 1)
 
     val a1 = (User.id, User.*)
-    val b1: RecursiveInverseMap[a1.type, Expr] = (1, 1, "", "")
+    val b1: RecursiveInverseMap[a1.type] = (1, 1, "", "")
 
     val a2 = (User.*, User.*)
-    val b2: RecursiveInverseMap[a2.type, Expr] = (1, "", "", 1, "", "")
+    val b2: RecursiveInverseMap[a2.type] = (1, "", "", 1, "", "")
 
     val a3 = (User.*, User.*, User.id)
-    val b3: RecursiveInverseMap[a3.type, Expr] = (1, "", "", 1, "", "", 1)
+    val b3: RecursiveInverseMap[a3.type] = (1, "", "", 1, "", "", 1)
 
     val a4 = (User.id, User.*, User.*, User.id)
-    val b4: RecursiveInverseMap[a4.type, Expr] = (1, 1, "", "", 1, "", "", 1)
+    val b4: RecursiveInverseMap[a4.type] = (1, 1, "", "", 1, "", "", 1)
 
     val a5 = (User.id, (User.*, User.id))
-    val b5: RecursiveInverseMap[a5.type, Expr] = (1, 1, "", "", 1)
+    val b5: RecursiveInverseMap[a5.type] = (1, 1, "", "", 1)
 
     val a6 = ((User.id, User.id), (User.id, User.*, User.id))
-    val b6: RecursiveInverseMap[a6.type, Expr] = (1, 1, 1, 1, "", "", 1)
+    val b6: RecursiveInverseMap[a6.type] = (1, 1, 1, 1, "", "", 1)
 
 //    val s = select (User.*, (User.id, User.*)) from User
 //    println(s.sql(DB.MYSQL))

@@ -27,12 +27,12 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
 
     def withFilter(f: T => Expr[Boolean]): Query[T] = filter(f)
 
-    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R], Expr]] = {
+    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
         spread(f(t))(addItem)
-        this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R], Expr]]]
+        this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R]]]]
     }
 
     def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
@@ -81,7 +81,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQueryImpl[Qu
                 table
             }
         }
-        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
+        query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, joinType, join))
         query
     }
 
