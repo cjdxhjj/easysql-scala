@@ -15,9 +15,8 @@ import java.sql.Connection
 import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
-class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
-    self =>
-    private var sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic { self =>
+    private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
 
@@ -35,17 +34,14 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         joinLeft = from.get
         sqlSelect.from = from
 
-        val s = new Select[T] {
-            override type FromTables = Tuple1[Table]
-            override type QuoteTables = self.QuoteTables
-        }
-        s.sqlSelect = this.sqlSelect
-        s.joinLeft = this.joinLeft
-        s.aliasName = this.aliasName
-        s
+        type S = Select[T] { type FromTables = Tuple1[Table]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def from(table: AliasedTableSchema | String): Select[T] = {
+    infix def from(table: AliasedTableSchema | String): Select[T] {
+        type FromTables = Tuple1[AnyTable]
+        type QuoteTables = self.QuoteTables
+    } = {
         val tableName = table match {
             case aliasedTableSchema: AliasedTableSchema => aliasedTableSchema.tableName
             case string: String => string
@@ -57,49 +53,77 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             case _ =>
         joinLeft = from.get
         sqlSelect.from = from
-        this
+
+        type S = Select[T] { type FromTables = Tuple1[AnyTable]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def from(table: SelectQuery[_]): Select[T] = {
+    infix def from(table: SelectQuery[_]): Select[T] {
+        type FromTables = Tuple1[AnyTable]
+        type QuoteTables = self.QuoteTables
+    } = {
         val from = Some(SqlSubQueryTableSource(table.getSelect))
         joinLeft = from.get
         sqlSelect.from = from
-        this
+
+        type S = Select[T] { type FromTables = Tuple1[AnyTable]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def from(table: Select[_]): Select[T] = {
+    infix def from(table: Select[_]): Select[T] {
+        type FromTables = Tuple1[AnyTable]
+        type QuoteTables = self.QuoteTables
+    } = {
         val from = SqlSubQueryTableSource(table.getSelect)
         if (table.aliasName.nonEmpty) {
             from.alias = table.aliasName
         }
         joinLeft = from
         sqlSelect.from = Some(from)
-        this
+
+        type S = Select[T] { type FromTables = Tuple1[AnyTable]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def fromLateral(query: SelectQuery[_]): Select[T] = {
+    infix def fromLateral(query: SelectQuery[_]): Select[T] {
+        type FromTables = Tuple1[AnyTable]
+        type QuoteTables = self.QuoteTables
+    } = {
         val from = Some(SqlSubQueryTableSource(query.getSelect, true))
         joinLeft = from.get
         sqlSelect.from = from
-        this
+
+        type S = Select[T] { type FromTables = Tuple1[AnyTable]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def fromLateral(table: Select[_]): Select[T] = {
+    infix def fromLateral(table: Select[_]): Select[T] {
+        type FromTables = Tuple1[AnyTable]
+        type QuoteTables = self.QuoteTables
+    } = {
         val from = SqlSubQueryTableSource(table.getSelect, true)
         if (table.aliasName.nonEmpty) {
             from.alias = table.aliasName
         }
         joinLeft = from
         sqlSelect.from = Some(from)
-        this
+
+        type S = Select[T] { type FromTables = Tuple1[AnyTable]; type QuoteTables = self.QuoteTables }
+        this.asInstanceOf[S]
     }
 
-    infix def as(name: String)(using NonEmpty[name.type] =:= Any): Select[T] = {
+    infix def as(name: String)(using NonEmpty[name.type] =:= Any): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = self.QuoteTables
+    } = {
         this.aliasName = Some(name)
         this
     }
 
-    infix def unsafeAs(name: String): Select[T] = {
+    infix def unsafeAs(name: String): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = self.QuoteTables
+    } = {
         this.aliasName = Some(name)
         this
     }
@@ -130,7 +154,7 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
 
     infix def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] {
         type FromTables = self.FromTables
-        type QuoteTables = item.QuoteTables
+        type QuoteTables = Tuple.Concat[self.QuoteTables, item.QuoteTables]
     } = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
@@ -141,17 +165,15 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         } else {
             sqlSelect.addSelectItem(visitExpr(item), item.alias)
         }
-        val s = new Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] {
-            override type FromTables = self.FromTables
-            override type QuoteTables = item.QuoteTables
-        }
-        s.sqlSelect = this.sqlSelect
-        s.joinLeft = this.joinLeft
-        s.aliasName = this.aliasName
-        s
+
+        type S = Select[Tuple.Concat[T, InverseMap[Tuple1[Expr[I]]]]] { type FromTables = self.FromTables; type QuoteTables = Tuple.Concat[self.QuoteTables, item.QuoteTables] }
+        this.asInstanceOf[S]
     }
 
-    infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
+    infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] {
+        type FromTables = self.FromTables
+        type QuoteTables = EmptyTuple
+    } = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -164,36 +186,60 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
             }
         }
 
-        this.asInstanceOf[Select[Tuple1[Nothing]]]
+        type S = Select[Tuple1[Nothing]] { type FromTables = self.FromTables; type QuoteTables = EmptyTuple }
+        this.asInstanceOf[S]
     }
 
-    def distinct: Select[T] = {
+    def distinct: Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = self.QuoteTables
+    } = {
         sqlSelect.distinct = true
         this
     }
 
-    infix def where(condition: Expr[_]): Select[T] = {
+    infix def where(condition: Expr[_]): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables] 
+    } = {
         sqlSelect.addCondition(getExpr(condition))
-        this
+
+        type S = Select[T] { type FromTables = self.FromTables; type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables] }
+        this.asInstanceOf[S]
     }
 
-    def where(test: () => Boolean, condition: Expr[_]): Select[T] = {
+    def where(test: () => Boolean, condition: Expr[_]): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables]
+    } = {
         if (test()) {
             sqlSelect.addCondition(getExpr(condition))
         }
-        this
+        
+        type S = Select[T] { type FromTables = self.FromTables; type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables] }
+        this.asInstanceOf[S]
     }
 
-    def where(test: Boolean, condition: Expr[_]): Select[T] = {
+    def where(test: Boolean, condition: Expr[_]): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables]
+    } = {
         if (test) {
             sqlSelect.addCondition(getExpr(condition))
         }
-        this
+        
+        type S = Select[T] { type FromTables = self.FromTables; type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables] }
+        this.asInstanceOf[S]
     }
 
-    infix def having(condition: Expr[_]): Select[T] = {
+    infix def having(condition: Expr[_]): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables]
+    } = {
         sqlSelect.addHaving(getExpr(condition))
-        this
+        
+        type S = Select[T] { type FromTables = self.FromTables; type QuoteTables = Tuple.Concat[self.QuoteTables, condition.QuoteTables] }
+        this.asInstanceOf[S]
     }
 
     infix def orderBy(items: OrderBy*): Select[T] = {
@@ -204,7 +250,10 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this
     }
 
-    infix def limit(count: Int): Select[T] = {
+    infix def limit(count: Int): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = self.QuoteTables
+    } = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(count, 0))
         } else {
@@ -213,7 +262,10 @@ class Select[T <: Tuple] extends SelectQueryImpl[T] with Dynamic {
         this
     }
 
-    infix def offset(offset: Int): Select[T] = {
+    infix def offset(offset: Int): Select[T] {
+        type FromTables = self.FromTables
+        type QuoteTables = self.QuoteTables
+    } = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(1, offset))
         } else {

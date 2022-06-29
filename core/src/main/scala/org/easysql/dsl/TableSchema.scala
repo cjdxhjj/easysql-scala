@@ -13,8 +13,7 @@ import scala.language.dynamics
 
 trait AnyTable
 
-trait TableSchema extends AnyTable {
-    self =>
+trait TableSchema extends AnyTable { self =>
     val tableName: String
 
     var $columns: ListBuffer[TableColumnExpr[?]] = ListBuffer[TableColumnExpr[?]]()
