@@ -5,11 +5,12 @@ import org.easysql.query.select.{Query, Select, UnionSelect}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
 import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.table.SqlJoinType
 
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
 import java.util.Date
-import scala.annotation.tailrec
+import scala.annotation.{experimental, tailrec}
 
 object Test extends App {
 //    val select = Select() select(User.name, User.id) from User
@@ -124,13 +125,11 @@ object Test extends App {
 
 //    val tables: Post.userId.QuoteTables = Tuple1(Post)
 
-    val s = select (Post.userId) from Post
-    println(s.asSql)
 
 
+    val s1 = select (Post.*, User.id) from Post join User on User.id == Post.userId
+    println(s1.asSql)
 
-
-//    val in: TableInTuple[User.type, (Post.type, User.type)] = true
-//    val check: Post.type *: EmptyTuple QuoteInFrom User.type *: Post.type *: EmptyTuple = false
-//    val check: TableCheck[User.type, AnyTable] = true
+//    val s2 = select (Post.*, User.id) from Post where Post.id === 1
+//    println(s2.asSql)
 }

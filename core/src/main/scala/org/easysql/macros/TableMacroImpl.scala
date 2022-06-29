@@ -4,7 +4,7 @@ import org.easysql.dsl.{TableColumnExpr, TableSchema}
 
 import scala.quoted.{Expr, Quotes, Type}
 
-def columnsMacroImpl[T <: TableSchema](table: Expr[T])(using quotes: Quotes, tpe: Type[T]): Expr[Map[String, TableColumnExpr[?]]] = {
+def columnsMacroImpl[T <: TableSchema](table: Expr[T])(using quotes: Quotes, tpe: Type[T]): Expr[Map[String, TableColumnExpr[_, _]]] = {
     import quotes.reflect.*
 
     val sym = TypeTree.of[T].symbol

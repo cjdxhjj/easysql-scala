@@ -24,19 +24,19 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 given queryToExpr[T <: SqlSingleConstType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
-    case Expr[x] *: t => x *: InverseMap[t]
+    case Expr[x, _] *: t => x *: InverseMap[t]
     case EmptyTuple => EmptyTuple
 }
 
 type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
     case x *: t => x match {
         case Tuple => Tuple.Concat[RecursiveInverseMap[x], RecursiveInverseMap[t]]
-        case Expr[y] => y *: RecursiveInverseMap[t]
+        case Expr[y, _] => y *: RecursiveInverseMap[t]
     }
     case EmptyTuple => EmptyTuple
 }
 
-type QueryType[T <: Tuple | Expr[_] | TableSchema] <: Tuple = T match {
+type QueryType[T <: Tuple | Expr[_, _] | TableSchema] <: Tuple = T match {
     case h *: t => h *: t
     case _ => Tuple1[T]
 }
@@ -83,4 +83,21 @@ type TableInTuple[Table <: TableSchema, T <: Tuple] <: Boolean = T match {
         case _ => TableInTuple[Table, t]
     }
     case EmptyTuple => false
+}
+
+type QueryQuoteTables[X <: Tuple] <: Tuple = X match {
+    case x *: t => x match {
+        case Tuple => Tuple.Concat[QueryQuoteTables[x], QueryQuoteTables[t]]
+        case Expr[_, y] => y *: QueryQuoteTables[t]
+        case OrderBy[y] => y *: QueryQuoteTables[t]
+    }
+    case EmptyTuple => EmptyTuple
+}
+
+type FlatTables[X <: Tuple] <: Tuple = X match {
+    case x *: t => x match {
+        case Tuple => Tuple.Concat[FlatTables[x], FlatTables[t]]
+        case _ => x *: FlatTables[t]
+    }
+    case EmptyTuple => EmptyTuple
 }

@@ -30,31 +30,31 @@ def any[T <: SqlSingleConstType | Null](select: SelectQuery[Tuple1[T]]) = SubQue
 
 def some[T <: SqlSingleConstType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
 
-def cast[T <: SqlSingleConstType | Null](expr: Expr[_], castType: String) = CastExpr[T](expr, castType)
+def cast[T <: SqlSingleConstType | Null](expr: Expr[_, _], castType: String) = CastExpr[T](expr, castType)
 
 def table(name: String) = new TableSchema {
     override val tableName: String = name
 }
 
-extension[T <: SqlSingleConstType | Null] (e: TableColumnExpr[T] | ColumnExpr[T]) {
-    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
+extension[T <: SqlSingleConstType | Null, Table <: TableSchema] (e: TableColumnExpr[T, Table] | ColumnExpr[T]) {
+    def to[V <: T](value: V | Expr[V, _] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
 def ** = AllColumnExpr()
 
-def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = Select().select(items)
+def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]] = {
+    val sel = Select().select(items)
+    sel.asInstanceOf[Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]]]
+}
 
-def select[I <: SqlSingleConstType | Null](item: Expr[I]): Select[InverseMap[Tuple1[Expr[I]]]] {
-    type FromTables = EmptyTuple.type
-    type QuoteTables = item.QuoteTables
-} = Select().select(item).asInstanceOf[Select[InverseMap[Tuple1[Expr[I]]]] {
-    type FromTables = EmptyTuple.type
-    type QuoteTables = item.QuoteTables
-}]
+def select[I <: SqlSingleConstType | Null, Q <: Tuple](item: Expr[I, Q]): Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q] = {
+    val sel = Select().select(item)
+    sel.asInstanceOf[Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q]]
+}
 
-def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
+def dynamicSelect(columns: Expr[_, _]*): Select[Tuple1[Nothing], EmptyTuple, EmptyTuple] = Select().dynamicSelect(columns: _*)
 
-inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_] = findMacro[T](Select(), pk)
+inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_, _, _] = findMacro[T](Select(), pk)
 
 def insertInto(table: TableSchema)(columns: Tuple) = Insert().insertInto(table)(columns)
 
