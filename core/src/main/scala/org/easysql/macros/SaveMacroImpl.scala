@@ -40,17 +40,16 @@ def saveMacroImpl[T <: TableEntity[_]](save: Expr[Save], entity: Expr[T])(using 
     '{
         val columnExprs = $compNamesExpr.zip($identsExpr).toMap
         val properties = columnExprs
-            .filter(it => it._2.isInstanceOf[TableColumnExpr[_]])
-            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_]])
+            .filter(it => it._2.isInstanceOf[TableColumnExpr[_, _]])
+            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_, _]])
             .toMap
 
         val pkCols = columnExprs
-            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_]])
-            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_]])
+            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_, _]])
+            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_, _]])
             .toMap
 
         if (pkCols.isEmpty) {
-            // todo 将报错提升到编译期
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")
         }
 

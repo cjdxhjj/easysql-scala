@@ -27,8 +27,8 @@ def deleteMacroImpl[T <: TableEntity[_]](delete: Expr[Delete], primaryKey: Expr[
 
     '{
         val pkCols = $identsExpr
-            .filter(it => it.isInstanceOf[PrimaryKeyColumnExpr[_]])
-            .map(it => it.asInstanceOf[PrimaryKeyColumnExpr[_]])
+            .filter(it => it.isInstanceOf[PrimaryKeyColumnExpr[_, _]])
+            .map(it => it.asInstanceOf[PrimaryKeyColumnExpr[_, _]])
 
         if (pkCols.isEmpty) {
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")

@@ -1,14 +1,16 @@
 import org.easysql.dsl.*
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
-import org.easysql.query.select.{Select, UnionSelect, Query}
+import org.easysql.query.select.{Query, Select, UnionSelect}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
 import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.table.SqlJoinType
 
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
 import java.util.Date
+import scala.annotation.{experimental, tailrec}
 
 object Test extends App {
 //    val select = Select() select(User.name, User.id) from User
@@ -117,26 +119,18 @@ object Test extends App {
 //    } yield (u.id, p.name)
 //    println(s.toSql)
 
+//    val nameList = List("x", "y")
+//    val sql = sql"select * from user where name in $nameList"
+//    println(sql)
 
-    val s = select (User.*)
+//    val tables: Post.userId.QuoteTables = Tuple1(Post)
 
-    // 根据不同条件查询不同表
-    if (true) {
-        s from User
-        // 把条件封装在变量
-        val condition = User.id === 1
-        s where condition
-        // 动态拼装order by
-        s orderBy User.id.asc
-    } else {
-        s from User leftJoin Post on User.id === Post.userId
-        // 动态添加查询列
-        s select Post.*
-        s where User.name === ""
-        s orderBy User.name.desc
-    }
 
-    val nameList = List("x", "y")
-    val sql = sql"select * from user where name in $nameList"
-    println(sql)
+
+    val t1 = (select (max(User.id) as "uid") from User) union (select (min(User.id) as "uid") from User) as "t1"
+    val s = select (t1.uid) from t1
+    println(s.asSql)
+
+//    val s2 = select (Post.*, User.id) from Post where Post.id === 1
+//    println(s2.asSql)
 }

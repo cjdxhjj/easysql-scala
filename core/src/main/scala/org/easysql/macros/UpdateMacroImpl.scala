@@ -39,13 +39,13 @@ def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T], 
         val columnExprs = $compNamesExpr.zip($identsExpr).toMap
 
         var columns = columnExprs
-            .filter(it => it._2.isInstanceOf[TableColumnExpr[_]])
-            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_]])
+            .filter(it => it._2.isInstanceOf[TableColumnExpr[_, _]])
+            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_, _]])
             .toMap
 
         val pkCols = columnExprs
-            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_]])
-            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_]])
+            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_, _]])
+            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_, _]])
             .map(it => it._2 -> values(it._1))
 
         if (pkCols.isEmpty) {
