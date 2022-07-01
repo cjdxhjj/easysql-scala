@@ -12,7 +12,7 @@ import org.easysql.visitor.getExpr
 
 import java.sql.Connection
 
-class ValuesSelect[T <: Tuple] extends SelectQueryImpl[T] {
+class ValuesSelect[T <: Tuple] extends AliasNameQuery[T] {
     private var sqlValuesSelect = SqlValuesSelect()
 
     def addRow[U <: Tuple](row: U): ValuesSelect[InverseMap[MapUnionNull[U]]] = {

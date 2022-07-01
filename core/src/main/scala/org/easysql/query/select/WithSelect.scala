@@ -9,7 +9,7 @@ import org.easysql.util.toSqlString
 
 import java.sql.Connection
 
-class WithSelect extends SelectQueryImpl[Nothing] {
+class WithSelect extends SelectQuery[Nothing] {
     private val sqlWithSelect = SqlWithSelect()
 
     def recursive: WithSelect = {

@@ -46,57 +46,57 @@ object TableSchema {
 }
 
 extension[T <: TableSchema] (t: T) {
-    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): AliasedTableSchema = {
+    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): AliasNameTableSchema = {
         val columns = columnsMacro[T](t)
-        AliasedTableSchema(t.tableName, aliasName, columns)
+        AliasNameTableSchema(t.tableName, aliasName, columns)
     }
 
-    inline infix def unsafeAs(aliasName: String): AliasedTableSchema = {
+    inline infix def unsafeAs(aliasName: String): AliasNameTableSchema = {
         val columns = columnsMacro[T](t)
-        AliasedTableSchema(t.tableName, aliasName, columns)
+        AliasNameTableSchema(t.tableName, aliasName, columns)
     }
 
-    infix def join(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.JOIN, table)
+    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.JOIN, table)
 
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.LEFT_JOIN, table)
+    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.LEFT_JOIN, table)
 
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.RIGHT_JOIN, table)
+    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.RIGHT_JOIN, table)
 
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.INNER_JOIN, table)
+    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.INNER_JOIN, table)
 
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.CROSS_JOIN, table)
+    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.CROSS_JOIN, table)
 
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.FULL_JOIN, table)
+    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.FULL_JOIN, table)
 }
 
-case class AliasedTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_, _]]) extends Dynamic {
+case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_, _]]) extends Dynamic {
     def selectDynamic(name: String): TableColumnExpr[_, _] = columns(name).copy(table = aliasName)
 
-    infix def join(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
+    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
+    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
 
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
+    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
 
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
+    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
 
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
+    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
 
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
+    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 }
 
-case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasedTableSchema, joinType: SqlJoinType, right: TableSchema | JoinTableSchema | AliasedTableSchema, var onCondition: Option[Expr[_, _]] = None) {
-    infix def join(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
+case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasNameTableSchema, joinType: SqlJoinType, right: TableSchema | JoinTableSchema | AliasNameTableSchema, var onCondition: Option[Expr[_, _]] = None) {
+    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
+    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
 
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
+    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
 
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
+    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
 
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
+    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
 
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasedTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
+    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 
     infix def on(expr: Expr[_, _]): JoinTableSchema = {
         this.onCondition = Some(expr)

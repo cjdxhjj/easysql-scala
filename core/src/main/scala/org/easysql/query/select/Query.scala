@@ -14,7 +14,7 @@ import org.easysql.macros.columnsMacro
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends SelectQueryImpl[QueryType[T]] {
+class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     def getSelect: SqlSelectQuery = sqlSelect
@@ -71,11 +71,11 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends SelectQueryImpl
         this
     }
 
-    private def join[JT <: TableSchema | AliasedTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
+    private def join[JT <: TableSchema | AliasNameTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
         val query = new Query[(T, JT)]((t, joinTable))
         val join = joinTable match {
             case t: TableSchema => SqlIdentifierTableSource(t.tableName)
-            case a: AliasedTableSchema => {
+            case a: AliasNameTableSchema => {
                 val table = SqlIdentifierTableSource(a.tableName)
                 table.alias = Some(a.aliasName)
                 table
@@ -85,15 +85,15 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends SelectQueryImpl
         query
     }
 
-    def joinInner[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
+    def joinInner[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
 
-    def joinLeft[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
+    def joinLeft[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
 
-    def joinRight[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
+    def joinRight[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
 
-    def joinCross[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
+    def joinCross[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
 
-    def joinFull[JT <: TableSchema | AliasedTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
+    def joinFull[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
     def on(f: T => Expr[Boolean, _]): Query[T] = {
         this.sqlSelect.from.get match {
