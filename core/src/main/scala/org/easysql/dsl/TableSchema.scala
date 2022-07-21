@@ -70,7 +70,9 @@ extension[T <: TableSchema] (t: T) {
 }
 
 case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_, _]]) extends Dynamic {
-    def selectDynamic(name: String): TableColumnExpr[_, _] = columns(name).copy(table = aliasName)
+    val t: TableSchema = table(aliasName)
+
+    def selectDynamic(name: String): TableColumnExpr[Nothing, t.type] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[Nothing, t.type]]
 
     infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
