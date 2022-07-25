@@ -17,9 +17,9 @@ class WithSelect extends SelectQuery[Nothing] {
         this
     }
 
-    def add(name: String, columns: List[String], query: SelectQuery[_]): WithSelect = {
+    def add(query: AliasNameQuery[_], columns: List[String]): WithSelect = {
         val withItem = SqlWithItem(
-            getExpr(col(name)),
+            getExpr(col(query.aliasName.get)),
             query.getSelect,
             columns.map(it => SqlIdentifierExpr(it))
         )
@@ -28,8 +28,8 @@ class WithSelect extends SelectQuery[Nothing] {
         this
     }
 
-    def select(query: Select[_, _, _] => SelectQuery[_]): WithSelect = {
-        sqlWithSelect.query = Some(query(Select()).getSelect)
+    def query(query: SelectQuery[_]): WithSelect = {
+        sqlWithSelect.query = Some(query.getSelect)
         this
     }
 
