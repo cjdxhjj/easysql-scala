@@ -1,46 +1,22 @@
-# 项目介绍
+# 概述
 
-easysql-scala是一个使用Scala3编写的完全面向对象的sql构造器。
+easysql是一个使用Scala3编写的sql构造器，其充分利用了Scala3优秀的类型系统，可以在编译期解决掉绝大多数的错误sql。并且，得益于Scala强大的表达能力，api与原生sql非常相似，极大降低了学习成本。
 
-构造器内建了sql语法树，可以使用封装好的api来灵活的构建查询，把sql构建织入进您的代码逻辑里，来避免复杂的字符串拼接，这在某些应用（比如低代码平台）中非常有价值。
+支持mysql、postgresql、oracle在内的多种方言。对同一个查询对象，可以方便地生成不同的数据库方言。
 
-并且，构造器是类型安全的，绝大多数sql错误都会在编译期被过滤掉。
+虽然定位并非orm，但我们仍然可以把它当做轻量级的orm使用，比如执行查询，并把结果映射到类，或是使用case class直接生成insert、update等语句，避免样板代码。
 
-我们可以使用原生sql风格的dsl构造查询（**主要支持**）：
+我们可以使用原生sql风格构造查询：
 
 ```scala
 val s = (select (User.*, Post.*)
-        from User 
+        from User
         leftJoin Post on User.id === Post.userId
         orderBy User.id.asc
         limit 10 offset 10)
 ```
 
-我们可以灵活的构建sql，比如下面的例子：
-
-```scala
-val s = select (User.*)
-
-// 根据不同条件查询不同表
-if (true) {
-    s from User
-    // 把条件封装在变量
-    val condition = User.id === 1
-    s where condition
-    // 动态拼装order by
-    s orderBy User.id.asc
-} else {
-    s from User leftJoin Post on User.id === Post.userId
-    // 动态添加查询列
-    s select Post.*
-    s where User.name === ""
-    s orderBy User.name.desc
-}
-```
-
-我们可以通过代码定制sql的任何部分，可以发挥想象力。
-
-也可以使用集合函数风格构建sql：
+或是使用集合函数风格：
 
 ```scala
 val s = User
@@ -52,7 +28,7 @@ val s = User
     .take(10)
 ```
 
-或是使用monadic风格：
+亦或是使用monadic风格：
 
 ```scala
 val s = for {
@@ -61,88 +37,169 @@ val s = for {
 } yield (u.*, p.*)
 ```
 
-使用这些dsl来替代sql字符串，有下面的好处：
-1. 类型安全：将表达式与错误类型的值或者表达式比较，更新主键等场景，将会编译失败；
-2. 防注入：dsl的背后是sql语法树，并非是单纯字符串拼接，静态的语法树类型可以防止绝大多数sql注入；
-3. 可组合性：查询的任何部分都可以被封装到方法或变量中，我们可以用来动态构建sql；
-4. 可移植性：对于同一套查询，使用不同的数据库枚举值，就可以方便地生成不同数据库的sql；
-5. 方便性：可以获得ide提示。
-
-
-支持mysql、postgres sql、oracle、sqlserver、sqlite在内的多种数据库，并且封装出了统一的api。（**mysql与pgsql为第一优先级支持**）
-
-# 快速开始
-
-我们编写一个`object`，继承`TableSchema`，例如：
+库内置了一个sql的ast（抽象语法树），使得我们可以灵活地对sql进行建模，动态构造查询，这在某些应用（比如低代码平台）中会非常有价值：
 
 ```scala
-object User extends TableSchema {
-    override val tableName: String = "user"
-    val id: TableColumnExpr[Int] = intColumn("id")
-    val name: TableColumnExpr[String] = varcharColumn("name")
+val s = select (User.*)
+
+// 根据不同条件查询不同表
+if (true) {
+    s from User
+    // 把条件封装在变量
+    val condition = User.id === 1
+    // 动态添加查询条件
+    s where condition
+    // 动态拼装order by
+    s orderBy User.id.asc
+} else {
+    s from User leftJoin Post on User.id === Post.userId
+    // 动态添加查询列
+    s select Post.*
 }
 ```
 
-在伴生对象中添加`override val tableName: String`，其值为表名。
+相比使用字符串等方式，不必费尽心思的处理字符串拼接，并且，调用各种子句的顺序可以不囿于sql语句的顺序，也可以在生成sql时处理成正确的情况。
 
-给伴生对象的属性赋值成column()类型，在column()函数中添加数据库列名。
-
-column类型支持：`intColumn`、`longColumn`、`varcharColumn`、`floatColumn`、`doubleColumn`、`booleanColumn`、`dateColumn`、`decimalColumn`。
-
-然后我们就可以使用`select`方法创建一个`Select`实例，并编写一个简单的查询：
-
-```scala
-val s = select (User.id) from User
-```
-
-上面代码中的`User`和`User.id`即是来自我们定义好的`object`，藉此我们可以获得类似原生sql的编写体验。
-
+下面，我们开始吧。
 
 # 元数据配置
 
-我们对上文的`object`加以改造，对主键字段填加`.primaryKey`调用（**此时字段类型将不再是TableColumnExpr，而是PrimaryKeyColumnExpr**）。
+首先，我们需要创建一个数据表的元数据：
 
 ```scala
 object User extends TableSchema {
     override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").primaryKey
-    val name: TableColumnExpr[String] = varcharColumn("name")
+    val id = intColumn("id")
+    val name = varcharColumn("name")
 }
 ```
 
-如果是自增主键，使用`.incr`（**一张表支持多个主键但只支持一个自增主键**）：
+上面，我们编写了一个`object`，并继承了`TableSchema`，添加了表名，以及两个字段。
+
+字段类型支持：
+
+`intColumn` `longColumn` `varcharColumn` `floatColumn` 
+
+`doubleColumn` `booleanColumn` `dateColumn` `decimalColumn`
+
+然后就可以这样使用查询：
+
+```scala
+val s = select (User.id, User.name) from User
+```
+
+## 主键和可空字段
+
+对于主键字段，可以添加`.primaryKey`调用：
 
 ```scala
 object User extends TableSchema {
     override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String] = varcharColumn("name")
+    val id = intColumn("id").primaryKey
+    val name = varcharColumn("name")
 }
 ```
 
-对可空类型的字段，我们添加`.nullable`，并在类型参数中添加（| Null）：
+自增主键添加`.incr`调用：
 
 ```scala
 object User extends TableSchema {
     override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("name").nullable
+    val id = intColumn("id").incr
+    val name = varcharColumn("name")
 }
 ```
 
-为了更方便的使用，我们可以添加一个展开所有字段的方法，把返回值定义成字段元组：
+**更新主键字段会产生编译错误，而不是运行期异常，是类型安全的体现。**
+
+使用`.nullable`来创建可空字段：
+
 ```scala
 object User extends TableSchema {
     override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("name").nullable
-    def * = (id, name)
+    val id = intColumn("id").primaryKey
+    val name = varcharColumn("name").nullable
 }
 ```
 
-这样就可以在查询中使用`User.*`，便能在生成sql时自动展开查询字段。
+**非空字段会在与空值比较时产生编译错误。**
 
-后续的查询构造器中，将会利用`object`中的配置，进行类型检查。
+## 字段列表
+
+为了更方便使用，推荐在元数据配置中添加一个字段元组：
+
+```scala
+object User extends TableSchema {
+    override val tableName: String = "user"
+    val id = intColumn("id").primaryKey
+    val name = varcharColumn("name").nullable
+
+    val * = (id, name)
+}
+```
+
+然后就可以这样调用：
+
+```scala
+val s = select (User.*) from User
+```
+
+## 表结构继承
+
+实际开发中，可能有很多表有一些共有字段，比如状态，创建时间等，如果每次都显式写出这些共有字段，会显得有些不方便。
+
+这个时候我们可以编写一个`trait`继承`TableSchema`：
+
+```scala
+trait BaseTable extends TableSchema {
+   lazy val dataState = intColumn("data_state")
+   lazy val createTime = dateColumn("create_time")
+}
+```
+
+其他表继承这个trait即可（**注意基表的字段需要写成`lazy val`**）：
+
+```scala
+object User extends BaseTable {
+    override val tableName: String = "user"
+    val id = intColumn("id").incr
+    val name = varcharColumn("name").nullable
+    val * = (id, name, dataState, createTime)
+}
+```
+
+这样，我们就可以达到继承共有字段的目的了。
+
+## 实体类绑定
+
+将上面的object改为实体类的*伴生对象*，并且使对象的字段名和实体类的字段名对应，就可以将元数据绑定到实体类：
+
+```scala
+case class User(id: Int. name: Option[String]) extends TableEntity[Int]
+
+object User extends TableSchema {
+    override val tableName: String = "user"
+    val id = intColumn("id").primaryKey
+    val name = varcharColumn("name").nullable
+
+    val * = (id, name)
+}
+```
+
+**可空字段对应到Scala的Option类型，实体类需要继承TableEntity，类型参数即是主键类型，如果是联合主键，其类型为一个元组，顺序需要与object的主键配置对应。**
+
+这样就能使用实体类来生成insert、update等语句：
+
+```scala
+val user = User(1, Some("x"))
+val i = insert(user)
+
+val u = update(user)
+
+val d = delete[User](1)
+```
+
+更详细的使用方式，将会在后续部分说明。
 
 ## 代码生成
 
@@ -154,204 +211,566 @@ val ds: DataSource = ???
 // 创建一个jdbc连接，传入数据库类型和连接池
 val db = new JdbcConnection(DB.MYSQL, ds)
 // 传入数据库名称和生成路径，来生成代码
-db.generateEntity("postgres", "src/main/scala/codegen/")
+db.generateEntity("test", "src/main/scala/codegen/")
 ```
 
-根据实际需要进行微调即可。
+再根据实际需求微调即可。
 
-## 表结构继承
+# 查询构造
 
-实际开发中，可能有很多表有一些共有字段，比如状态，创建时间等，如果每张表都需要显式写出这些共有字段，会显得有些不方便。
+下面，我们开始了解查询构造器的使用，但是，在介绍select、insert等sql语句之前，需要先对sql的表达式有一些了解。
 
-这个时候我们可以编写一个`trait`继承`TableSchema`：
+## 表达式
 
-```scala
-trait BaseTable extends TableSchema {
-   lazy val dataState = intColumn("data_state")
-   lazy val createTime = dateColumn("create_time")
-}
-```
+先来介绍常用的sql表达式，比如字段，常量，逻辑运算，聚合函数等（为了避免此部分变得冗长，不常用的case when、窗口函数等将会在后续的部分进行说明）。
 
-这里，我们创建了一个名为BaseTable的trait，其他表继承这个trait即可（需要注意的是，基表的所有字段需要指定成`lazy val`）：
-
-```scala
-object User extends BaseTable {
-    override val tableName: String = "user"
-    val id = intColumn("id").incr
-    val name = varcharColumn("name").nullable
-    def * = (id, name, dataState, createTime)
-}
-```
-
-这样，我们就可以达到继承共有字段的目的了。
-
-# 查询构造器
-
-接下来我们将开始了解查询构造器，为了更好地使用查询构造器，也为了使用者更深入的了解sql的本质，我们先来了解表达式和运算符：
-
-## 表达式和运算符
-
-我们首先来介绍库提供的表达式和各种运算符。
-
-表达式拥有共同的父类`Expr`，而大多数表达式的参数中也可以接收`Expr`类型，因此，表达式之间可以互相嵌套，便可以提供高抽象能力。
-
-**表达式类型中如果代入进了字符串，会在生成sql时自动转义特殊符号，以此来防止sql注入。**
+库内部使用了抽象语法树来构建表达式，所以各种表达式可以互相嵌套，并拥有共通的父类`Expr`，带来了强大的抽象能力。
 
 ### 字段
 
-字段是最基本的表达式，比如上文`object`中的属性`User.id`就是一个字段类型，可以代入到其他表达式或查询语句中：
+字段是最基本的表达式，上文中，我们创建的元数据里，便是创建了字段类型的表达式。
+
+有了元数据对象，我们就可以写这样的查询：
 
 ```scala
-select (User.id) from User
+val s = select (User.id) from User
 ```
 
-如果我们需要查询全部字段，那么可以像下面这样调用：
+但是有些应用里，表是运行期动态创建的，我们恐怕并不能构建出元数据对象，这时候可以使用`col`方法来创建一个动态字段；
 
 ```scala
-select (**) from User
+val s = select (col("user.id")) from table("t")
 ```
 
-**有些遗憾的是，由于与乘法运算符冲突，所以此处不能像真正的sql一样使用单个星号**。
-
-这个表达式的定义如下：
-```scala
-def ** = AllColumnExpr()
-```
-
-当然，我们使用上文定义的全部字段的元组，就不存在这个问题：
-```scala
-select (User.*) from User
-```
-
-假如你的项目中，表名字段名是动态的，并不能构建出实体类，那可以使用另一种方式生成字段表达式：
+库内置了一个名为\*\*的方法，用来产生一个字段通配符：
 
 ```scala
-col[Int]("c1")
+val s = select (**) from table("t")
 ```
 
-其中的类型参数为字段的实际类型（**也可以不传类型参数，但这会失去类型安全性，请使用者自行斟酌**），可空字段可以写成：
-```scala
-col[Int | Null]("c1")
-```
-
-将这种字段代入查询：
-
-```scala
-select (col[Int]("c1")) from User
-```
-
-如果`col()`中的字符串包含`.`，那么`.`左侧会被当做表名，右侧会被当做字段名；如果包含`*`，那么会产生一个sql通配符。
+有些遗憾的是，因为某些方法名冲突，这里不能像真正的sql一样使用单个星号，但是我们使用上文中元数据对象中定义的字段元组，便不存在这个问题了。
 
 ### 表达式别名
 
-表达式类型可以使用中缀方法`as`来起别名，我们在此以字段类型为例，后文的其他表达式类型也支持这个功能：
+可以使用`as`方法，来给查询的表达式起别名：
 
 ```scala
-select (User.id as "c1") from User
+val s = select (User.id as "c1", User.name as "c2") from User
 ```
 
-`as`方法携带了编译期校验，如果参数传入一个空字符串，将会产生编译错误：
+当然，`as`方法可以推广到后续介绍的任何sql表达式类型，后续就不再赘述了。
+
+`as`方法使用了一种名为`refinement type`的手段达到类型安全，`as`的参数如果为空字符串，则不能通过编译：
 
 ```scala
-// 编译错误，as的参数不能为空字符串
-select (User.id as "") from User
+// 编译错误
+val s = select (User.id as "") from User
 ```
 
-如果别名需要运行期动态确定，我们需要使用`unsafeAs`方法：
-
-```scala
-val alias: String = ???
-select (User.id unsafeAs alias) from User
-```
-
-**这可能在运行期产生sql异常，请谨慎使用。**
+如果别名需要运行期动态确定，可以使用`unsafeAs`方法。
 
 ### 常量
 
-在某些需求中，可能会将某一种常量来作为查询结果集的一列，比如：
+有一些需求中，可能需要把常量作为查询结果集的一列，比如：
 
 ```sql
-SELECT 1 AS c1
+SELECT 1 AS "col1"
 ```
 
-我们可以使用`const()`来生成常量类型的表达式：
+为了实现这个需求，我们需要`import org.easysql.dsl.given`：
 
 ```scala
-select(const(1) as "c1")
+val s = select (User.id as "col1", 1 as "col2", "x" as "col3") from User
 ```
 
-当然，利用Scala强大的编译器，只要在使用时**隐式转换**一下，此处就可以省略掉`const()`：
+### 逻辑运算
+
+除开字段和常量之外，最常见的表达式就是逻辑运算构成的表达式。
+
+支持的二元逻辑运算有：`===`、`<>`、`>`、`>=`、`<`、`<=`、`&&`、`||`、`^`，我们可以使用逻辑运算构成表达式，来代入查询条件里：
+
+```scala
+val id = 1
+val name = "x"
+val s = select (User.*) from User.id > id && User.name === name 
+```
+
+二元运算的右侧，不仅可以是值，也可以是其他表达式：
+
+```scala
+val s = select (User.*, Post.*) from User join Post on User.id === Post.userId
+```
+
+当然，如果你想在运算左侧使用常量，也一样可做到，前提是`import org.easysql.dsl.given`：
 
 ```scala
 import org.easysql.dsl.given
-select(1 as "c1")
+
+val s = select (User.*) from User where 1 === User.id
 ```
 
-隐式转换后也可以在运算符左侧使用此值：
+**`===`与`<>`在与空值比较时，生成的sql为`IS NULL`与`IS NOT NULL。`**
+
+除开这些符号组成的逻辑运算，还支持`in`、`notIn`、`between`、`notBetween`，以及String类型的表达式**专用**的`like`与`notLike`。与上面的符号略微有区别的是，这些字母组成的运算符，使用的时候需要套一层小括号：
+
 ```scala
-import org.easysql.dsl.given
-select (**) from User where 1 < User.id
+val s = select (User.*) from User where (User.id between (1, 5)) || (User.name  ("x", "y"))
+
+val s1 = select (User.*) from User where (User.name like "x%")
 ```
+
+当然，这些运算符的抽象能力也一样强大，我们甚至可以写出来这种无意义的sql：
+
+```scala
+val s = select (User.*) from User where (User.id in (1, 2, User.id))
+
+import org.easysql.dsl.given
+val s1 = select (User.*) from User where (1 in User.id)
+```
+
+### 数学运算
+
+除开上面的逻辑运算外，还支持`+`、`-`、`*`、`/`、`%`五个数学运算：
+
+```scala
+val s = select (User.id * 100) from User where User.id + 1 > 5
+```
+
+当然，如果要在表达式的左侧使用数值，别忘记`import org.easysql.dsl.given`。
 
 ### 聚合函数
 
-内置了`count`、`countDistinct`、`sum`、`avg`、`max`、`min`这些标准的聚合函数，比如：
+接下来，在实际工作中比较常见的表达式就是聚合函数了，内置了几个常用的标准聚合函数：`count`、`countDistinct`、`max`、`min`、`sum`、`avg`：
 
 ```scala
-select (count() as "col1", sum(User.id) as "col2") from User
+val s = select (count() as "col1", sum(User.id) as "col2") from User
 ```
 
-### 逻辑运算符
-
-库内置了`==`、`===`（**由于==与内置库函数同名，所以使用==可能在某些情况下会产生预期之外的结果，所以更推荐使用===代替==**）、`<>`、`>`、`>=`、`<`、`<=`、`&&`(AND)、`||`(OR)、`^`(XOR)等逻辑运算符，我们可放入where条件中：
+当然，聚合函数也可以成为其他表达式的一部分：
 
 ```scala
-select (User.*) from User where User.id === 1
+val s = select (count() + User.id * 100 as "col1") from User
 ```
 
-运算符们可以自由组合：
+当然，还支持窗口函数使用的`rowNumber`、`rank`、`denseRank`聚合函数，以及自定义聚合函数，但是受篇幅限制，将在后续部分说明。
+
+## 查询语句
+
+好了，介绍完常用的表达式以后，就可以开始了解sql的核心，查询语句的构建了。
+
+内置了一系列中缀方法，来构建查询，比如：
 
 ```scala
-select (User.*) from User where User.name === "小黑" && (User.id > 1 || User.gender === 1)
+val s = select (User.*) from User where User.name === "x" orderBy User.id.asc
 ```
 
-如果使用`AND`来拼接条件，也可以使用多个`where`。
-
-除了上文的逻辑运算符外，还支持`in`、`notIn`、`like`、`notLike`、`between`、`notBetween`、`isNull`、`isNotNull`：
+然后我们可以使用`sql`方法，传入数据库方言的枚举，来生成sql语句：
 
 ```scala
-select(User.*)
-    .from(User)
-    .where(User.gender in (1, 2))
-    .where(User.id between (1, 10))
-    .where(User.name like "%xxx%")
-    .where(User.name.isNotNull)
+val sql: String = s.sql(DB.MYSQL)
 ```
 
-上文中`object`里未使用`nullable`来标注的字段，使用`isNull`或`isNotNull`时，产生一个**编译错误**。
-
-这些运算符不仅可以代入数值，字符串等常量，表达式类型的子类也可以代入其中，比如我们需要做一个需求，查询当前的时间在表的两个字段范围内的数据，我们可以这样写：
+如果不需要使用多种数据库，每次生成sql都要传入一个数据库类型，十分不方便，这个时候，我们可以创建一个`given`，然后使用`toSql`方法来生成sql。
 
 ```scala
-select (User.*) from User where const(Date()).between(User.time1, User.time2)
+given DB = DB.MYSQL
+
+val s1 = select (User.id) from User
+val sql1 = s1.toSql
+
+val s2 = select (User.*) from User where User.name === "x"
+val sql2 = s2.toSql
 ```
 
-这已经体现出运算符的抽象能力了，但是，我们还可以再简洁一些：
+这时候，你可能觉得，使用这种dsl，没办法在编译期检查这种错误的sql：
 
 ```scala
-import org.easysql.dsl.given
-select (User.*) from User where Date().between(User.time1, User.time2)
+val s = select (A.*) from B
 ```
 
-### 数学运算符
-
-库提供了`+`、`-`、`*`、`/`、`%`五个数学运算符，比如：
+但是，使用`asSql`方法的话，这种错误也逃不过编译器的检查：
 
 ```scala
-select (User.id + 1) from User
+given DB = DB.MYSQL
+
+val s = select (A.*) from B
+val sql = s.asSql // 编译错误
 ```
 
-### case表达式
+**`asSql`更适合编译期模板可以确定的偏静态的查询。**
+
+下面，来介绍常用的select子句（不常用的功能比如cte、values临时表等会在后续部分介绍）。
+
+### select
+
+使用select方法，传入若干表达式，来创建select子句：
+
+```scala
+val s = select(User.id)
+// 后续的select方法调用，会把字段追加在后面
+s.select(User.name)
+```
+
+字段元组和普通的表达式可以放在一起，会在生成sql时递归展开：
+
+```scala
+val s = select (User.*, count())
+```
+
+select列表中的字段类型会在union查询或是子查询等时机保证类型安全，但要求你的查询字段是可以在编译期确定的。如果查询字段是运行期动态传入的，需要使用`dynamicSelect`：
+
+```scala
+// 假设此处查询的列是用户传入参数
+val list = List("x", "y", "z")
+
+// 把字符串列表转换为字段列表，并传入dynamicSelect中
+val s = dynamicSelect(list.map(col): _*)
+```
+
+### from
+
+使用中缀方法`from`，并传入元数据中配置的对象名：
+
+```scala
+val s = select (User.*) from User
+```
+
+如果你的表名也是运行期动态确定的，可以使用`table`方法：
+
+```scala
+val s = select (col("c1")) from table("t1")
+```
+
+from方法也可以传入一个子查询，会在后续子查询部分进行说明。
+
+表可以起别名，比如用自连接来处理树状数据：
+
+```scala
+val t1 = User as "t1"
+val t2 = User as "t2"
+
+val s = select (t1.id, t2.name) from t1 join t2 
+```
+
+**暂时不支持别名表使用\*。**
+
+### where
+
+使用中缀方法`where`配合表达式来生成查询条件：
+
+```scala
+val s = select (User.*) from User where User.id === 1
+```
+
+如果你的查询条件都是使用`AND`来连接，那么也可以选择使用多个`where`：
+
+```scala
+val s = select (User.*) from User
+
+s.where(User.id in (1, 2, 3))
+s.where(User.name === "x")
+```
+
+某些需要视情况而动态拼接的查询条件，可以在`where`中传入一个Boolean值或者返回Boolean的函数：
+
+```scala
+val name = ""
+
+val s = select (User.*) from User
+s.where(name.nonEmpty, User.name === name)
+```
+
+### order by
+
+表达式类型中，有`asc`、`desc`两个方法，用来配合`orderBy`创建排序规则：
+
+```scala
+val s = select (User.*) from User orderBy (User.id.asc, User.name.desc)
+```
+
+### group by与having
+
+使用`groupBy`做数据分组，`having`做分组后的筛选：
+
+```scala
+val s = select (User.name, count()) from User groupBy User.name having count() > 1
+```
+
+除了普通的group by之外，还支持几个特殊的group by形式：
+
+1. `rollup`：
+    ```scala
+    select (User.id, User.name, count()) from User groupBy rollup(User.id, User.name)
+    ```
+2. `cube`：
+    ```scala
+    select (User.id, User.name, count()) from User groupBy cube(User.id, User.name)
+    ```
+3. `groupingSets`（参数类型支持表达式、表达式元组以及使用EmptyTuple产生的空元组）:
+    ```scala
+    select (User.id, User.name, count()) from User groupBy groupingSets((User.id, User.name), User.name)
+    ```
+
+上面的各种group by形式可以组合调用。
+
+### distinct
+
+使用`distinct`做数据去重：
+
+```scala
+val s = select (User.name) from User
+s.distinct
+```
+
+### limit
+
+使用limit和offset两个方法，来限制结果集：
+
+```scala
+val s = select (User.*) from User limit 10 offset 100
+```
+
+当只调用其中一个方法的时候，limit的缺省值为1，offset的缺省值为0。
+
+### join
+
+内置了`join`、`leftJoin`、`rightJoin`、`innerJoin`、`fullJoin`、`crossJoin`方法，配合`on`方法来连接表：
+
+```scala
+val s = select (A.*, B.*) from A join B on A.x === B.y
+```
+
+可以像真正的sql一样，使用小括号来限制表连接的顺序：
+
+```scala
+val s = select (A.*, B.*, C.*) from A join (B join C on B.y === C.z) on A.x === B.y
+```
+
+### 子查询
+
+1. from中的子查询：
+
+    ```scala
+    val subQuery = select (User.id as "col1") from User as "q1"
+
+    val s = select (subQuery.col1) from subQuery
+    ```
+
+    **使用as方法对子查询起别名，并需要对子查询的每个字段起别名，字段别名可以当做子查询变量的属性来使用。**
+
+    join中的子查询与from的类似，此处不再赘述。
+
+    可以使用`fromLateral`、`joinLateral`等来调用lateral子查询。
+
+2. 表达式中的子查询：
+
+    只返回一列的子查询可以被用在表达式里，比如：
+
+    ```scala
+    val subQuery = select (max(User.id)) from User
+
+    val s = select (User.*) from User where User.id < subQuery
+    ```
+
+    支持`some`、`any`、`exists`、`notExists`、`all`这几个子查询谓词：
+
+    ```scala
+    val subQuery = select (max(User.id)) from User
+
+    val s = select (User.*) from User where exists(subQuery)
+    ```
+
+3.  标量子查询
+
+    只返回一列的查询可以被放入select列表中，这被称作标量子查询，我们需要把子查询的类型指定为Expr：
+
+    ```scala
+    val sub: Expr[Int, EmptyTuple] = select (User.id) from User
+    val s = select (sub, User.name) from User
+    ```
+
+### for update
+
+使用`forUpdate`方法来给查询加锁：
+
+```scala
+val s = select (User.*) from User
+s.forUpdate
+```
+
+在sqlserver中会在FROM子句后生成WITH (UPDLOCK)。
+
+### 生成sql
+
+上文的链式调用，只是构建出了sql语法树，并未真正生成sql语句，我们需要一个终止操作来生成sql：
+
+```scala
+given DB = DB.MYSQL
+
+val s = select (User.*) from User orderBy User.id.asc limit 10
+
+val sql: String = s.toSql
+val countSql: String = s.toFetchCountSql
+val pageSql: String = s.toPageSql(10, 1)
+```
+
+`toSql`会一比一的生成sql语句。
+
+为了避免性能浪费，`toFetchCountSql`会拷贝语法树副本，把limit信息和order by信息去掉，并把select列表替换为COUNT(*)：
+
+```sql
+SELECT COUNT(*) AS `count`
+FROM `user`
+```
+
+`toPageSql`，顾名思义，就是生成分页的查询，第一个参数为每页条数，第二个参数为页码，会依据这两个参数替换语法树副本的信息。
+
+## union查询
+
+支持`union`、`unionAll`、`except`、`exceptAll`、`intersect`、`intersectAll`来将两个查询拼接在一起：
+
+```scala
+val s1 = select (User.name) from User where User.id === 1
+val s2 = select (User.name) from User where User.id === 2
+
+val union = s1 union s2
+```
+
+用于拼接的查询，select中的字段数目与字段类型必须一致，否则无法通过编译。
+
+## 原生sql
+
+虽然构造器的功能已经十分完善，但可能有一些特殊的方言，比如postgresql中的distinct on，oracle中的connect by在构造器中没有对应的api，这时候也可以使用`sql""`构建原生sql：
+
+```scala
+val id = 1
+val s = sql"select * from user where id = $id"
+```
+
+这看起来就像是原生的字符串模板一样，如果熟悉scala的字符串模板，将不会对这种方式感到陌生。
+
+字符串等类型的变量代入其中的时候可以自动生成单引号：
+
+```scala
+val name = "x"
+val s = sql"select * from user where name = $name"
+
+assert(s == "select * from user where name = 'x'")
+```
+
+也可以把List代入其中：
+
+```scala
+val idList = List(1, 2, 3)
+val s = sql"select * from user where id in $idList"
+
+assert(s == "select * from user where id in (1, 2, 3)")
+```
+
+就算是使用原生sql，我们也不用编写生成表达式的样板代码。
+
+## 插入语句
+
+使用`insertInto`方法来创建insert语句：
+
+```scala
+val i = insertInto(User)(User.*).values((1, "x"), (2, "y"))
+
+val sql = i.toSql
+```
+
+values中的每个元组的类型必须与insertInto中传入的参数一致，否则会编译错误。
+
+如果我们在上文元数据配置环节，将元数据对象写成实体类的伴生对象，那么就可以使用实体类来生成insert语句：
+
+```scala
+val user = User(1, Some("x"))
+val i = insert(user)
+val sql = i.toSql
+```
+
+**使用incr标记的主键会在生成sql时跳过。**
+
+insert语句也可以使用子查询：
+
+```scala
+val i = insertInto(User)(User.*).select {
+    select (User.*) from User
+}
+```
+
+`select`方法中子查询的返回类型也需要与`insertInto`中的传参一致，这是`dependent type`的一种应用。
+
+## 更新语句
+
+库对非主键字段扩展了一个名为`to`的方法，这样我们就可以在更新语句中使用：
+
+```scala
+val u = update(User).set(User.name to "x").where(User.id === 1)
+val sql = u.toSql
+```
+
+由于是对非主键类型的扩展，所以更新主键将不会通过编译。
+
+to跟一般的运算一样，右侧不止可以是值，也可以是其他表达式，比如我们这样实现某字段自增的需求：
+
+```scala
+val u = update(A).set(A.x to A.x + 1)
+```
+
+与insert一样，同样可以使用实体类，来按主键更新其他字段：
+
+```scala
+val user = User(1, Some("x"))
+val u = update(user)
+val sql = u.toSql
+```
+
+使用实体类更新时，可以传入一个`skipNull`参数（默认为`true`），如果此参数为`true`，那么值为`null`或者值为`None`的字段会被跳过：
+
+```scala
+// 省略元数据配置代码
+case class Entity(a: Int, b: Option[Int], c: Option[Int]) extends TableEntity[Int]
+
+val e = Entity(1, Some(2), None)
+
+// UPDATE entity SET b = 2 where a = 1
+val u1 = update(e)
+
+// UPDATE entity SET b = 2, c = null where a = 1
+val u2 = update(e, skipNull = false)
+```
+
+## 删除语句
+
+```scala
+val d = deleteFrom(User).where(User.id === 1)
+val sql = d.toSql
+```
+
+使用泛型传入实体类类型，便可以通过主键生成删除sql：
+
+```scala
+val d = delete[User](1)
+val sql = d.toSql
+```
+
+## 插入或更新
+
+使用实体类生成按主键插入或更新的sql：
+```scala
+val user = User(1, Some("x"))
+val s = save(user)
+val sql = s.toSql
+```
+
+**每一种数据库生成的sql均不同。**
+
+## 其他查询功能
+
+上文中介绍的都是，常用的查询构造功能，下面介绍一些标准sql中的，不常用的功能。
+
+### case when
 
 使用`caseWhen()`方法和中缀函数`thenIs`与`elseIs`来生成一个case表达式：
 
@@ -392,7 +811,7 @@ FROM user
 
 ### 窗口函数
 
-使用`聚合函数`或`rank()`、`denseRank()`、`rowNumber()`三个窗口专用函数，在后面调用`.over`，来创建一个窗口函数，然后通过`partitionBy`和`orderBy`来构建一个窗口：
+在聚合函数后面调用`.over`，来创建一个窗口函数，然后通过`partitionBy`和`orderBy`来构建一个窗口：
 
 ```scala
 select (rank().over partitionBy User.id orderBy User.name.asc as "over") from User
@@ -410,17 +829,41 @@ SELECT RANK() OVER (PARTITION BY user.id ORDER BY user.user_name ASC) AS over FR
 
 **窗口函数是一种高级查询方式，使用时需要注意数据库是否支持（比如mysql8.0以下版本不支持窗口函数功能）。**
 
-### 普通函数
+### 自定义函数
 
-可以使用内置的`NormalFunctionExpr`来封装一个数据库函数。
+除开内置的聚合函数外，我们还可以使用`NormalFunctionExpr`来创建普通函数，使用`AggFunctionExpr`来创建聚合函数，来看看下面的例子：
 
-**函数不利于查询优化以及不同数据库转换，因此不推荐使用**。
+创建一个普通函数`LEFT`：
 
-### cast表达式
+```scala
+def left(e: Expr[String, _] | Expr[String | Null, _], size: Int): NormalFunctionExpr[String] = {
+    import org.easysql.dsl.given
+    NormalFunctionExpr("LEFT", List(e, size))
+}
 
-使用`cast()`方法生成一个cast表达式用于数据库类型转换。
+val s = select (User.*) from User where left(User.name, 3) === "xxx"
+```
 
-第一个参数为表达式类型，为待转换的表达式；
+创建一个mysql的聚合函数GROUP_CONCAT：
+
+```scala
+def groupConcat(e: Expr[_, _], separator: String = "", distinct: Boolean = false, orderBy: OrderBy[_]*): AggFunctionExpr[String] = {
+    import org.easysql.dsl.given
+    AggFunctionExpr("GROUP_CONCAT", List(e), distinct, Map("SEPARATOR" -> separator), orderBy.toList)
+}
+
+val s1 = select (groupConcat(User.name, ",", true, User.id.asc)) from User
+
+val s2 = select (groupConcat(User.name)) from User
+```
+
+这可能需要使用者对抽象语法树有一定的了解，如果你没有这种知识储备，那么也可以使用上文介绍的原生sql。
+
+### cast转换
+
+使用`cast`方法生成一个cast表达式用于数据库类型转换。
+
+第一个参数为待转换的表达式；
 
 第二个参数为String，为想转换的数据类型。
 
@@ -437,292 +880,6 @@ SELECT CAST(user.id AS CHAR) FROM user
 ```
 
 **会影响查询效率，不推荐使用**。
-
-## 查询语句
-
-在介绍完表达式和运算符之后，我们便可以开始着重来讲sql的核心：`select`语句的构建。
-
-库内置了一系列方法来支持SELECT语句的编写，比如：
-
-```scala
-val select = select (User.*) from User where User.name === "小黑"
-```
-
-然后我们就可以用`sql`方法，并传入数据库类型枚举`DB`，获取生成的sql：
-
-```scala
-val sql = select.sql(DB.MYSQL)
-```
-
-当然，生成sql语句的方法并非只有sql，后文会详细说明。
-
-### select子句
-
-select()方法中支持传入若干个前文介绍的表达式类型：
-
-```scala
-select(User.id, User.name)
-```
-
-链式调用多个`select`，会在生成sql时依次拼接进sql语句。
-
-上面的`select`，对于union和子查询是**类型安全**的，但是查询字段需要在编译期确定，
-虽然安全，但在select的字段列表在运行期才能确定时并不方便，在这种动态sql的场景里，我们可以使用`dynamicSelect`：
-
-```scala
-// 假设这个List的内容是运行期用户传参
-val list = List("x", "y", "z") 
-
-// 将字符串列表映射成字段列表，传入dynamicSelect的可变参数中
-val select = dynamicSelect(list.map(col): _*) from "table1" 
-```
-
-这样虽然失去了类型安全，但在高度动态的查询里，使用更加简单。
-
-使用哪种方式需要根据使用者的实际业务场景决定，如非必要，不推荐使用`dynamicSelect`。
-
-### from子句
-
-`from()`方法支持传入一个字符串表名，或者前文介绍的继承了`TableSchema`的对象名：
-
-```scala
-select (User.*) from User
-
-select (**) from "table"
-```
-
-此功能使用Scala3的union type功能实现。
-
-**不支持from多张表，如果有此类需求，请使用join功能。**
-
-### 表别名
-
-通常需要对表起别名时，分成两个场景，自连接和子查询，下面我们将会对这两种情况一一进行说明。
-
-自连接时，使用`TableSchema`的`as`方法，创建一个新的表实例：
-
-```scala
-val t1 = User as "t1"
-val t2 = User as "t2"
-
-select (**) from t1 join t2 on t1.id === t2.id where t1.name === "小黑"
-```
-
-对于动态表名，我们可以使用`table()`括起来，再使用`as`方法。
-
-**需要注意的是，给表起别名之后，便不能使用元数据中定义的展开字段元组的方法。**
-
-子查询时，使用`Select`类的`as`方法，修改别名：
-
-```scala
-val sub = (select (User.id as "c1", User.name as "c2") from User) as "sub"
-select (sub.c1) from sub where sub.c2 === "小黑"
-```
-
-子查询的表，需要手动展开查询字段，**并对每个字段起别名**，在下面引述子查询的时候，便可以通过别名字符串推断出属性名。
-
-**与表达式别名一样，上述的`as`是安全的，如果传入空字符串会产生编译错误，我们可以使用`unsafeAs`来传入运行期确定的别名。**
-
-### where子句
-
-使用`where()`配合各种前面介绍的运算符和表达式，生成where条件：
-
-```scala
-select (User.*) from User where User.id === 1 && User.gender <> 1
-```
-
-多个`where()`会使用AND来拼接条件，如果需要使用OR和XOR，请参考前文的运算符部分。
-
-有些时候，我们需要根据一些条件动态拼接where条件，我们可以这样调用：
-
-```scala
-select(User.*).from(User).where(testCondition, User.name === "")
-```
-
-`where()`的第一个参数接收一个Boolean表达式，只有表达式返回的值是true的时候，条件才会被拼接到sql中。
-
-如果判断条件比较复杂，第一个参数也可以传入一个返回Boolean类型的lambda表达式。
-
-**不止是select语句，后文的update和delete语句也支持这些where()的调用方式，以后便不再赘述。**
-
-### order by子句
-
-使用`orderBy()`方法传入表达式类型的`.asc`或者`.desc`方法来生成的排序规则：
-
-```scala
-select (User.*) from User orderBy (User.id.asc, User.name.desc)
-```
-
-这可能还不够像sql风格，我们可以导入`scala.language.postfixOps`来去掉asc和desc之前的点:
-```scala
-import scala.language.postfixOps
-select (User.*) from User orderBy (User.id asc, User.name desc)
-```
-
-### group by和having子句
-
-使用`groupBy()`来聚合数据（多个group by字段需要用小括号括起来），`having()`来做聚合后的筛选：
-
-```scala
-select (User.gender, count()) from User groupBy User.gender having count() > 1
-```
-
-`groupBy()`接收若干个表达式类型，`having()`的使用方式与`where()`相似。
-
-除了普通的group by之外，还支持几个特殊的group by形式：
-
-1. `rollup`：
-    ```scala
-    select (User.id, User.name, count()) from User groupBy rollup(User.id, User.name)
-    ```
-2. `cube`：
-    ```scala
-    select (User.id, User.name, count()) from User groupBy cube(User.id, User.name)
-    ```
-3. `groupingSets`（参数类型支持表达式、表达式元组以及使用EmptyTuple产生的空元组）:
-    ```scala
-    select (User.id, User.name, count()) from User groupBy groupingSets((User.id, User.name), User.name)
-    ```
-
-上面的各种group by形式可以组合调用。
-   
-### distinct子句
-
-在调用链中添加`distinct`即可，会对查出的列进行去重。
-
-```scala
-select(User.name).from(User).distinct
-```
-
-### limit子句
-
-我们可以使用中缀函数`limit`和`offset`组合调用
-
-```scala
-select (User.*) from User limit 1 offset 10
-```
-
-offset默认值为0，limit默认值为1。
-
-**limit语句并不是sql标准用法，因此每个数据库厂商采用的语法都有差异，生成sql时会根据数据源的数据库类型进行方言适配。**
-
-**oracle需要版本在12c以上，sqlserver需要版本在2012以上。低于此版本，需要使用者自行处理ROW NUMBER。**
-
-### join子句
-
-提供：`join()`、`innerJoin()`、`leftJoin()`、`rightJoin()`、`crossJoin()`、`fullJoin()`几种不同的join方法。
-
-上述方法配合`on()`方法来做表连接：
-
-```scala
-select (User.*, Post.*) from User leftJoin Post on User.id === Post.uid
-```
-
-支持自定义join的顺序，比如：
-```scala
-select (**) from A leftJoin (B join C on B.col === C.col) on A.col === B.col
-```
-
-小括号里面依然可以继续嵌套小括号，解析时将对join结构进行递归处理。
-
-### 子查询
-
-如果需要使用子查询，我们另外声明一个`Select`对象传入调用链即可：
-
-```scala
-val sub = (select (User.*) from User) as "t1"
-
-select (**) from sub
-```
-
-join中的子查询：
-
-```scala
-val sub = (select (Post.userId as "id") from Post limit 10) as "t1"
-
-select (**) from User leftJoin sub on User.id === sub.id
-```
-
-**子查询的别名规则请参考上文的表别名说明**。
-
-操作符中的子查询：
-
-```scala
-select(User.*) from User where (User.id in select(User.id).from(User).limit(10))
-````
-
-标量子查询：
-
-```scala
-import org.easysql.dsl.given
-val sub: Expr[Int] = select (User.id) from User
-val s = select (sub as "x", User.id) from User
-```
-
-子查询谓词：支持`exists`、`notExists`、`any`、`all`、`some`这五个子查询谓词，使用对应的全局函数把查询调用链代入即可：
-
-```scala
-select (User.*) from User where exists(select (max(User.id)) from User)
-```
-
-当然子查询谓词依然是表达式类型，所以可以使用操作符函数来计算：
-
-```scala
-select (User.*) from User where User.id < any(select (max(User.id)) from User)
-```
-
-如果需要使用LATERAL子查询，把`from()`改为`fromLateral()`即可（join的调用方式类似，**需要注意使用的数据库版本是否支持LATERAL关键字**）：
-
-### for update
-
-使用`forUpdate`方法将查询加锁：
-
-```scala
-select(User.*).from(User).forUpdate
-```
-
-不支持sqlite；在sqlserver中会在FROM子句后生成WITH (UPDLOCK)；其他数据库会在sql语句末尾生成FOR UPDATE。
-
-### 获取sql
-
-前面通过链式调用构建的查询，其实只是构建出sql语法树，还并未生成sql，我们还需要一个链式调用终止操作，来生成需要的sql语句：
-
-```scala
-val s = select (User.*) from User
-
-s.sql(DB.MYSQL) // 传入数据库枚举，直接生成sql
-
-s.fetchCountSql(DB.MYSQL) // 生成查询count的sql（会复制查询副本并去掉limit和order by信息）
-
-s.pageSql(10, 1)(DB.MYSQL) // 生成分页sql（会复制查询副本并根据参数替换掉limit信息）
-```
-
-在只使用一种数据库的情况下，上面这种每次生成sql都传入一个数据库类型的方式略显繁琐，我们可以定义一个`given`，来帮我们**隐式传入**数据库类型：
-```scala
-given DB = DB.MYSQL
-
-s.toSql
-s.toFetchCountSql
-s.toPageSql(10, 1)
-```
-
-在隐式值的作用域下，在生成sql方法名前面添加to，我们就可以省略掉数据库类型传参。
-
-如果你需要同时使用多种数据库，那么还是推荐使用第一种方式。
-
-## 其他查询语句
-
-除了普通的select语句之外，还支持union等一些特殊查询，**这些查询只支持使用sql方法获取sql语句**：
-
-### union查询
-
-支持`union`、`unionAll`、`except`、`exceptAll`、`intersect`、`intersectAll`来将两个查询拼接在一起：
-
-```scala
-val s = (select (User.name) from User where User.id === 1) union (select (User.name) from User where User.id === 2)
-```
-
-如果两个查询select中的返回类型不一致，**将无法通过编译。**
 
 ### with查询
 
@@ -750,141 +907,6 @@ values临时表最大的用处是被放入union中，但是上面的用法并不
 ```scala
 val union = select (User.id, User.name) from User union (1, "x") union List((2, "y"), (3, "z"))
 ```
-
-## 原生sql
-
-虽然内置的sql功能已经很全面，但仍然有可能不满足使用者需求，
-这种情况下，我们可以使用`sql`字符串插值器调用原生sql：
-
-```scala
-val id = 1
-val name = "xxx"
-val s = sql"select * from user where id = $id and name = $name"
-```
-
-字符串等类型会在生成sql语句时自动生成单引号。
-
-**此方式失去了类型安全性，如无必要，不推荐使用。**
-
-## 插入语句
-
-```scala
-val i = insertInto(User)(User.id, User.name).values((1, "x"), (2, "y"))
-val sql = i.sql(DB)
-```
-
-当然，此处也可以使用之前定义好的字段元组：
-
-```scala
-val i = insertInto(User)(User.*).values((1, "x"), (2, "y"))
-val sql = i.sql(DB)
-```
-
-得益于Scala3强大的类型系统，**values中如果类型与前面的字段定义不一致，将会产生编译错误。**
-
-### 使用实体类
-
-我们也可以使用实体类来插入数据，`case class`继承`TableEntity`, 并添加伴生对象：
-
-```scala
-case class User(id: Int = 123, name: Option[String] = Some("")) extends TableEntity[Int]
-
-object User extends TableSchema {
-    override val tableName: String = "user"
-    val id: PrimaryKeyColumnExpr[Int] = intColumn("id").incr
-    val name: TableColumnExpr[String | Null] = varcharColumn("user_name").nullable
-    def * = (id, name)
-}
-```
-
-**TableEntity中的类型参数为主键类型，如果是联合主键，可以传入一个元组类型，比如：TableEntity[(Int, String)]**
-
-**联合主键的表，请确保实体类、伴生对象、TableEntity的主键定义顺序一致。**
-
-然后使用`insert`方法：
-```scala
-val user = User(name = Some("x"))
-val sql = insert(user).sql(DB)
-```
-
-使用`incr`标注的字段将会在语句生成时忽略。
-
-### 子查询
-
-当然，插入语句中也支持使用子查询：
-
-```scala
-val i = insertInto(User)(User.id, User.name).select {
-    select (User.id, User.name) from User
-}
-```
-
-此处会对`insert`指定的列和`select`中的列进行类型匹配检查，如不相符，则会**编译错误。**
-
-框架合理利用了Scala的类型系统，达到状态安全，对一个`Insert`同时对象调用`values`和`select`方法时，将会**编译错误**：
-
-```scala
-val i = insertInto(User)(User.id, User.name).values((1, "x"), (2, "y"))
-
-// 编译错误，一个Insert对象只能调用values或select的其中一个方法
-i.select {
-    select (User.id, User.name) from User
-}
-```
-
-## 更新语句
-
-```scala
-val u = update (User) set (User.name to "x") where User.id === 1
-```
-
-`to`是对`TableColumnExpr`添加的扩展函数，其中添加了类型检查，所以**如果更新成与字段不同的类型，将不会通过编译检查**；
-
-并且由于是对`TableColumnExpr`的扩展，所以如果**更新主键，将会产生编译错误**。
-
-`to`的右边不止可以是值，也可以是其他表达式，所以我们可以实现这样的功能：
-
-```scala
-update (User) set (User.followers to User.followers + 1) where User.id === 1
-```
-
-我们也可以传入上文插入语句介绍中的实体类，用主键字段的值作为条件更新其他字段：
-
-```scala
-val user = User(1, Some("x"))
-update(user)
-```
-
-上面的用法，遇到值为`null`和`None`的字段会跳过，如果不希望跳过，可以将`skipNull`参数指定为`false`:
-
-```scala
-update(user, skipNull = false)
-```
-
-## 删除语句
-
-我们这样创建一个删除语句：
-
-```scala
-val d = deleteFrom (User) where User.id === 1
-```
-
-我们也可以使用实体类的类型生成按主键删除的sql：
-
-```scala
-delete[User](1)
-```
-
-## 插入或更新
-
-使用实体类生成按主键插入或更新的sql：
-```scala
-val user = User(1, Some("x"))
-val s = save(user)
-val sql = s.sql(DB)
-```
-
-**每一种数据库生成的sql均不同。**
 
 # 与数据库交互
 
@@ -1015,9 +1037,9 @@ db.transaction { t =>
 我们也可以手动传入`java.sql.Connection`中定义的隔离级别，比如：
 
 ```scala
-db.transaction(TRANSACTION_READ_UNCOMMITTED, { t =>
+db.transaction(TRANSACTION_READ_UNCOMMITTED) { t =>
     t.run(...)
-})
+}
 ```
 
 # 致谢
