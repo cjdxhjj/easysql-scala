@@ -886,13 +886,13 @@ SELECT CAST(user.id AS CHAR) FROM user
 `WithSelect()`生成一个with查询（mysql和pgsql使用递归查询在调用链添加.recursive）
 
 ```scala
-import org.easysql.dsl.given
-
+val q1 = select (User.name) from User where User.id === 1 as "q1"
+val q2 = select (User.name) from User where User.id === 2 as "q2"
 val w = WithSelect()
-    .add("q1", List("name"), Select() select User.name from User where User.id === 1)
-    .add("q2", List("name"), Select() select User.name from User where User.id === 2)
-    .select { s =>
-        s from "q1" join "q2" on true
+    .add(q1, List("n1"))
+    .add(q2, List("n2"))
+    .query {
+        select (q1.n1, q2.n2) from table("q1") join table("q2")
     }
 ```
 
