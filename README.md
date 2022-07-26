@@ -239,7 +239,7 @@ val s = select (User.id) from User
 但是有些应用里，表是运行期动态创建的，我们恐怕并不能构建出元数据对象，这时候可以使用`col`方法来创建一个动态字段；
 
 ```scala
-val s = select (col("user.id")) from table("t")
+val s = select (col("t.id")) from table("t")
 ```
 
 库内置了一个名为\*\*的方法，用来产生一个字段通配符：
@@ -346,7 +346,7 @@ val s = select (User.id * 100) from User where User.id + 1 > 5
 val s = select (count() as "col1", sum(User.id) as "col2") from User
 ```
 
-当然，聚合函数也可以成为其他表达式的一部分：
+聚合函数也可以成为其他表达式的一部分：
 
 ```scala
 val s = select (count() + User.id * 100 as "col1") from User
