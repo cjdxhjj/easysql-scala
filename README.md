@@ -312,18 +312,18 @@ val s = select (User.*) from User where 1 === User.id
 除开这些符号组成的逻辑运算，还支持`in`、`notIn`、`between`、`notBetween`，以及String类型的表达式**专用**的`like`与`notLike`。与上面的符号略微有区别的是，这些字母组成的运算符，使用的时候需要套一层小括号：
 
 ```scala
-val s = select (User.*) from User where (User.id between (1, 5)) || (User.name  ("x", "y"))
+val s = select (User.*) from User where (User.id between (1, 5)) || (User.name in ("x", "y"))
 
 val s1 = select (User.*) from User where (User.name like "x%")
 ```
 
-当然，这些运算符的抽象能力也一样强大，我们甚至可以写出来这种无意义的sql：
+当然，这些运算符的抽象能力也一样强大，我们甚至可以写出来这种合法但无意义的sql：
 
 ```scala
 val s = select (User.*) from User where (User.id in (1, 2, User.id))
 
 import org.easysql.dsl.given
-val s1 = select (User.*) from User where (1 in User.id)
+val s1 = select (User.*) from User where (1 in (User.id, 1))
 ```
 
 ### 数学运算
