@@ -242,13 +242,11 @@ val s = select (User.id) from User
 val s = select (col("t.id")) from table("t")
 ```
 
-库内置了一个名为\*\*的方法，用来产生一个字段通配符：
+库内置了一个名为\*的方法，用来产生一个字段通配符：
 
 ```scala
-val s = select (**) from table("t")
+val s = select (*) from table("t")
 ```
-
-有些遗憾的是，因为某些方法名冲突，这里不能像真正的sql一样使用单个星号，但是我们使用上文中元数据对象中定义的字段元组，便不存在这个问题了。
 
 ### 表达式别名
 

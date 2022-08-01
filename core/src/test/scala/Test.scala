@@ -127,10 +127,13 @@ object Test extends App {
 
 
 
-    val t1 = (select (max(User.id) as "uid") from User) union (select (min(User.id) as "uid") from User) as "t1"
-    val s = select (t1.uid) from t1
-    println(s.asSql)
+//    val t1 = (select (max(User.id) as "uid") from User) union (select (min(User.id) as "uid") from User) as "t1"
+//    val s = select (t1.uid) from t1
+//    println(s.asSql)
 
 //    val s2 = select (Post.*, User.id) from Post where Post.id === 1
 //    println(s2.asSql)
+
+    val s = select (*) from User where User.id === 1
+    println(s.toSql)
 }

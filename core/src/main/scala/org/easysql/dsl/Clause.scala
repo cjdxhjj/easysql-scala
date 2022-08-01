@@ -12,11 +12,14 @@ import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
 import org.easysql.macros.findMacro
 
+import scala.annotation.targetName
 import scala.collection.mutable
 
 def const[T <: SqlSingleConstType | Null](value: T) = ConstExpr[T](value)
 
-def col[T <: SqlSingleConstType | Null](column: String) = ColumnExpr[T](column)
+def typeCol[T <: SqlSingleConstType | Null](column: String) = ColumnExpr[T](column)
+
+def col(column: String) = ColumnExpr[SqlSingleConstType | Null](column)
 
 def caseWhen[T <: SqlSingleConstType | Null](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
 
@@ -40,7 +43,7 @@ extension[T <: SqlSingleConstType | Null, Table <: TableSchema] (e: TableColumnE
     def to[V <: T](value: V | Expr[V, _] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
-def ** = AllColumnExpr()
+def * = AllColumnExpr()
 
 def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]] = {
     val sel = Select().select(items)
