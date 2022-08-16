@@ -46,11 +46,25 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
 
     def ==[V <: T](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
 
+    def ==[V <: T](value: Option[V]): BinaryExpr[Boolean, QuoteTables] = {
+        value match {
+            case Some(v) => BinaryExpr(this, SqlBinaryOperator.EQ, const(v))
+            case None => BinaryExpr(this, SqlBinaryOperator.EQ, const(null))
+        }
+    }
+
     def ==[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.EQ, expr)
 
     def ==[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.EQ, SubQueryExpr(subQuery))
 
     def ===[V <: T](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
+
+    def ===[V <: T](value: Option[V]): BinaryExpr[Boolean, QuoteTables] = {
+        value match {
+            case Some(v) => BinaryExpr(this, SqlBinaryOperator.EQ, const(v))
+            case None => BinaryExpr(this, SqlBinaryOperator.EQ, const(null))
+        }
+    }
 
     def ===[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.EQ, expr)
 
@@ -59,6 +73,13 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
     def equal(expr: Any): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.EQ, anyToExpr(expr))
 
     def <>[V <: T](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.NE, const(value))
+
+    def <>[V <: T](value: Option[V]): BinaryExpr[Boolean, QuoteTables] = {
+        value match {
+            case Some(v) => BinaryExpr(this, SqlBinaryOperator.NE, const(v))
+            case None => BinaryExpr(this, SqlBinaryOperator.NE, const(null))
+        }
+    }
 
     def <>[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.NE, expr)
 
@@ -88,11 +109,11 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
 
     def <=[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LE, SubQueryExpr(subQuery))
 
-    infix def &&[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.AND, query)
+    def &&[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.AND, query)
 
-    infix def ||[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.OR, query)
+    def ||[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.OR, query)
 
-    infix def ^[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.XOR, query)
+    def ^[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.XOR, query)
 
     infix def in[V <: T](list: List[V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]]]): Expr[Boolean, EmptyTuple] = {
         InListExpr(this, list)
