@@ -21,6 +21,8 @@ given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_
 
 given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
+given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
+
 given queryToExpr[T <: SqlSingleConstType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
