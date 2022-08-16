@@ -116,7 +116,11 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
     def ^[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.XOR, query)
 
     infix def in[V <: T](list: List[V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]]]): Expr[Boolean, EmptyTuple] = {
-        InListExpr(this, list)
+        if (list.isEmpty) {
+            const(false)
+        } else {
+            InListExpr(this, list)
+        }
     }
 
     infix def in[V <: T](list: (V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])*): Expr[Boolean, EmptyTuple] = {
@@ -124,7 +128,11 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
     }
 
     infix def notIn[V <: T](list: List[V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]]]): Expr[Boolean, EmptyTuple] = {
-        InListExpr(this, list, true)
+        if (list.isEmpty) {
+            const(true)
+        } else {
+            InListExpr(this, list, true)
+        }
     }
 
     infix def notIn[V <: T](list: (V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])*): Expr[Boolean, EmptyTuple] = {
