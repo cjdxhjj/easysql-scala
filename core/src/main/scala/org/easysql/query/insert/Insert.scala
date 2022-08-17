@@ -2,7 +2,7 @@ package org.easysql.query.insert
 
 import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.insert.SqlInsert
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.dsl.{ConstExpr, Expr, InverseMap, PrimaryKeyColumnExpr, TableColumnExpr, TableSchema, col}
 import org.easysql.query.ReviseQuery

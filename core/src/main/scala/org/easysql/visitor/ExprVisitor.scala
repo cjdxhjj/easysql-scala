@@ -1,7 +1,7 @@
 package org.easysql.visitor
 
 import org.easysql.ast.expr.*
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.order.SqlOrderBy
 import org.easysql.dsl.*
 import org.easysql.query.select.SelectQuery
@@ -71,7 +71,7 @@ def visitAggFunctionExpr(aggFunctionExpr: AggFunctionExpr[_]): SqlAggFunctionExp
     SqlAggFunctionExpr(aggFunctionExpr.name, aggFunctionExpr.args.map(visitExpr), aggFunctionExpr.distinct, aggFunctionExpr.attributes.map((k, v) => k -> visitExpr(v)), aggFunctionExpr.orderBy.map(it => SqlOrderBy(visitExpr(it.query), it.order)))
 }
 
-def getExpr(value: SqlSingleConstType | Null | Expr[_, _] | SelectQuery[_]): SqlExpr = {
+def getExpr(value: SqlDataType | Null | Expr[_, _] | SelectQuery[_]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)

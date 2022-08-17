@@ -2,7 +2,7 @@ package org.easysql.dsl
 
 import org.easysql.database.TableEntity
 import org.easysql.dsl.{AllColumnExpr, TableColumnExpr}
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
 import org.easysql.macros.columnsMacro
 import org.easysql.query.select.{SelectQuery, Query}
@@ -18,7 +18,7 @@ trait TableSchema extends AnyTable { self =>
 
     var $columns: ListBuffer[TableColumnExpr[_, _]] = ListBuffer[TableColumnExpr[_, _]]()
 
-    def column[T <: SqlSingleConstType](name: String): TableColumnExpr[T, self.type] = {
+    def column[T <: SqlDataType](name: String): TableColumnExpr[T, self.type] = {
         val c = TableColumnExpr[T, self.type](tableName, name)
         $columns.addOne(c)
         c
@@ -72,7 +72,7 @@ extension[T <: TableSchema] (t: T) {
 case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_, _]]) extends Dynamic {
     val t: TableSchema = table(aliasName)
 
-    def selectDynamic(name: String): TableColumnExpr[SqlSingleConstType | Null, t.type] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[SqlSingleConstType | Null, t.type]]
+    def selectDynamic(name: String): TableColumnExpr[SqlDataType | Null, t.type] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[SqlDataType | Null, t.type]]
 
     infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 

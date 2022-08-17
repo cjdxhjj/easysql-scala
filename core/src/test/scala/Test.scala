@@ -4,7 +4,7 @@ import org.easysql.query.insert.Insert
 import org.easysql.query.select.{Query, Select, UnionSelect}
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.macros.*
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
 
 import scala.compiletime.ops.any.*
@@ -134,6 +134,6 @@ object Test extends App {
 //    val s2 = select (Post.*, User.id) from Post where Post.id === 1
 //    println(s2.asSql)
 
-    val s = select (*) from User where User.id === 1
+    val s = select (sum(User.id) / count() + 100) from User where User.id === 1
     println(s.toSql)
 }

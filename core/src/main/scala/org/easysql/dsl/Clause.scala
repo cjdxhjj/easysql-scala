@@ -1,6 +1,6 @@
 package org.easysql.dsl
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.SqlSubQueryPredicate
 import org.easysql.database.{DB, TableEntity}
 import org.easysql.dsl.ConstExpr
@@ -15,31 +15,31 @@ import org.easysql.macros.findMacro
 import scala.annotation.targetName
 import scala.collection.mutable
 
-def const[T <: SqlSingleConstType | Null](value: T) = ConstExpr[T](value)
+def const[T <: SqlDataType | Null](value: T) = ConstExpr[T](value)
 
-def typeCol[T <: SqlSingleConstType | Null](column: String) = ColumnExpr[T](column)
+def typeCol[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
 
-def col(column: String) = ColumnExpr[SqlSingleConstType | Null](column)
+def col(column: String) = ColumnExpr[SqlDataType | Null](column)
 
-def caseWhen[T <: SqlSingleConstType | Null](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
+def caseWhen[T <: SqlDataType | Null](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
 
 def exists(select: SelectQuery[_]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.EXISTS)
 
 def notExists(select: SelectQuery[_]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.NOT_EXISTS)
 
-def all[T <: SqlSingleConstType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ALL)
+def all[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ALL)
 
-def any[T <: SqlSingleConstType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ANY)
+def any[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ANY)
 
-def some[T <: SqlSingleConstType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
+def some[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
 
-def cast[T <: SqlSingleConstType | Null](expr: Expr[_, _], castType: String) = CastExpr[T](expr, castType)
+def cast[T <: SqlDataType | Null](expr: Expr[_, _], castType: String) = CastExpr[T](expr, castType)
 
 def table(name: String) = new TableSchema {
     override val tableName: String = name
 }
 
-extension[T <: SqlSingleConstType | Null, Table <: TableSchema] (e: TableColumnExpr[T, Table] | ColumnExpr[T]) {
+extension[T <: SqlDataType | Null, Table <: TableSchema] (e: TableColumnExpr[T, Table] | ColumnExpr[T]) {
     def to[V <: T](value: V | Expr[V, _] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
@@ -50,7 +50,7 @@ def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U], EmptyTuple, Fla
     sel.asInstanceOf[Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]]]
 }
 
-def select[I <: SqlSingleConstType | Null, Q <: Tuple](item: Expr[I, Q]): Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q] = {
+def select[I <: SqlDataType | Null, Q <: Tuple](item: Expr[I, Q]): Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q] = {
     val sel = Select().select(item)
     sel.asInstanceOf[Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q]]
 }
@@ -76,7 +76,7 @@ inline def delete[T <: TableEntity[_]](pk: PK[T]): Delete = Delete().delete[T](p
 def truncate(table: TableSchema | String): Truncate = Truncate().truncate(table)
 
 extension (s: StringContext) {
-    def sql(args: (SqlSingleConstType | List[SqlSingleConstType])*): String = {
+    def sql(args: (SqlDataType | List[SqlDataType])*): String = {
         import org.easysql.util.*
         import org.easysql.visitor.*
 

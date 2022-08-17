@@ -6,7 +6,7 @@ import org.easysql.ast.limit.SqlLimit
 import org.easysql.ast.order.{SqlOrderBy, SqlOrderByOption}
 import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem, SqlSelectQuery}
 import org.easysql.ast.table.*
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.database.DB
 import org.easysql.dsl.{JoinTableSchema, TableSchema, *}
 import org.easysql.util.toSqlString
@@ -91,7 +91,7 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]], FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]]]
     }
 
-    infix def select[I <: SqlSingleConstType | Null, Q <: Tuple](item: Expr[I, Q]): Select[Tuple.Concat[T, InverseMap[Tuple1[item.type]]], FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    infix def select[I <: SqlDataType | Null, Q <: Tuple](item: Expr[I, Q]): Select[Tuple.Concat[T, InverseMap[Tuple1[item.type]]], FromTables, Tuple.Concat[QuoteTables, Q]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }

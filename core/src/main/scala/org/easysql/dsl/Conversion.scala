@@ -1,6 +1,6 @@
 package org.easysql.dsl
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.database.TableEntity
 import org.easysql.query.select.{SelectQuery, ValuesSelect}
 
@@ -23,7 +23,7 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
 given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
 
-given queryToExpr[T <: SqlSingleConstType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
+given queryToExpr[T <: SqlDataType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case Expr[x, _] *: t => x *: InverseMap[t]

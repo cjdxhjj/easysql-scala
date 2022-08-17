@@ -1,6 +1,6 @@
 package org.easysql.query.update
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.{SqlIdentifierExpr, SqlPropertyExpr}
 import org.easysql.ast.statement.update.SqlUpdate
 import org.easysql.database.{DB, TableEntity}
@@ -33,7 +33,7 @@ class Update extends ReviseQuery {
         this
     }
 
-    def set[T <: SqlSingleConstType | Null](items: (TableColumnExpr[_, _] | ColumnExpr[_], T | Expr[_, _] | SelectQuery[_])*): Update = {
+    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_, _] | ColumnExpr[_], T | Expr[_, _] | SelectQuery[_])*): Update = {
         items.foreach { item =>
             val (column, value) = item
 

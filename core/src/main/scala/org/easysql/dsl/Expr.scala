@@ -5,7 +5,7 @@ import org.easysql.visitor.*
 import org.easysql.ast.order.SqlOrderByOption
 import org.easysql.dsl.const
 import org.easysql.query.select.SelectQuery
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.util.anyToExpr
 
 import java.util.Date
@@ -13,32 +13,32 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.Tuple.Concat
 
-sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alias: Option[String] = None) {
-    def +[V <: T & SqlSingleConstType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.ADD, const(value))
+sealed trait Expr[T <: SqlDataType | Null, QuoteTables <: Tuple](var alias: Option[String] = None) {
+    def +[V <: T & SqlNumberType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.ADD, const(value))
 
     def +[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[T, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.ADD, expr)
 
     def +[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
 
-    def -[V <: T & SqlSingleConstType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.SUB, const(value))
+    def -[V <: T & SqlNumberType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.SUB, const(value))
 
     def -[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[T, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.SUB, expr)
 
     def -[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
 
-    def *[V <: T & SqlSingleConstType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.MUL, const(value))
+    def *[V <: T & SqlNumberType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.MUL, const(value))
 
     def *[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[T, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.MUL, expr)
 
     def *[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
 
-    def /[V <: T & SqlSingleConstType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.DIV, const(value))
+    def /[V <: T & SqlNumberType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.DIV, const(value))
 
     def /[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[T, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.DIV, expr)
 
     def /[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
 
-    def %[V <: T & SqlSingleConstType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.MOD, const(value))
+    def %[V <: T & SqlNumberType](value: V): BinaryExpr[T, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.MOD, const(value))
 
     def %[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[T, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.MOD, expr)
 
@@ -85,25 +85,25 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
 
     def <>[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.NE, SubQueryExpr(subQuery))
 
-    def >[V <: T & SqlSingleConstType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GT, const(value))
+    def >[V <: T & SqlDataType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GT, const(value))
 
     def >[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.GT, expr)
 
     def >[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GT, SubQueryExpr(subQuery))
 
-    def >=[V <: T & SqlSingleConstType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GE, const(value))
+    def >=[V <: T & SqlDataType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GE, const(value))
 
     def >=[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.GE, expr)
 
     def >=[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.GE, SubQueryExpr(subQuery))
 
-    def <[V <: T & SqlSingleConstType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LT, const(value))
+    def <[V <: T & SqlDataType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LT, const(value))
 
     def <[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.LT, expr)
 
     def <[V <: T | Null](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LT, SubQueryExpr(subQuery))
 
-    def <=[V <: T & SqlSingleConstType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LE, const(value))
+    def <=[V <: T & SqlDataType](value: V): BinaryExpr[Boolean, QuoteTables] = BinaryExpr(this, SqlBinaryOperator.LE, const(value))
 
     def <=[V <: T | Null, Tables <: Tuple](expr: Expr[V, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.LE, expr)
 
@@ -143,11 +143,11 @@ sealed trait Expr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](var alia
 
     infix def notIn(subQuery: SelectQuery[Tuple1[T]] | SelectQuery[Tuple1[T | Null]]): Expr[Boolean, EmptyTuple] = InSubQueryExpr(this, subQuery, true)
 
-    infix def between[V <: T](between: ((V & SqlSingleConstType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]], (V & SqlSingleConstType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])): Expr[Boolean, EmptyTuple] = {
+    infix def between[V <: T](between: ((V & SqlDataType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]], (V & SqlDataType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])): Expr[Boolean, EmptyTuple] = {
         BetweenExpr(this, between._1, between._2)
     }
 
-    infix def notBetween[V <: T](between: ((V & SqlSingleConstType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]], (V & SqlSingleConstType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])): Expr[Boolean, EmptyTuple] = {
+    infix def notBetween[V <: T](between: ((V & SqlDataType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]], (V & SqlDataType) | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]])): Expr[Boolean, EmptyTuple] = {
         BetweenExpr(this, between._1, between._2, true)
     }
 
@@ -184,21 +184,21 @@ extension[T <: String | Null, QuoteTables <: Tuple] (e: Expr[T, QuoteTables]) {
     }
 }
 
-case class ConstExpr[T <: SqlSingleConstType | Null](value: T) extends Expr[T, EmptyTuple]()
+case class ConstExpr[T <: SqlDataType | Null](value: T) extends Expr[T, EmptyTuple]()
 
-case class BinaryExpr[T <: SqlSingleConstType | Null, QuoteTables <: Tuple](left: Expr[_, _],
-                                                      operator: SqlBinaryOperator,
-                                                      right: Expr[_, _]) extends Expr[T, QuoteTables]() {
-    def thenIs[TV <: SqlSingleConstType | Null](thenValue: TV | Expr[TV, _] | SelectQuery[Tuple1[TV]]): CaseBranch[TV] = {
+case class BinaryExpr[T <: SqlDataType | Null, QuoteTables <: Tuple](left: Expr[_, _],
+                                                                     operator: SqlBinaryOperator,
+                                                                     right: Expr[_, _]) extends Expr[T, QuoteTables]() {
+    def thenIs[TV <: SqlDataType | Null](thenValue: TV | Expr[TV, _] | SelectQuery[Tuple1[TV]]): CaseBranch[TV] = {
         CaseBranch(this, thenValue)
     }
 }
 
-case class ColumnExpr[T <: SqlSingleConstType | Null](column: String) extends Expr[T, EmptyTuple]()
+case class ColumnExpr[T <: SqlDataType | Null](column: String) extends Expr[T, EmptyTuple]()
 
-case class TableColumnExpr[T <: SqlSingleConstType | Null, QuoteTable <: TableSchema](table: String,
-                                                           column: String) extends Expr[T, Tuple1[QuoteTable]]() {
-    def primaryKey: PrimaryKeyColumnExpr[T & SqlSingleConstType, QuoteTable] = {
+case class TableColumnExpr[T <: SqlDataType | Null, QuoteTable <: TableSchema](table: String,
+                                                                               column: String) extends Expr[T, Tuple1[QuoteTable]]() {
+    def primaryKey: PrimaryKeyColumnExpr[T & SqlDataType, QuoteTable] = {
         PrimaryKeyColumnExpr(table, column)
     }
 
@@ -226,9 +226,9 @@ extension [T <: Int | Long, QuoteTable <: TableSchema](t: TableColumnExpr[T, Quo
     }
 }
 
-case class PrimaryKeyColumnExpr[T <: SqlSingleConstType, QuoteTable <: TableSchema](table: String,
-                                                         column: String,
-                                                         var isIncr: Boolean = false) extends Expr[T, Tuple1[QuoteTable]]() {
+case class PrimaryKeyColumnExpr[T <: SqlDataType, QuoteTable <: TableSchema](table: String,
+                                                                             column: String,
+                                                                             var isIncr: Boolean = false) extends Expr[T, Tuple1[QuoteTable]]() {
     override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T, Tuple1[QuoteTable]] = {
         val copy: PrimaryKeyColumnExpr[T, QuoteTable] = this.copy()
         copy.alias = Some(name)
@@ -242,20 +242,20 @@ case class PrimaryKeyColumnExpr[T <: SqlSingleConstType, QuoteTable <: TableSche
     }
 }
 
-case class SubQueryExpr[T <: SqlSingleConstType | Null](selectQuery: SelectQuery[Tuple1[T]]) extends Expr[T, EmptyTuple]()
+case class SubQueryExpr[T <: SqlDataType | Null](selectQuery: SelectQuery[Tuple1[T]]) extends Expr[T, EmptyTuple]()
 
-case class NormalFunctionExpr[T <: SqlSingleConstType | Null](name: String, args: List[Expr[_, _]]) extends Expr[T, EmptyTuple]()
+case class NormalFunctionExpr[T <: SqlDataType | Null](name: String, args: List[Expr[_, _]]) extends Expr[T, EmptyTuple]()
 
-case class AggFunctionExpr[T <: SqlSingleConstType | Null](name: String,
-                                                           args: List[Expr[_, _]],
-                                                           distinct: Boolean = false,
-                                                           attributes: Map[String, Expr[_, _]] = Map(),
-                                                           orderBy: List[OrderBy[_]] = List()) extends Expr[T, EmptyTuple]() {
+case class AggFunctionExpr[T <: SqlDataType | Null](name: String,
+                                                    args: List[Expr[_, _]],
+                                                    distinct: Boolean = false,
+                                                    attributes: Map[String, Expr[_, _]] = Map(),
+                                                    orderBy: List[OrderBy[_]] = List()) extends Expr[T, EmptyTuple]() {
     def over: OverExpr[T] = OverExpr(this)
 }
 
-case class CaseExpr[T <: SqlSingleConstType | Null](conditions: List[CaseBranch[T]],
-                                                    var default: T | Expr[T, _] | SelectQuery[Tuple1[T]] | Null = null) extends Expr[T, EmptyTuple]() {
+case class CaseExpr[T <: SqlDataType | Null](conditions: List[CaseBranch[T]],
+                                             var default: T | Expr[T, _] | SelectQuery[Tuple1[T]] | Null = null) extends Expr[T, EmptyTuple]() {
     infix def elseIs(value: T | Expr[T, _] | SelectQuery[Tuple1[T]] | Null): CaseExpr[T] = {
         if (value != null) {
             CaseExpr(this.conditions, value)
@@ -265,33 +265,33 @@ case class CaseExpr[T <: SqlSingleConstType | Null](conditions: List[CaseBranch[
     }
 }
 
-case class ListExpr[T <: SqlSingleConstType | Null](list: List[T | Expr[_, _] | SelectQuery[_]]) extends Expr[T, EmptyTuple]()
+case class ListExpr[T <: SqlDataType | Null](list: List[T | Expr[_, _] | SelectQuery[_]]) extends Expr[T, EmptyTuple]()
 
-case class InListExpr[T <: SqlSingleConstType | Null](query: Expr[_, _],
-                                                      list: List[T | Expr[_, _] | SelectQuery[_]],
-                                                      isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
+case class InListExpr[T <: SqlDataType | Null](query: Expr[_, _],
+                                               list: List[T | Expr[_, _] | SelectQuery[_]],
+                                               isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
 
-case class InSubQueryExpr[T <: SqlSingleConstType | Null](query: Expr[T, _], subQuery: SelectQuery[_], isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
+case class InSubQueryExpr[T <: SqlDataType | Null](query: Expr[T, _], subQuery: SelectQuery[_], isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
 
-case class CastExpr[T <: SqlSingleConstType | Null](query: Expr[_, _], castType: String) extends Expr[T, EmptyTuple]()
+case class CastExpr[T <: SqlDataType | Null](query: Expr[_, _], castType: String) extends Expr[T, EmptyTuple]()
 
-case class BetweenExpr[T <: SqlSingleConstType | Null](query: Expr[_, _],
-                                                       start: T | Expr[_, _] | SelectQuery[_],
-                                                       end: T | Expr[_, _] | SelectQuery[_],
-                                                       isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
+case class BetweenExpr[T <: SqlDataType | Null](query: Expr[_, _],
+                                                start: T | Expr[_, _] | SelectQuery[_],
+                                                end: T | Expr[_, _] | SelectQuery[_],
+                                                isNot: Boolean = false) extends Expr[Boolean, EmptyTuple]()
 
 case class AllColumnExpr(owner: Option[String] = None) extends Expr[Nothing, EmptyTuple]()
 
-case class OverExpr[T <: SqlSingleConstType | Null](function: AggFunctionExpr[_],
-                                                    partitionBy: ListBuffer[Expr[_, _]] = ListBuffer(),
-                                                    orderBy: ListBuffer[OrderBy[_]] = ListBuffer()) extends Expr[T, EmptyTuple]() {
+case class OverExpr[T <: SqlDataType | Null](function: AggFunctionExpr[_],
+                                             partitionBy: ListBuffer[Expr[_, _]] = ListBuffer(),
+                                             orderBy: ListBuffer[OrderBy[_]] = ListBuffer()) extends Expr[T, EmptyTuple]() {
     def partitionBy(query: Expr[_, _]*): OverExpr[T] = OverExpr(this.function, this.partitionBy.addAll(query), this.orderBy)
 
     def orderBy(order: OrderBy[_]*): OverExpr[T] = OverExpr(this.function, this.partitionBy, this.orderBy.addAll(order))
 }
 
-case class SubQueryPredicateExpr[T <: SqlSingleConstType | Null](query: SelectQuery[_], predicate: SqlSubQueryPredicate) extends Expr[T, EmptyTuple]()
+case class SubQueryPredicateExpr[T <: SqlDataType | Null](query: SelectQuery[_], predicate: SqlSubQueryPredicate) extends Expr[T, EmptyTuple]()
 
-case class CaseBranch[T <: SqlSingleConstType | Null](query: Expr[_, _], thenValue: T | Expr[T, _] | SelectQuery[Tuple1[T]])
+case class CaseBranch[T <: SqlDataType | Null](query: Expr[_, _], thenValue: T | Expr[T, _] | SelectQuery[Tuple1[T]])
 
 case class OrderBy[QuoteTables <: Tuple](query: Expr[_, QuoteTables], order: SqlOrderByOption)
