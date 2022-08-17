@@ -1,5 +1,5 @@
 package org.easysql.database
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 
-trait TableEntity[T <: SqlSingleConstType | Tuple]
+trait TableEntity[T <: SqlDataType | Tuple]

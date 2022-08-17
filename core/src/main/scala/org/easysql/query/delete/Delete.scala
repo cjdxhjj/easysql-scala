@@ -1,6 +1,6 @@
 package org.easysql.query.delete
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.delete.SqlDelete
 import org.easysql.database.{DB, TableEntity}

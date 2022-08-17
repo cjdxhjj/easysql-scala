@@ -1,6 +1,6 @@
 package org.easysql.macros
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.database.TableEntity
 import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, const}
 import org.easysql.query.delete.Delete

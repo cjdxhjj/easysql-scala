@@ -1,6 +1,6 @@
 package org.easysql.dsl
 
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.query.select.SelectQuery
 
 def count() = AggFunctionExpr[Int]("COUNT", List())
@@ -9,13 +9,13 @@ def count(query: Expr[_, _]) = AggFunctionExpr[Int]("COUNT", List(query))
 
 def countDistinct(query: Expr[_, _]) = AggFunctionExpr[Int]("COUNT", List(query), true)
 
-def sum[T <: Int | Long | Float | Double | Null](query: Expr[T, _]) = AggFunctionExpr[T]("SUM", List(query))
+def sum[T <: SqlNumberType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("SUM", List(query))
 
-def avg[T <: Int | Long | Float | Double | Null](query: Expr[T, _]) = AggFunctionExpr[T]("AVG", List(query))
+def avg[T <: SqlNumberType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("AVG", List(query))
 
-def max[T <: SqlSingleConstType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("MAX", List(query))
+def max[T <: SqlDataType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("MAX", List(query))
 
-def min[T <: SqlSingleConstType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("MIN", List(query))
+def min[T <: SqlDataType | Null](query: Expr[T, _]) = AggFunctionExpr[T]("MIN", List(query))
 
 def rank() = AggFunctionExpr[Int]("RANK", List())
 
@@ -34,7 +34,7 @@ def groupingSets(expr: (Expr[_, _] | Tuple)*) = {
         case t: Tuple =>
             val list = t.toList
             val exprList: List[Expr[_, _]] = list.map {
-                case v: SqlSingleConstType => const(v)
+                case v: SqlDataType => const(v)
                 case expr: Expr[_, _] => expr
                 case _ => const(null)
             }

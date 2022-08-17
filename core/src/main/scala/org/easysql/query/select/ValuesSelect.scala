@@ -4,7 +4,7 @@ import org.easysql.ast.statement.select.{SqlSelectQuery, SqlValuesSelect}
 import org.easysql.database.DB
 import org.easysql.util.toSqlString
 import org.easysql.util.anyToExpr
-import org.easysql.ast.SqlSingleConstType
+import org.easysql.ast.SqlDataType
 import org.easysql.dsl.Expr
 import org.easysql.dsl.MapUnionNull
 import org.easysql.dsl.InverseMap
