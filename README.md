@@ -4,7 +4,7 @@ easysql是一个使用Scala3编写的sql构造器，其充分利用了Scala3优�
 
 支持mysql、postgresql、oracle在内的多种方言。对同一个查询对象，可以方便地生成不同的数据库方言。
 
-虽然定位并非orm，但我们仍然可以把它当做轻量级的orm使用，比如执行查询，并把结果映射到类，或是使用case class直接生成insert、update等语句，避免样板代码。
+虽然定位并非orm，但我们仍然可以把它当做轻量级的orm使用，比如执行查询，并把结果映射到类，或是使用case class直接生成insert、update等语句，避免样板代码。（此部分使用`macro`实现，无反射开销）。
 
 我们可以使用原生sql风格构造查询：
 
