@@ -326,6 +326,14 @@ import org.easysql.dsl.given
 val s1 = select (User.*) from User where (1 in (User.id, 1))
 ```
 
+此外还支持一元逻辑运算`!`：
+
+```scala
+val s = select (User.*) from User where !(User.id === 1)
+```
+
+生成的sql为`NOT()`。
+
 ### 数学运算
 
 除开上面的逻辑运算外，还支持`+`、`-`、`*`、`/`、`%`五个数学运算：
