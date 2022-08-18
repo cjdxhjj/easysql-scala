@@ -115,6 +115,8 @@ sealed trait Expr[T <: SqlDataType | Null, QuoteTables <: Tuple](var alias: Opti
 
     def ^[Tables <: Tuple](query: Expr[_, Tables]): BinaryExpr[Boolean, Concat[QuoteTables, Tables]] = BinaryExpr(this, SqlBinaryOperator.XOR, query)
 
+    def unary_! : NormalFunctionExpr[Boolean] = NormalFunctionExpr("NOT", List(this))
+
     infix def in[V <: T](list: List[V | Expr[V, _] | Expr[V | Null, _] | SelectQuery[Tuple1[V]] | SelectQuery[Tuple1[V | Null]]]): Expr[Boolean, EmptyTuple] = {
         if (list.isEmpty) {
             const(false)
