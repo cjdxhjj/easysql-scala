@@ -18,12 +18,8 @@ import java.util.Date
 class Update extends ReviseQuery {
     private val sqlUpdate = SqlUpdate()
 
-    infix def update(table: TableSchema | String): Update = {
-        val tableName = table match {
-            case i: TableSchema => i.tableName
-            case s: String => s
-        }
-        this.sqlUpdate.table = Some(SqlIdentifierExpr(tableName))
+    infix def update(table: TableSchema): Update = {
+        this.sqlUpdate.table = Some(SqlIdentifierExpr(table.tableName))
         this
     }
 

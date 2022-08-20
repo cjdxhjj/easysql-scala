@@ -30,16 +30,9 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
         this
     }
 
-    infix def from(table: AliasNameTableSchema | String): Select[T] = {
-        val tableName = table match {
-            case aliasedTableSchema: AliasNameTableSchema => aliasedTableSchema.tableName
-            case string: String => string
-        }
-
-        val from = Some(SqlIdentifierTableSource(tableName))
-        table match
-            case a: AliasNameTableSchema => from.get.alias = Some(a.aliasName)
-            case _ =>
+    infix def from(table: AliasNameTableSchema): Select[T] = {
+        val from = Some(SqlIdentifierTableSource(table.tableName))
+        from.get.alias = Some(table.aliasName)
         joinLeft = from.get
         sqlSelect.from = from
 
@@ -194,15 +187,9 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
         this
     }
 
-    private def joinClause(table: String | AliasNameTableSchema, joinType: SqlJoinType): Select[T] = {
-        val tableName = table match {
-            case string: String => string
-            case aliasedTableSchema: AliasNameTableSchema => aliasedTableSchema.tableName
-        }
-        val joinTable = SqlIdentifierTableSource(tableName)
-        table match
-            case a: AliasNameTableSchema => joinTable.alias = Some(a.aliasName)
-            case _ =>
+    private def joinClause(table: AliasNameTableSchema, joinType: SqlJoinType): Select[T] = {
+        val joinTable = SqlIdentifierTableSource(table.tableName)
+        joinTable.alias = Some(table.aliasName)
 
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
@@ -253,7 +240,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def join(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
-    infix def join(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
     infix def join(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN)
 
@@ -263,7 +250,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def leftJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
     infix def leftJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.LEFT_JOIN)
 
@@ -273,7 +260,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def rightJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
     infix def rightJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.RIGHT_JOIN)
 
@@ -283,7 +270,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def innerJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
     infix def innerJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN)
 
@@ -293,7 +280,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def crossJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
     infix def crossJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.CROSS_JOIN)
 
@@ -303,7 +290,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     infix def fullJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(table: AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
     infix def fullJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.FULL_JOIN)
 

@@ -15,12 +15,8 @@ import java.sql.{Connection, SQLException}
 class Delete extends ReviseQuery {
     private val sqlDelete = SqlDelete()
 
-    infix def deleteFrom(table: TableSchema | String): Delete = {
-        val tableName = table match {
-            case i: TableSchema => i.tableName
-            case s: String => s
-        }
-        this.sqlDelete.table = Some(SqlIdentifierExpr(tableName))
+    infix def deleteFrom(table: TableSchema): Delete = {
+        this.sqlDelete.table = Some(SqlIdentifierExpr(table.tableName))
         this
     }
 

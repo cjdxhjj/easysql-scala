@@ -65,15 +65,15 @@ inline def insert[T <: TableEntity[_]](entity: T*) = Insert().insert(entity: _*)
 
 inline def save[T <: TableEntity[_]](entity: T): Save = Save().save(entity)
 
-def update(table: TableSchema | String): Update = Update().update(table)
+def update(table: TableSchema): Update = Update().update(table)
 
 inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = Update().update(entity, skipNull)
 
-def deleteFrom(table: TableSchema | String): Delete = Delete().deleteFrom(table)
+def deleteFrom(table: TableSchema): Delete = Delete().deleteFrom(table)
 
 inline def delete[T <: TableEntity[_]](pk: PK[T]): Delete = Delete().delete[T](pk)
 
-def truncate(table: TableSchema | String): Truncate = Truncate().truncate(table)
+def truncate(table: TableSchema): Truncate = Truncate().truncate(table)
 
 extension (s: StringContext) {
     def sql(args: (SqlDataType | List[SqlDataType])*): String = {
