@@ -309,7 +309,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
 
     override def toSql(using db: DB): String = toSqlString(sqlSelect, db)
 
-    def fetchCountSql(db: DB): String = {
+    def countSql(db: DB): String = {
         val selectCopy = this.sqlSelect.copy(selectList = ListBuffer(), limit = None, orderBy = ListBuffer())
         selectCopy.selectList.clear()
         selectCopy.orderBy.clear()
@@ -318,7 +318,7 @@ class Select[T <: Tuple] extends AliasNameQuery[T] {
         toSqlString(selectCopy, db)
     }
 
-    def toFetchCountSql(using db: DB): String = fetchCountSql(db)
+    def toCountSql(using db: DB): String = countSql(db)
 
     def pageSql(pageSize: Int, pageNumber: Int)(db: DB): String = {
         val offset = if (pageNumber <= 1) {
