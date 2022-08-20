@@ -32,8 +32,8 @@ def insertMacroImpl[T <: TableEntity[_]](insert: Expr[Insert[_, _]], entities: E
         i.sqlInsert.table = Some(SqlIdentifierExpr($tableName))
 
         val pkCols = columnExprs
-            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_, _]])
-            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_, _]])
+            .filter(it => it._2.isInstanceOf[PrimaryKeyColumnExpr[_]])
+            .map(it => it._1 -> it._2.asInstanceOf[PrimaryKeyColumnExpr[_]])
             .filter(it => !it._2.isIncr)
 
         pkCols.foreach { it =>
@@ -41,8 +41,8 @@ def insertMacroImpl[T <: TableEntity[_]](insert: Expr[Insert[_, _]], entities: E
         }
 
         val columns = columnExprs
-            .filter(it => it._2.isInstanceOf[TableColumnExpr[_, _]])
-            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_, _]])
+            .filter(it => it._2.isInstanceOf[TableColumnExpr[_]])
+            .map(it => it._1 -> it._2.asInstanceOf[TableColumnExpr[_]])
 
         columns.foreach { it =>
             i.sqlInsert.columns.addOne(SqlIdentifierExpr(it._2.column))

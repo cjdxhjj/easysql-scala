@@ -14,20 +14,20 @@ import org.easysql.macros.columnsMacro
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[QueryType[T]] {
+class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends AliasNameQuery[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     def getSelect: SqlSelectQuery = sqlSelect
 
-    def filter(f: T => Expr[Boolean, _]): Query[T] = {
+    def filter(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
         sqlSelect.addCondition(visitExpr(expr))
         this
     }
 
-    def withFilter(f: T => Expr[Boolean, _]): Query[T] = filter(f)
+    def withFilter(f: T => Expr[Boolean]): Query[T] = filter(f)
 
-    def map[R <: Tuple | Expr[_, _]](f: T => R): Query[RecursiveInverseMap[QueryType[R]]] = {
+    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -35,7 +35,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R]]]]
     }
 
-    def flatMap[R <: Tuple | Expr[_, _]](f: T => Query[R]): Query[R] = {
+    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
         val join = f(t).sqlSelect.from.get
         val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
         val where = if (f(t).sqlSelect.where.nonEmpty) {
@@ -53,19 +53,19 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this
     }
 
-    def sortBy[R <: Tuple | OrderBy[_]](f: T => R): Query[T] = {
+    def sortBy[R <: Tuple | OrderBy](f: T => R): Query[T] = {
         spread(f(t))(addSortBy)
         this
     }
 
-    def groupBy[R <: Tuple | Expr[_, _]](f: T => R): Query[(R, T)] = {
+    def groupBy[R <: Tuple | Expr[_]](f: T => R): Query[(R, T)] = {
         spread(f(t))(addGroupBy)
         val query = new Query[(R, T)](f(t) -> t)
         query.sqlSelect = this.sqlSelect
         query
     }
 
-    def having(f: T => Expr[Boolean, _]): Query[T] = {
+    def having(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
         sqlSelect.addHaving(visitExpr(expr))
         this
@@ -95,7 +95,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
 
     def joinFull[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
-    def on(f: T => Expr[Boolean, _]): Query[T] = {
+    def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {
             case j: SqlJoinTableSource => j.on = Some(visitExpr(f(t)))
             case _ => 
@@ -121,11 +121,11 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this
     }
 
-    private def addGroupBy(column: Expr[_, _]): Unit = {
+    private def addGroupBy(column: Expr[_]): Unit = {
         this.sqlSelect.groupBy.append(visitExpr(column))
     }
 
-    private def addItem(column: Expr[_, _]): Unit = {
+    private def addItem(column: Expr[_]): Unit = {
         if (column.alias.isEmpty) {
             this.sqlSelect.addSelectItem(visitExpr(column))
         } else {
@@ -133,7 +133,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         }
     }
 
-    private def addSortBy(sortBy: OrderBy[_]): Unit = {
+    private def addSortBy(sortBy: OrderBy): Unit = {
         val sqlOrderBy = SqlOrderBy(visitExpr(sortBy.query), sortBy.order)
         this.sqlSelect.orderBy.append(sqlOrderBy)
     }

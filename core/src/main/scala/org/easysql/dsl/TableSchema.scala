@@ -16,29 +16,29 @@ trait AnyTable
 trait TableSchema extends AnyTable { self =>
     val tableName: String
 
-    var $columns: ListBuffer[TableColumnExpr[_, _]] = ListBuffer[TableColumnExpr[_, _]]()
+    var $columns: ListBuffer[TableColumnExpr[_]] = ListBuffer[TableColumnExpr[_]]()
 
-    def column[T <: SqlDataType](name: String): TableColumnExpr[T, self.type] = {
-        val c = TableColumnExpr[T, self.type](tableName, name)
+    def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
+        val c = TableColumnExpr[T](tableName, name)
         $columns.addOne(c)
         c
     }
 
-    def intColumn(name: String): TableColumnExpr[Int, self.type] = column[Int](name)
+    def intColumn(name: String): TableColumnExpr[Int] = column[Int](name)
 
-    def varcharColumn(name: String): TableColumnExpr[String, self.type] = column[String](name)
+    def varcharColumn(name: String): TableColumnExpr[String] = column[String](name)
 
-    def longColumn(name: String): TableColumnExpr[Long, self.type] = column[Long](name)
+    def longColumn(name: String): TableColumnExpr[Long] = column[Long](name)
 
-    def floatColumn(name: String): TableColumnExpr[Float, self.type] = column[Float](name)
+    def floatColumn(name: String): TableColumnExpr[Float] = column[Float](name)
 
-    def doubleColumn(name: String): TableColumnExpr[Double, self.type] = column[Double](name)
+    def doubleColumn(name: String): TableColumnExpr[Double] = column[Double](name)
 
-    def booleanColumn(name: String): TableColumnExpr[Boolean, self.type] = column[Boolean](name)
+    def booleanColumn(name: String): TableColumnExpr[Boolean] = column[Boolean](name)
 
-    def dateColumn(name: String): TableColumnExpr[Date, self.type] = column[Date](name)
+    def dateColumn(name: String): TableColumnExpr[Date] = column[Date](name)
 
-    def decimalColumn(name: String): TableColumnExpr[BigDecimal, self.type] = column[BigDecimal](name)
+    def decimalColumn(name: String): TableColumnExpr[BigDecimal] = column[BigDecimal](name)
 }
 
 object TableSchema {
@@ -69,10 +69,10 @@ extension[T <: TableSchema] (t: T) {
     infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.FULL_JOIN, table)
 }
 
-case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_, _]]) extends Dynamic {
+case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_]]) extends Dynamic {
     val t: TableSchema = table(aliasName)
 
-    def selectDynamic(name: String): TableColumnExpr[SqlDataType | Null, t.type] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[SqlDataType | Null, t.type]]
+    def selectDynamic(name: String): TableColumnExpr[SqlDataType | Null] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[SqlDataType | Null]]
 
     infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
@@ -87,7 +87,7 @@ case class AliasNameTableSchema(tableName: String, aliasName: String, columns: M
     infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 }
 
-case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasNameTableSchema, joinType: SqlJoinType, right: TableSchema | JoinTableSchema | AliasNameTableSchema, var onCondition: Option[Expr[_, _]] = None) {
+case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasNameTableSchema, joinType: SqlJoinType, right: TableSchema | JoinTableSchema | AliasNameTableSchema, var onCondition: Option[Expr[_]] = None) {
     infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
     infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
@@ -100,7 +100,7 @@ case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasNameTableS
 
     infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 
-    infix def on(expr: Expr[_, _]): JoinTableSchema = {
+    infix def on(expr: Expr[_]): JoinTableSchema = {
         this.onCondition = Some(expr)
         this
     }

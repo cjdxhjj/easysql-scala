@@ -32,7 +32,7 @@ def bindEntityMacroImpl[A <: TableEntity[_]](using q: Quotes, tpe: Type[A]): Exp
         symbol.tree match {
             case vd: ValDef => {
                 vd.tpt.tpe.asType match {
-                    case '[TableColumnExpr[_, _]] => !symbol.flags.is(Flags.Protected | Flags.Local)
+                    case '[TableColumnExpr[_]] => !symbol.flags.is(Flags.Protected | Flags.Local)
                     case _ => false
                 }
             }
@@ -43,7 +43,7 @@ def bindEntityMacroImpl[A <: TableEntity[_]](using q: Quotes, tpe: Type[A]): Exp
         symbol.tree match {
             case vd: ValDef => {
                 vd.tpt.tpe.asType match {
-                    case '[PrimaryKeyColumnExpr[_, _]] => !symbol.flags.is(Flags.Protected | Flags.Local)
+                    case '[PrimaryKeyColumnExpr[_]] => !symbol.flags.is(Flags.Protected | Flags.Local)
                     case _ => false
                 }
             }
@@ -51,11 +51,11 @@ def bindEntityMacroImpl[A <: TableEntity[_]](using q: Quotes, tpe: Type[A]): Exp
     )
 
     val columnsMap = columns.map { column =>
-        column.name -> Select.unique(This(companion.fieldMember(column.name).owner), column.name).asExprOf[TableColumnExpr[_, _]]
+        column.name -> Select.unique(This(companion.fieldMember(column.name).owner), column.name).asExprOf[TableColumnExpr[_]]
     }.toMap
 
     val pkColumnsMap = pkColumns.map { column =>
-        column.name -> Select.unique(This(companion.fieldMember(column.name).owner), column.name).asExprOf[PrimaryKeyColumnExpr[_, _]]
+        column.name -> Select.unique(This(companion.fieldMember(column.name).owner), column.name).asExprOf[PrimaryKeyColumnExpr[_]]
     }.toMap
 
     val typ = TypeRepr.of[String]

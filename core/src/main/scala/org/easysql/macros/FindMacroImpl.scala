@@ -7,7 +7,7 @@ import org.easysql.query.select.Select
 import java.sql.SQLException
 import scala.quoted.{Expr, Quotes, Type}
 
-def findMacroImpl[T <: TableEntity[_]](select: Expr[Select[_, _, _]], primaryKey: Expr[Any])(using quotes: Quotes, tpe: Type[T]): Expr[Select[_, _, _]] = {
+def findMacroImpl[T <: TableEntity[_]](select: Expr[Select[_]], primaryKey: Expr[Any])(using quotes: Quotes, tpe: Type[T]): Expr[Select[_]] = {
     import quotes.reflect.*
 
     val sym = TypeTree.of[T].symbol
@@ -25,8 +25,8 @@ def findMacroImpl[T <: TableEntity[_]](select: Expr[Select[_, _, _]], primaryKey
 
     '{
         val pkCols = $identsExpr
-            .filter(it => it.isInstanceOf[PrimaryKeyColumnExpr[_, _]])
-            .map(it => it.asInstanceOf[PrimaryKeyColumnExpr[_, _]])
+            .filter(it => it.isInstanceOf[PrimaryKeyColumnExpr[_]])
+            .map(it => it.asInstanceOf[PrimaryKeyColumnExpr[_]])
 
         if (pkCols.isEmpty) {
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")

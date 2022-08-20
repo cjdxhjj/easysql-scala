@@ -17,20 +17,20 @@ import scala.annotation.experimental
 import scala.collection.mutable.ListBuffer
 import scala.language.dynamics
 
-class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends AliasNameQuery[T] {
+class Select[T <: Tuple] extends AliasNameQuery[T] {
     private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
 
-    infix def from[Table <: TableSchema](table: Table): Select[T, Tuple1[Table], QuoteTables] = {
+    infix def from[Table <: TableSchema](table: Table): Select[T] = {
         val from = Some(SqlIdentifierTableSource(table.tableName))
         joinLeft = from.get
         sqlSelect.from = from
 
-        this.asInstanceOf[Select[T, Tuple1[Table], QuoteTables]]
+        this
     }
 
-    infix def from(table: AliasNameTableSchema | String): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    infix def from(table: AliasNameTableSchema | String): Select[T] = {
         val tableName = table match {
             case aliasedTableSchema: AliasNameTableSchema => aliasedTableSchema.tableName
             case string: String => string
@@ -43,19 +43,19 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         joinLeft = from.get
         sqlSelect.from = from
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    infix def from(table: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    infix def from(table: AliasNameQuery[_]): Select[T] = {
         val from = SqlSubQueryTableSource(table.getSelect)
         from.alias = table.aliasName
         joinLeft = from
         sqlSelect.from = Some(from)
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    infix def fromLateral(table: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    infix def fromLateral(table: AliasNameQuery[_]): Select[T] = {
         val from = SqlSubQueryTableSource(table.getSelect, true)
         if (table.aliasName.nonEmpty) {
             from.alias = table.aliasName
@@ -63,15 +63,15 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         joinLeft = from
         sqlSelect.from = Some(from)
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]], FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]] = {
+    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
 
-        def addItem(column: Expr[_, _]): Unit = {
+        def addItem(column: Expr[_]): Unit = {
             if (column.alias.isEmpty) {
                 sqlSelect.addSelectItem(visitExpr(column))
             } else {
@@ -82,16 +82,16 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         def spread(items: Tuple): Unit = {
             items.toArray.foreach {
                 case t: Tuple => spread(t)
-                case expr: Expr[_, _] => addItem(expr)
+                case expr: Expr[_] => addItem(expr)
             }
         }
 
         spread(items)
 
-        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]], FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]]]]
     }
 
-    infix def select[I <: SqlDataType | Null, Q <: Tuple](item: Expr[I, Q]): Select[Tuple.Concat[T, InverseMap[Tuple1[item.type]]], FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    infix def select[I <: SqlDataType | Null](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -102,10 +102,10 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
             sqlSelect.addSelectItem(visitExpr(item), item.alias)
         }
 
-        this.asInstanceOf[Select[Tuple.Concat[T, InverseMap[Tuple1[item.type]]], FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]]]]
     }
 
-    infix def dynamicSelect(columns: Expr[_, _]*): Select[Tuple1[Nothing], FromTables, EmptyTuple] = {
+    infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -118,62 +118,50 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
             }
         }
 
-        this.asInstanceOf[Select[Tuple1[Nothing], FromTables, EmptyTuple]]
+        this.asInstanceOf[Select[Tuple1[Nothing]]]
     }
 
-    def distinct: Select[T, FromTables, QuoteTables] = {
+    def distinct: Select[T] = {
         sqlSelect.distinct = true
         this
     }
 
-    infix def where[Q <: Tuple](condition: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    infix def where(condition: Expr[_]): Select[T] = {
         sqlSelect.addCondition(getExpr(condition))
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    def where[Q <: Tuple](test: () => Boolean, condition: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    def where(test: () => Boolean, condition: Expr[_]): Select[T] = {
         if (test()) {
             sqlSelect.addCondition(getExpr(condition))
         }
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    def where[Q <: Tuple](test: Boolean, condition: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    def where(test: Boolean, condition: Expr[_]): Select[T] = {
         if (test) {
             sqlSelect.addCondition(getExpr(condition))
         }
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    infix def having[Q <: Tuple](condition: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    infix def having(condition: Expr[_]): Select[T] = {
         sqlSelect.addHaving(getExpr(condition))
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    infix def orderBy[Q <: Tuple](item: OrderBy[Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
-        val sqlOrderBy = SqlOrderBy(visitExpr(item.query), item.order)
-        this.sqlSelect.orderBy.append(sqlOrderBy)
+    infix def orderBy(item: OrderBy*): Select[T] = {
+        val sqlOrderBy = item.map(o => SqlOrderBy(visitExpr(o.query), o.order))
+        this.sqlSelect.orderBy.addAll(sqlOrderBy)
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    infix def orderBy(items: Tuple): Select[T, FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]] = {
-        items.toArray.foreach { it =>
-            val order = it match
-                case o: OrderBy[_] => SqlOrderBy(visitExpr(o.query), o.order)
-                case e: Expr[_, _] => SqlOrderBy(visitExpr(e), SqlOrderByOption.ASC)
-
-            this.sqlSelect.orderBy.append(order)
-        }
-
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]]]
-    }
-
-    infix def limit(count: Int): Select[T, FromTables, QuoteTables] = {
+    infix def limit(count: Int): Select[T] = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(count, 0))
         } else {
@@ -182,7 +170,7 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         this
     }
 
-    infix def offset(offset: Int): Select[T, FromTables, QuoteTables] = {
+    infix def offset(offset: Int): Select[T] = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(1, offset))
         } else {
@@ -191,31 +179,22 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         this
     }
 
-    infix def groupBy[Q <: Tuple](item: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
-        this.sqlSelect.groupBy.append(visitExpr(item))
+    infix def groupBy(item: Expr[_]*): Select[T] = {
+        this.sqlSelect.groupBy.appendAll(item.map(i => visitExpr(i)))
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    infix def groupBy(items: Tuple): Select[T, FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]] = {
-        items.toArray.foreach { it =>
-            it match
-                case e: Expr[_, _] => this.sqlSelect.groupBy.append(visitExpr(e))
-        }
-
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, FlatTables[QueryQuoteTables[items.type]]]]]
-    }
-
-    private def joinClause(table: TableSchema, joinType: SqlJoinType): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = {
+    private def joinClause(table: TableSchema, joinType: SqlJoinType): Select[T] = {
         val joinTable = SqlIdentifierTableSource(table.tableName)
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
         joinLeft = join
 
-        this.asInstanceOf[Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables]]
+        this
     }
 
-    private def joinClause(table: String | AliasNameTableSchema, joinType: SqlJoinType): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    private def joinClause(table: String | AliasNameTableSchema, joinType: SqlJoinType): Select[T] = {
         val tableName = table match {
             case string: String => string
             case aliasedTableSchema: AliasNameTableSchema => aliasedTableSchema.tableName
@@ -229,19 +208,19 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         sqlSelect.from = Some(join)
         joinLeft = join
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    private def joinClause(table: AliasNameQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    private def joinClause(table: AliasNameQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T] = {
         val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral))
         join.alias = table.aliasName
         sqlSelect.from = Some(join)
         joinLeft = join
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T, Tuple1[AnyTable], QuoteTables] = {
+    private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T] = {
         def unapplyTable(t: TableSchema | JoinTableSchema | AliasNameTableSchema): SqlTableSource = {
             t match {
                 case table: TableSchema => SqlIdentifierTableSource(table.tableName)
@@ -259,80 +238,80 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
         sqlSelect.from = Some(join)
         joinLeft = join
 
-        this.asInstanceOf[Select[T, Tuple1[AnyTable], QuoteTables]]
+        this
     }
 
-    infix def on[Q <: Tuple](onCondition: Expr[_, Q]): Select[T, FromTables, Tuple.Concat[QuoteTables, Q]] = {
+    infix def on(onCondition: Expr[_]): Select[T] = {
         val from = this.sqlSelect.from.get
         from match {
             case table: SqlJoinTableSource => table.on = Some(visitExpr(onCondition))
             case _ =>
         }
 
-        this.asInstanceOf[Select[T, FromTables, Tuple.Concat[QuoteTables, Q]]]
+        this
     }
 
-    infix def join(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
-    infix def join(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
-    infix def join(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.JOIN)
+    infix def join(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN)
 
-    infix def join(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
-    infix def joinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.JOIN, true)
+    infix def joinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN, true)
 
-    infix def leftJoin(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.LEFT_JOIN, true)
+    infix def leftJoinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.LEFT_JOIN, true)
 
-    infix def rightJoin(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.RIGHT_JOIN, true)
+    infix def rightJoinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.RIGHT_JOIN, true)
 
-    infix def innerJoin(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.INNER_JOIN, true)
+    infix def innerJoinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN, true)
 
-    infix def crossJoin(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.CROSS_JOIN, true)
+    infix def crossJoinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.CROSS_JOIN, true)
 
-    infix def fullJoin(table: TableSchema): Select[T, Tuple.Concat[FromTables, Tuple1[table.type]], QuoteTables] = joinClause(table, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(table: String | AliasNameTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(table: String | AliasNameTableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(table: JoinTableSchema): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(table, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(table: JoinTableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoinLateral(query: AliasNameQuery[_]): Select[T, Tuple1[AnyTable], QuoteTables] = joinClause(query, SqlJoinType.FULL_JOIN, true)
+    infix def fullJoinLateral(query: AliasNameQuery[_]): Select[T] = joinClause(query, SqlJoinType.FULL_JOIN, true)
 
-    def forUpdate: Select[T, FromTables, QuoteTables] = {
+    def forUpdate: Select[T] = {
         this.sqlSelect.forUpdate = true
         this
     }
@@ -342,8 +321,6 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
     override def sql(db: DB): String = toSqlString(sqlSelect, db)
 
     override def toSql(using db: DB): String = toSqlString(sqlSelect, db)
-
-    def asSql(using db: DB)(using QuoteInFrom[QuoteTables, FromTables] =:= Any): String = toSqlString(sqlSelect, db)
 
     def fetchCountSql(db: DB): String = {
         val selectCopy = this.sqlSelect.copy(selectList = ListBuffer(), limit = None, orderBy = ListBuffer())
@@ -373,5 +350,5 @@ class Select[T <: Tuple, FromTables <: Tuple, QuoteTables <: Tuple] extends Alia
 }
 
 object Select {
-    def apply(): Select[EmptyTuple, EmptyTuple, EmptyTuple] = new Select()
+    def apply(): Select[EmptyTuple] = new Select()
 }

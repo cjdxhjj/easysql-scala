@@ -18,5 +18,5 @@ trait AliasNameQuery[T <: Tuple] extends SelectQuery[T] with Dynamic {
         this
     }
 
-    def selectDynamic(name: String): Expr[SqlDataType | Null, EmptyTuple] = ColumnExpr[SqlDataType | Null](s"${aliasName.get}.$name")
+    def selectDynamic(name: String): Expr[SqlDataType | Null] = ColumnExpr[SqlDataType | Null](s"${aliasName.get}.$name")
 }
