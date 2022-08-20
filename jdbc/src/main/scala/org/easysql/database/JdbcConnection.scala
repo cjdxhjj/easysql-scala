@@ -41,7 +41,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     inline def pageEntity[T <: TableEntity[_]](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[T] =
         page(query)(pageSize, pageNum, needCount)(it => bindEntityMacro[T](it.toMap))
 
-    override def fetchCount(query: Select[_]): Int = exec(conn => jdbcQueryCount(conn, query.fetchCountSql(db)))
+    override def fetchCount(query: Select[_]): Int = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
 
     def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection

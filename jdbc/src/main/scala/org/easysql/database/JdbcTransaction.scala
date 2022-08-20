@@ -35,7 +35,7 @@ class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
     inline def pageEntity[T <: TableEntity[_]](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[T] =
         page(query)(pageSize, pageNum, needCount)(it => bindEntityMacro[T](it.toMap))
 
-    override def fetchCount(query: Select[_]): Int = jdbcQueryCount(conn, query.fetchCountSql(db))
+    override def fetchCount(query: Select[_]): Int = jdbcQueryCount(conn, query.countSql(db))
 
     private def page[T](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean)(bind: List[(String, Any)] => T): Page[T] = {
         val data = if (pageSize == 0) {
