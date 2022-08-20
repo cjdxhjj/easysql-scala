@@ -17,9 +17,7 @@ import scala.collection.mutable
 
 def const[T <: SqlDataType | Null](value: T) = ConstExpr[T](value)
 
-def typeCol[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
-
-def col(column: String) = ColumnExpr[SqlDataType | Null](column)
+def col[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
 
 def caseWhen[T <: SqlDataType | Null](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
 

@@ -14,7 +14,7 @@ import org.easysql.macros.columnsMacro
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends AliasNameQuery[QueryType[T]] {
+class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQuery[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     def getSelect: SqlSelectQuery = sqlSelect

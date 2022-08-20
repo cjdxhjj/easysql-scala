@@ -143,4 +143,14 @@ object Test extends App {
     val u2 = user as "u2"
     val s = select (u1.*, u2.*) from u1 join u2 where u1.id === u2.id
     println(s.toSql)
+
+    val s1 = select (user.id as "c1", user.name as "c2") from user as "s1"
+
+
+    
+    val c1 = s1._1
+    val c2 = s1._2
+    
+    val s2 = select (c1, c2) from s1
+    println(s2.toSql)
 }
