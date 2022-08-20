@@ -7,10 +7,12 @@ import org.easysql.macros.*
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
 
+import java.lang.reflect.Constructor
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
 import java.util.Date
 import scala.annotation.{experimental, tailrec}
+import scala.reflect.ClassTag
 
 object Test extends App {
 //    val select = Select() select(User.name, User.id) from User
@@ -134,6 +136,11 @@ object Test extends App {
 //    val s2 = select (Post.*, User.id) from Post where Post.id === 1
 //    println(s2.asSql)
 
-    val s = select (sum(User.id) / count() + 100) from User where User.id === 1
+//    val s = select (sum(User.id) / count() + 100) from User where User.id === 1
+//    println(s.toSql)
+
+    val u1 = user as "u1"
+    val u2 = user as "u2"
+    val s = select (u1.*, u2.*) from u1 join u2 where u1.id === u2.id
     println(s.toSql)
 }

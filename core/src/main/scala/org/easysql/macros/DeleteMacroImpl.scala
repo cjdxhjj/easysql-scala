@@ -2,7 +2,7 @@ package org.easysql.macros
 
 import org.easysql.ast.SqlDataType
 import org.easysql.database.TableEntity
-import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, const}
+import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, const, table}
 import org.easysql.query.delete.Delete
 import org.easysql.util.anyToExpr
 
@@ -34,7 +34,7 @@ def deleteMacroImpl[T <: TableEntity[_]](delete: Expr[Delete], primaryKey: Expr[
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")
         }
     
-        val del = $delete.deleteFrom(${tableName})
+        val del = $delete.deleteFrom(table(${tableName}))
 
         if ($primaryKey.isInstanceOf[Tuple]) {
             val pkValues = $primaryKey.asInstanceOf[Tuple].productIterator.toList

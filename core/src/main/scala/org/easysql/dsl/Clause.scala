@@ -35,7 +35,7 @@ def some[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPred
 
 def cast[T <: SqlDataType | Null](expr: Expr[_], castType: String) = CastExpr[T](expr, castType)
 
-def table(name: String) = new TableSchema {
+def table(name: String) = new TableSchema() {
     override val tableName: String = name
 }
 

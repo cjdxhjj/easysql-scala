@@ -21,3 +21,13 @@ def columnsMacroImpl[T <: TableSchema](table: Expr[T])(using quotes: Quotes, tpe
         $compNamesExpr.zip($table.$columns).toMap
     }
 }
+
+def aliasMacroImpl[T <: TableSchema](name: Expr[String])(using quotes: Quotes, tpe: Type[T]): Expr[T] = {
+    import quotes.reflect.*
+
+    val className = TypeRepr.of[T].typeSymbol.fullName
+    val classSym = Symbol.requiredClass(className)
+    val tree = Apply(Select.unique(New(TypeIdent(classSym)), "<init>"), Expr.apply(name.value).asTerm :: Nil)
+    tree.asExprOf[T]
+}
+

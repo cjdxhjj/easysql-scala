@@ -71,29 +71,23 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends AliasNameQuery[Que
         this
     }
 
-    private def join[JT <: TableSchema | AliasNameTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
+    private def join[JT <: TableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
         val query = new Query[(T, JT)]((t, joinTable))
-        val join = joinTable match {
-            case t: TableSchema => SqlIdentifierTableSource(t.tableName)
-            case a: AliasNameTableSchema => {
-                val table = SqlIdentifierTableSource(a.tableName)
-                table.alias = Some(a.aliasName)
-                table
-            }
-        }
+        val join = SqlIdentifierTableSource(joinTable.tableName)
+        join.alias = joinTable.aliasName
         query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, joinType, join))
         query
     }
 
-    def joinInner[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
+    def joinInner[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
 
-    def joinLeft[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
+    def joinLeft[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
 
-    def joinRight[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
+    def joinRight[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
 
-    def joinCross[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
+    def joinCross[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
 
-    def joinFull[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
+    def joinFull[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
     def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {

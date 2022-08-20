@@ -1,7 +1,7 @@
 package org.easysql.macros
 
 import org.easysql.database.TableEntity
-import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, col}
+import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, col, table}
 import org.easysql.query.update.Update
 import org.easysql.util.anyToExpr
 
@@ -33,7 +33,7 @@ def updateMacroImpl[T <: TableEntity[_]](update: Expr[Update], entity: Expr[T], 
     val identsExpr: Expr[List[Any]] = Expr.ofList(idents.map(_._2.asExpr))
 
     '{
-        $update.update($tableName)
+        $update.update(table($tableName))
 
         val values = $namesExpr.zip($fieldExprs).toMap
         val columnExprs = $compNamesExpr.zip($identsExpr).toMap

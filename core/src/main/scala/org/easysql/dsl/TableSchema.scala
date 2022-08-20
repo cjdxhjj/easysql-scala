@@ -4,22 +4,33 @@ import org.easysql.database.TableEntity
 import org.easysql.dsl.{AllColumnExpr, TableColumnExpr}
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
-import org.easysql.macros.columnsMacro
+import org.easysql.macros.*
 import org.easysql.query.select.{SelectQuery, Query}
 
 import java.util.Date
 import scala.collection.mutable.ListBuffer
-import scala.language.dynamics
 
-trait AnyTable
+sealed trait AnyTable {
+    infix def join(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
 
-trait TableSchema extends AnyTable { self =>
+    infix def leftJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
+
+    infix def rightJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
+
+    infix def innerJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
+
+    infix def crossJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
+
+    infix def fullJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
+}
+
+trait TableSchema(val aliasName: Option[String] = None) extends AnyTable {
     val tableName: String
 
     var $columns: ListBuffer[TableColumnExpr[_]] = ListBuffer[TableColumnExpr[_]]()
 
     def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
-        val c = TableColumnExpr[T](tableName, name)
+        val c = TableColumnExpr[T](aliasName.getOrElse(tableName), name)
         $columns.addOne(c)
         c
     }
@@ -46,60 +57,15 @@ object TableSchema {
 }
 
 extension[T <: TableSchema] (t: T) {
-    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): AliasNameTableSchema = {
-        val columns = columnsMacro[T](t)
-        AliasNameTableSchema(t.tableName, aliasName, columns)
+    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T =
+        aliasMacro[T](aliasName)
+
+    infix def unsafeAs(aliasName: String): TableSchema = new TableSchema(Some(aliasName)) {
+        override val tableName: String = t.tableName
     }
-
-    inline infix def unsafeAs(aliasName: String): AliasNameTableSchema = {
-        val columns = columnsMacro[T](t)
-        AliasNameTableSchema(t.tableName, aliasName, columns)
-    }
-
-    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.JOIN, table)
-
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.LEFT_JOIN, table)
-
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.RIGHT_JOIN, table)
-
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.INNER_JOIN, table)
-
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.CROSS_JOIN, table)
-
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(t, SqlJoinType.FULL_JOIN, table)
 }
 
-case class AliasNameTableSchema(tableName: String, aliasName: String, columns: Map[String, TableColumnExpr[_]]) extends Dynamic {
-    val t: TableSchema = table(aliasName)
-
-    def selectDynamic(name: String): TableColumnExpr[SqlDataType | Null] = columns(name).copy(table = aliasName).asInstanceOf[TableColumnExpr[SqlDataType | Null]]
-
-    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
-
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
-
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
-
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
-
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
-
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
-}
-
-case class JoinTableSchema(left: TableSchema | JoinTableSchema | AliasNameTableSchema, joinType: SqlJoinType, right: TableSchema | JoinTableSchema | AliasNameTableSchema, var onCondition: Option[Expr[_]] = None) {
-    infix def join(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
-
-    infix def leftJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.LEFT_JOIN, table)
-
-    infix def rightJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.RIGHT_JOIN, table)
-
-    infix def innerJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.INNER_JOIN, table)
-
-    infix def crossJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.CROSS_JOIN, table)
-
-    infix def fullJoin(table: TableSchema | JoinTableSchema | AliasNameTableSchema): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
-
+case class JoinTableSchema(left: AnyTable, joinType: SqlJoinType, right: AnyTable, var onCondition: Option[Expr[_]] = None) extends AnyTable {
     infix def on(expr: Expr[_]): JoinTableSchema = {
         this.onCondition = Some(expr)
         this

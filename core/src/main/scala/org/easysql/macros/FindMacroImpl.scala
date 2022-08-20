@@ -1,7 +1,7 @@
 package org.easysql.macros
 
 import org.easysql.database.TableEntity
-import org.easysql.dsl.PrimaryKeyColumnExpr
+import org.easysql.dsl.{PrimaryKeyColumnExpr, table}
 import org.easysql.query.select.Select
 
 import java.sql.SQLException
@@ -32,7 +32,7 @@ def findMacroImpl[T <: TableEntity[_]](select: Expr[Select[_]], primaryKey: Expr
             throw SQLException(s"实体类${$typeName}伴生对象中未定义主键字段")
         }
 
-        val sel = $select.from(${tableName})
+        val sel = $select.from(table(${tableName}))
 
         if ($primaryKey.isInstanceOf[Tuple]) {
             val pkValues = $primaryKey.asInstanceOf[Tuple].productIterator.toList

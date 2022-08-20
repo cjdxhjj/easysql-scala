@@ -13,7 +13,7 @@ inline def xx[T <: TableEntity[_]]: T = {
 
 case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
 
-object Post extends TableSchema {
+object Post extends TableSchema() {
     override val tableName: String = "post"
     val id = intColumn("id").primaryKey
     val userId = intColumn("user_id")
