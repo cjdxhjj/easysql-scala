@@ -8,20 +8,29 @@ import org.easysql.dsl.{Expr, TableColumnExpr, TableSchema, PK}
 import org.easysql.query.ReviseQuery
 import org.easysql.util.toSqlString
 import org.easysql.visitor.getExpr
-import org.easysql.macros.deleteMacro
 
 import java.sql.{Connection, SQLException}
 
 class Delete extends ReviseQuery {
     private val sqlDelete = SqlDelete()
 
-    infix def deleteFrom(table: TableSchema): Delete = {
+    infix def deleteFrom(table: TableSchema[_]): Delete = {
         this.sqlDelete.table = Some(SqlIdentifierExpr(table.tableName))
         this
     }
 
-    inline infix def delete[T <: TableEntity[_]](pk: PK[T]): Delete = {
-        deleteMacro[T](this, pk)
+    def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = {
+        sqlDelete.table = Some(SqlIdentifierExpr(t.tableName))
+
+        pk match {
+            case tuple: Tuple =>
+                t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
+                    sqlDelete.addCondition(getExpr(pkCol._1.equal(pkCol._2)))
+                }
+            case _ => sqlDelete.addCondition(getExpr(t.$pkCols.head.equal(pk)))
+        }
+
+        this
     }
 
     infix def where(condition: Expr[_]): Delete = {

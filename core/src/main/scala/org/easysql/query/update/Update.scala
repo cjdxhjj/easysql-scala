@@ -10,7 +10,6 @@ import org.easysql.query.select.SelectQuery
 import org.easysql.util.toSqlString
 import org.easysql.util.anyToExpr
 import org.easysql.visitor.{getExpr, visitExpr}
-import org.easysql.macros.updateMacro
 
 import java.sql.{Connection, SQLException}
 import java.util.Date
@@ -18,23 +17,43 @@ import java.util.Date
 class Update extends ReviseQuery {
     private val sqlUpdate = SqlUpdate()
 
-    infix def update(table: TableSchema): Update = {
+    def update(table: TableSchema[_]): Update = {
         this.sqlUpdate.table = Some(SqlIdentifierExpr(table.tableName))
         this
     }
 
-    inline infix def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = {
-        updateMacro(this, entity, skipNull)
+    def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = {
+        sqlUpdate.table = Some(SqlIdentifierExpr(t.tableName))
+
+        t.$columns.foreach { col =>
+            val (column, value) = col match {
+                case TableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
+                case NullableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
+            }
+
+            if (!skipNull) {
+                sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
+            } else {
+                if (value != null && value != None) {
+                    sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
+                }
+            }
+        }
+
+        t.$pkCols.foreach { pk =>
+            sqlUpdate.addCondition(getExpr(pk.equal(pk.bind.get.apply(entity))))
+        }
 
         this
     }
 
-    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
+    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_, _] | NullableColumnExpr[_, _] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
         items.foreach { item =>
             val (column, value) = item
 
             val columnExpr = column match {
-                case t: TableColumnExpr[_] => visitExpr(ColumnExpr(t.column))
+                case t: TableColumnExpr[_, _] => visitExpr(ColumnExpr(t.column))
+                case n: NullableColumnExpr[_, _] => visitExpr(ColumnExpr(n.column))
                 case c: ColumnExpr[_] => visitExpr(c)
             }
 
@@ -45,7 +64,7 @@ class Update extends ReviseQuery {
         this
     }
 
-    infix def where(condition: Expr[_]): Update = {
+    def where(condition: Expr[_]): Update = {
         sqlUpdate.addCondition(getExpr(condition))
         this
     }

@@ -33,7 +33,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def from[Table <: TableSchema](table: Table): Select[T] = {
+    infix def from[Table <: TableSchema[_]](table: Table): Select[T] = {
         val from = SqlIdentifierTableSource(table.tableName)
         from.alias = table.aliasName
         joinLeft = from
@@ -188,7 +188,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    private def joinClause(table: TableSchema, joinType: SqlJoinType): Select[T] = {
+    private def joinClause(table: TableSchema[_], joinType: SqlJoinType): Select[T] = {
         val joinTable = SqlIdentifierTableSource(table.tableName)
         joinTable.alias = table.aliasName
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
@@ -213,7 +213,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
     private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T] = {
         def unapplyTable(t: AnyTable): SqlTableSource = {
             t match {
-                case table: TableSchema =>
+                case table: TableSchema[_] =>
                     val ts = SqlIdentifierTableSource(table.tableName)
                     ts.alias = table.aliasName
                     ts
@@ -240,7 +240,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def join(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.JOIN)
 
     infix def join(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN)
 
@@ -248,7 +248,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def joinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN, true)
 
-    infix def leftJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
+    infix def leftJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.LEFT_JOIN)
 
     infix def leftJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.LEFT_JOIN)
 
@@ -256,7 +256,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def leftJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.LEFT_JOIN, true)
 
-    infix def rightJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
+    infix def rightJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.RIGHT_JOIN)
 
     infix def rightJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.RIGHT_JOIN)
 
@@ -264,7 +264,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def rightJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.RIGHT_JOIN, true)
 
-    infix def innerJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
     infix def innerJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN)
 
@@ -272,7 +272,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def innerJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN, true)
 
-    infix def crossJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
+    infix def crossJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.CROSS_JOIN)
 
     infix def crossJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.CROSS_JOIN)
 
@@ -280,7 +280,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def crossJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.CROSS_JOIN, true)
 
-    infix def fullJoin(table: TableSchema): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
+    infix def fullJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.FULL_JOIN)
 
     infix def fullJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.FULL_JOIN)
 

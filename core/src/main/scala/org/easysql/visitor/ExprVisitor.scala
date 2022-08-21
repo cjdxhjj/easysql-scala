@@ -18,9 +18,11 @@ def visitExpr(query: Expr[_] | Null): SqlExpr = {
             SqlBinaryExpr(visitExpr(left), op, visitExpr(right))
         case column: ColumnExpr[_] =>
             visitColumnExpr(column)
-        case tableColumn: TableColumnExpr[_] =>
+        case tableColumn: TableColumnExpr[_, _] =>
             SqlPropertyExpr(tableColumn.table, tableColumn.column)
-        case primaryKeyColumnExpr: PrimaryKeyColumnExpr[_] =>
+        case nullableColumn: NullableColumnExpr[_, _] =>
+            SqlPropertyExpr(nullableColumn.table, nullableColumn.column)
+        case primaryKeyColumnExpr: PrimaryKeyColumnExpr[_, _] =>
             SqlPropertyExpr(primaryKeyColumnExpr.table, primaryKeyColumnExpr.column)
         case SubQueryExpr(selectQuery) =>
             SqlSelectQueryExpr(selectQuery.getSelect)
@@ -46,7 +48,6 @@ def visitExpr(query: Expr[_] | Null): SqlExpr = {
             SqlSubQueryPredicateExpr(SqlSelectQueryExpr(query.getSelect), predicate)
         case ListExpr(list) =>
             SqlListExpr(list.map(getExpr))
-        case _ => SqlNullExpr()
     }
 }
 

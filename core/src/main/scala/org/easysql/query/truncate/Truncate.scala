@@ -12,7 +12,7 @@ import java.sql.Connection
 class Truncate extends ReviseQuery {
     private val sqlTruncate = SqlTruncate()
 
-    infix def truncate(table: TableSchema): Truncate = {
+    infix def truncate(table: TableSchema[_]): Truncate = {
         this.sqlTruncate.table = Some(SqlIdentifierExpr(table.tableName))
 
         this

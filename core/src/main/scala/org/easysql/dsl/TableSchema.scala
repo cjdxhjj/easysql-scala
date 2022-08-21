@@ -5,10 +5,11 @@ import org.easysql.dsl.{AllColumnExpr, TableColumnExpr}
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
 import org.easysql.macros.*
-import org.easysql.query.select.{SelectQuery, Query}
+import org.easysql.query.select.{Query, SelectQuery}
 
 import java.util.Date
 import scala.collection.mutable.ListBuffer
+import scala.collection.mutable
 
 sealed trait AnyTable {
     infix def join(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.JOIN, table)
@@ -24,43 +25,44 @@ sealed trait AnyTable {
     infix def fullJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 }
 
-trait TableSchema(val aliasName: Option[String] = None) extends AnyTable {
+trait TableSchema[E <: TableEntity[_]](val aliasName: Option[String] = None) extends AnyTable {
     val tableName: String
 
-    var $columns: ListBuffer[TableColumnExpr[_]] = ListBuffer[TableColumnExpr[_]]()
+    val $columns: ListBuffer[TableColumnExpr[_, E] | NullableColumnExpr[_, E]] = ListBuffer[TableColumnExpr[_, E] | NullableColumnExpr[_, E]]()
 
-    def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
-        val c = TableColumnExpr[T](aliasName.getOrElse(tableName), name)
-        $columns.addOne(c)
+    val $pkCols: ListBuffer[PrimaryKeyColumnExpr[_, E]] = ListBuffer[PrimaryKeyColumnExpr[_, E]]()
+
+    def column[T <: SqlDataType](name: String): TableColumnExpr[T, E] = {
+        val c = TableColumnExpr[T, E](aliasName.getOrElse(tableName), name, this)
         c
     }
 
-    def intColumn(name: String): TableColumnExpr[Int] = column[Int](name)
+    def intColumn(name: String): TableColumnExpr[Int, E] = column[Int](name)
 
-    def varcharColumn(name: String): TableColumnExpr[String] = column[String](name)
+    def varcharColumn(name: String): TableColumnExpr[String, E] = column[String](name)
 
-    def longColumn(name: String): TableColumnExpr[Long] = column[Long](name)
+    def longColumn(name: String): TableColumnExpr[Long, E] = column[Long](name)
 
-    def floatColumn(name: String): TableColumnExpr[Float] = column[Float](name)
+    def floatColumn(name: String): TableColumnExpr[Float, E] = column[Float](name)
 
-    def doubleColumn(name: String): TableColumnExpr[Double] = column[Double](name)
+    def doubleColumn(name: String): TableColumnExpr[Double, E] = column[Double](name)
 
-    def booleanColumn(name: String): TableColumnExpr[Boolean] = column[Boolean](name)
+    def booleanColumn(name: String): TableColumnExpr[Boolean, E] = column[Boolean](name)
 
-    def dateColumn(name: String): TableColumnExpr[Date] = column[Date](name)
+    def dateColumn(name: String): TableColumnExpr[Date, E] = column[Date](name)
 
-    def decimalColumn(name: String): TableColumnExpr[BigDecimal] = column[BigDecimal](name)
+    def decimalColumn(name: String): TableColumnExpr[BigDecimal, E] = column[BigDecimal](name)
 }
 
 object TableSchema {
-    inline given tableToQuery[T <: TableSchema]: Conversion[T, Query[T]] = Query[T](_)
+    inline given tableToQuery[T <: TableSchema[_]]: Conversion[T, Query[T]] = Query[T](_)
 }
 
-extension[T <: TableSchema] (t: T) {
+extension[T <: TableSchema[_]] (t: T) {
     inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T =
         aliasMacro[T](aliasName)
 
-    infix def unsafeAs(aliasName: String): TableSchema = new TableSchema(Some(aliasName)) {
+    infix def unsafeAs(aliasName: String): TableSchema[_] = new TableSchema(Some(aliasName)) {
         override val tableName: String = t.tableName
     }
 }

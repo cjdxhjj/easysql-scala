@@ -5,23 +5,15 @@ import java.util.Date
 
 case class User(id: Int, key: String, name: Option[String]) extends TableEntity[(Int, String)]
 
-class UserTable(aliasName: Option[String] = None) extends TableSchema(aliasName) {
+class UserTable(aliasName: Option[String] = None) extends TableSchema[User](aliasName) {
     override val tableName: String = "user"
-    val id = intColumn("id").primaryKey
-    val key = varcharColumn("key").primaryKey
-    val name = varcharColumn("user_name")
+    val id = intColumn("id").incr.bind(_.id)
+    val key = varcharColumn("key").primaryKey.bind(_.key)
+    val name = varcharColumn("user_name").nullable.bind(_.name)
     def * = (id, key, name)
 }
 
-final val user = UserTable()
-
-object User extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id").primaryKey
-    val key = varcharColumn("key").primaryKey
-    val name = varcharColumn("user_name")
-    def * = (id, key, name)
-}
+given user: UserTable = UserTable()
 
 case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
 

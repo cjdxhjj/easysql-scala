@@ -38,7 +38,7 @@ type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
     case EmptyTuple => EmptyTuple
 }
 
-type QueryType[T <: Tuple | Expr[_] | TableSchema] <: Tuple = T match {
+type QueryType[T <: Tuple | Expr[_] | TableSchema[_]] <: Tuple = T match {
     case h *: t => h *: t
     case _ => Tuple1[T]
 }

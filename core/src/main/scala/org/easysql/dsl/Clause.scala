@@ -37,7 +37,7 @@ def table(name: String) = new TableSchema() {
     override val tableName: String = name
 }
 
-extension[T <: SqlDataType | Null] (e: TableColumnExpr[T] | ColumnExpr[T]) {
+extension[T <: SqlDataType | Null] (e: TableColumnExpr[T & SqlDataType, _] | NullableColumnExpr[T & SqlDataType, _] | ColumnExpr[T]) {
     def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
@@ -57,21 +57,21 @@ def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamic
 
 inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_] = findMacro[T](Select(), pk)
 
-def insertInto(table: TableSchema)(columns: Tuple) = Insert().insertInto(table)(columns)
+def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
 
-inline def insert[T <: TableEntity[_]](entity: T*) = Insert().insert(entity: _*)
+inline def insert[T <: TableEntity[_]](entity: T*)(using t: TableSchema[T]) = Insert().insert(entity: _*)(using t)
 
-inline def save[T <: TableEntity[_]](entity: T): Save = Save().save(entity)
+inline def save[T <: TableEntity[_]](entity: T)(using t: TableSchema[T]): Save = Save().save(entity)(using t)
 
-def update(table: TableSchema): Update = Update().update(table)
+def update(table: TableSchema[_]): Update = Update().update(table)
 
-inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = Update().update(entity, skipNull)
+inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = Update().update(entity, skipNull)(using t)
 
-def deleteFrom(table: TableSchema): Delete = Delete().deleteFrom(table)
+def deleteFrom(table: TableSchema[_]): Delete = Delete().deleteFrom(table)
 
-inline def delete[T <: TableEntity[_]](pk: PK[T]): Delete = Delete().delete[T](pk)
+inline def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = Delete().delete[T](pk)(using t)
 
-def truncate(table: TableSchema): Truncate = Truncate().truncate(table)
+def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
 
 extension (s: StringContext) {
     def sql(args: (SqlDataType | List[SqlDataType])*): String = {

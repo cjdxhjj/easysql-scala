@@ -6,6 +6,7 @@ import org.easysql.ast.order.SqlOrderByOption
 import org.easysql.dsl.const
 import org.easysql.query.select.SelectQuery
 import org.easysql.ast.{SqlDataType, SqlNumberType}
+import org.easysql.database.TableEntity
 import org.easysql.util.anyToExpr
 
 import java.util.Date
@@ -198,46 +199,88 @@ case class BinaryExpr[T <: SqlDataType | Null](left: Expr[_],
 
 case class ColumnExpr[T <: SqlDataType | Null](column: String) extends Expr[T]()
 
-case class TableColumnExpr[T <: SqlDataType | Null](table: String, column: String) extends Expr[T]() {
-    def primaryKey: PrimaryKeyColumnExpr[T & SqlDataType] = {
-        PrimaryKeyColumnExpr(table, column)
+case class TableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
+                                                                  column: String,
+                                                                  schema: TableSchema[E],
+                                                                  bind: Option[E => T] = None) extends Expr[T]() {
+    def primaryKey: PrimaryKeyColumnExpr[T & SqlDataType, E] = {
+        PrimaryKeyColumnExpr(table, column, schema)
     }
 
-    def nullable: TableColumnExpr[T | Null] = {
-        val copy: TableColumnExpr[T | Null] = this.copy()
+    def nullable: NullableColumnExpr[T, E] = {
+        val copy: NullableColumnExpr[T, E] = NullableColumnExpr(table, column, schema, bind = None)
         copy
     }
 
     override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: TableColumnExpr[T] = this.copy()
+        val copy: TableColumnExpr[T, E] = this.copy()
         copy.alias = Some(name)
         copy
     }
 
     override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: TableColumnExpr[T] = this.copy()
+        val copy: TableColumnExpr[T, E] = this.copy()
         copy.alias = Some(name)
         copy
     }
-}
 
-extension [T <: Int | Long](t: TableColumnExpr[T]) {
-    def incr: PrimaryKeyColumnExpr[T] = {
-        PrimaryKeyColumnExpr(t.table, t.column, true)
+    def bind(f: E => T): TableColumnExpr[T, E] = {
+        val col = this.copy(bind = Some(f))
+        schema.$columns.append(col)
+        col
     }
 }
 
-case class PrimaryKeyColumnExpr[T <: SqlDataType](table: String, column: String, var isIncr: Boolean = false) extends Expr[T]() {
+extension[T <: Int | Long, E <: TableEntity[_]] (t: TableColumnExpr[T, E]) {
+    def incr: PrimaryKeyColumnExpr[T, E] = {
+        PrimaryKeyColumnExpr(t.table, t.column, t.schema, true)
+    }
+}
+
+case class NullableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
+                                                                            column: String,
+                                                                            schema: TableSchema[E],
+                                                                            bind: Option[E => Option[T]] = None) extends Expr[T | Null]() {
+    override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T | Null] = {
+        val copy: NullableColumnExpr[T, E] = this.copy()
+        copy.alias = Some(name)
+        copy
+    }
+
+    override infix def unsafeAs(name: String): Expr[T | Null] = {
+        val copy: NullableColumnExpr[T, E] = this.copy()
+        copy.alias = Some(name)
+        copy
+    }
+
+    def bind(f: E => Option[T]): NullableColumnExpr[T, E] = {
+        val col = this.copy(bind = Some(f))
+        schema.$columns.append(col)
+        col
+    }
+}
+
+case class PrimaryKeyColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
+                                                                       column: String,
+                                                                       schema: TableSchema[E],
+                                                                       var isIncr: Boolean = false,
+                                                                       bind: Option[E => T] = None) extends Expr[T]() {
     override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T] = this.copy()
+        val copy: PrimaryKeyColumnExpr[T, E] = this.copy()
         copy.alias = Some(name)
         copy
     }
 
     override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T] = this.copy()
+        val copy: PrimaryKeyColumnExpr[T, E] = this.copy()
         copy.alias = Some(name)
         copy
+    }
+
+    def bind(f: E => T): PrimaryKeyColumnExpr[T, E] = {
+        val col = this.copy(bind = Some(f))
+        schema.$pkCols.append(col)
+        col
     }
 }
 

@@ -9,12 +9,11 @@ import org.easysql.ast.table.*
 import org.easysql.database.DB
 import org.easysql.visitor.visitExpr
 import org.easysql.util.toSqlString
-import org.easysql.macros.columnsMacro
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQuery[QueryType[T]] {
+class Query[T <: Tuple | Expr[_] | TableSchema[_]](t: T) extends SelectQuery[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     def getSelect: SqlSelectQuery = sqlSelect
@@ -71,7 +70,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQuery[QueryT
         this
     }
 
-    private def join[JT <: TableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
+    private def join[JT <: TableSchema[_]](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
         val query = new Query[(T, JT)]((t, joinTable))
         val join = SqlIdentifierTableSource(joinTable.tableName)
         join.alias = joinTable.aliasName
@@ -79,15 +78,15 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQuery[QueryT
         query
     }
 
-    def joinInner[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
+    def joinInner[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
 
-    def joinLeft[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
+    def joinLeft[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
 
-    def joinRight[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
+    def joinRight[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
 
-    def joinCross[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
+    def joinCross[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
 
-    def joinFull[JT <: TableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
+    def joinFull[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
     def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {
@@ -146,7 +145,7 @@ class Query[T <: Tuple | Expr[_] | TableSchema](t: T) extends SelectQuery[QueryT
 }
 
 object Query {
-    inline def apply[T <: TableSchema](table: T): Query[T] = {
+    inline def apply[T <: TableSchema[_]](table: T): Query[T] = {
         val query = new Query[T](table)
         val from = SqlIdentifierTableSource(table.tableName)
         query.sqlSelect.from = Some(from)
