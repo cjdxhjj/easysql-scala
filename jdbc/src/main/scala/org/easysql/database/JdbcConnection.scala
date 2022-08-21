@@ -7,11 +7,12 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.update.Update
 import org.easysql.jdbc.*
-import org.easysql.macros.bindEntityMacro
-import org.easysql.dsl.MapUnionNull
+import org.easysql.dsl.{MapUnionNull, TableSchema}
+import org.easysql.bind.bindData
 
 import java.sql.Connection
 import javax.sql.DataSource
+import scala.reflect.ClassTag
 
 class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     def getDB: DB = db
@@ -24,13 +25,13 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
 
     override def queryTuple[T <: Tuple](query: SelectQuery[T]): List[MapUnionNull[T]] = exec(conn => jdbcQuery(conn, query.sql(db)).map(it => Tuple.fromArray(it.map(_._2).toArray).asInstanceOf[MapUnionNull[T]]))
 
-    inline def queryEntity[T <: TableEntity[_]](query: SelectQuery[_]): List[T] = exec(conn => jdbcQuery(conn, query.sql(db)).map(it => bindEntityMacro[T](it.toMap)))
+    inline def queryEntity[T <: TableEntity[_]](query: SelectQuery[_])(using t: TableSchema[T], ct: ClassTag[T]): List[T] = exec(conn => jdbcQuery(conn, query.sql(db)).map(it => bindData[T](it.toMap)))
 
     override def findMap(query: Select[_]): Option[Map[String, Any]] = exec(conn => jdbcQuery(conn, query.sql(db)).headOption.map(_.toMap))
 
     override def findTuple[T <: Tuple](query: Select[T]): Option[MapUnionNull[T]] = exec(conn => jdbcQuery(conn, query.sql(db)).headOption.map(it => Tuple.fromArray(it.map(_._2).toArray).asInstanceOf[MapUnionNull[T]]))
 
-    inline def findEntity[T <: TableEntity[_]](query: Select[_]): Option[T] = exec(conn => jdbcQuery(conn, query.sql(db)).headOption.map(it => bindEntityMacro[T](it.toMap)))
+    inline def findEntity[T <: TableEntity[_]](query: Select[_])(using t: TableSchema[T], ct: ClassTag[T]): Option[T] = exec(conn => jdbcQuery(conn, query.sql(db)).headOption.map(it => bindData[T](it.toMap)))
 
     override def pageMap(query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[Map[String, Any]] =
         page(query)(pageSize, pageNum, needCount)(it => it.toMap)
@@ -38,8 +39,8 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     override def pageTuple[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[MapUnionNull[T]] =
         page(query)(pageSize, pageNum, needCount)(it => Tuple.fromArray(it.map(_._2).toArray).asInstanceOf[MapUnionNull[T]])
 
-    inline def pageEntity[T <: TableEntity[_]](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[T] =
-        page(query)(pageSize, pageNum, needCount)(it => bindEntityMacro[T](it.toMap))
+    inline def pageEntity[T <: TableEntity[_]](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true)(using t: TableSchema[T], ct: ClassTag[T]): Page[T] =
+        page(query)(pageSize, pageNum, needCount)(it => bindData[T](it.toMap))
 
     override def fetchCount(query: Select[_]): Int = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
 

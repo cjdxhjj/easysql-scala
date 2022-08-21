@@ -224,7 +224,12 @@ case class TableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
         copy
     }
 
-    def bind(f: E => T): TableColumnExpr[T, E] = {
+    inline def bind(inline f: E => T): TableColumnExpr[T, E] = {
+        import scala.compiletime.codeOf
+        import scala.language.unsafeNulls
+        
+        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
+        schema.$bind.put(fieldName, column)
         val col = this.copy(bind = Some(f))
         schema.$columns.append(col)
         col
@@ -253,7 +258,12 @@ case class NullableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: Stri
         copy
     }
 
-    def bind(f: E => Option[T]): NullableColumnExpr[T, E] = {
+    inline def bind(inline f: E => Option[T]): NullableColumnExpr[T, E] = {
+        import scala.compiletime.codeOf
+        import scala.language.unsafeNulls
+        
+        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
+        schema.$bind.put(fieldName, column)
         val col = this.copy(bind = Some(f))
         schema.$columns.append(col)
         col
@@ -277,7 +287,12 @@ case class PrimaryKeyColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: St
         copy
     }
 
-    def bind(f: E => T): PrimaryKeyColumnExpr[T, E] = {
+    inline def bind(inline f: E => T): PrimaryKeyColumnExpr[T, E] = {
+        import scala.compiletime.codeOf
+        import scala.language.unsafeNulls
+
+        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
+        schema.$bind.put(fieldName, column)
         val col = this.copy(bind = Some(f))
         schema.$pkCols.append(col)
         col

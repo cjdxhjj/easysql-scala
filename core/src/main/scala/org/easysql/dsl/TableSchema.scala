@@ -32,6 +32,8 @@ trait TableSchema[E <: TableEntity[_]](val aliasName: Option[String] = None) ext
 
     val $pkCols: ListBuffer[PrimaryKeyColumnExpr[_, E]] = ListBuffer[PrimaryKeyColumnExpr[_, E]]()
 
+    val $bind: mutable.Map[String, String] = mutable.Map()
+    
     def column[T <: SqlDataType](name: String): TableColumnExpr[T, E] = {
         val c = TableColumnExpr[T, E](aliasName.getOrElse(tableName), name, this)
         c
