@@ -55,7 +55,18 @@ def select[I <: SqlDataType | Null](item: Expr[I]): Select[Tuple1[I]] = {
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
-inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_] = findMacro[T](Select(), pk)
+def find[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Select[_] = {
+    val select = Select()
+    select.from(t)
+    pk match {
+        case tuple: Tuple =>
+            t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
+                select.where(pkCol._1.equal(pkCol._2))
+            }
+        case _ => select.where(t.$pkCols.head.equal(pk))
+    }
+    select
+}
 
 def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
 

@@ -19,9 +19,9 @@ case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
 
 class PostTable(aliasName: Option[String] = None) extends TableSchema[Post](aliasName) {
     override val tableName: String = "post"
-    val id = intColumn("id").incr
-    val userId = intColumn("user_id")
-    val name = varcharColumn("post_name")
+    val id = intColumn("id").incr.bind(_.id)
+    val userId = intColumn("user_id").bind(_.userId)
+    val name = varcharColumn("post_name").bind(_.name)
     val * = (id, userId, name)
 }
 

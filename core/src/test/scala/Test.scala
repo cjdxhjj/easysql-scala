@@ -51,4 +51,9 @@ object Test extends App {
     println(save1.sql(DB.PGSQL))
     println(save1.sql(DB.SQLITE))
     println(save1.sql(DB.ORACLE))
+
+    val f1 = find[User](1, "x")
+    println(f1.toSql)
+    val f2 = find[Post](1)
+    println(f2.toSql)
 }
