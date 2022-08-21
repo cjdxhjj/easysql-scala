@@ -10,7 +10,6 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
-import org.easysql.macros.findMacro
 
 import scala.annotation.targetName
 import scala.collection.mutable
