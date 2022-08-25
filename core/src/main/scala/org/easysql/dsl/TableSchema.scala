@@ -25,8 +25,10 @@ sealed trait AnyTable {
     infix def fullJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 }
 
-trait TableSchema[E <: TableEntity[_]](val aliasName: Option[String] = None) extends AnyTable {
+trait TableSchema[E <: TableEntity[_]] extends AnyTable {
     val tableName: String
+
+    var aliasName: Option[String] = None
 
     val $columns: ListBuffer[TableColumnExpr[_, E] | NullableColumnExpr[_, E]] = ListBuffer[TableColumnExpr[_, E] | NullableColumnExpr[_, E]]()
 
@@ -61,11 +63,18 @@ object TableSchema {
 }
 
 extension[T <: TableSchema[_]] (t: T) {
-    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T =
-        aliasMacro[T](aliasName)
+    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T = {
+        val table = aliasMacro[T]
+        table.aliasName = Some(aliasName)
+        table
+    }
 
-    infix def unsafeAs(aliasName: String): TableSchema[_] = new TableSchema(Some(aliasName)) {
-        override val tableName: String = t.tableName
+    infix def unsafeAs(aliasName: String): TableSchema[_] = {
+        val table = new TableSchema {
+            override val tableName: String = t.tableName
+        }
+        table.aliasName = Some(aliasName)
+        table
     }
 }
 

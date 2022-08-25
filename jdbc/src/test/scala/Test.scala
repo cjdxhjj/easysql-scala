@@ -16,7 +16,7 @@ inline def testBind[T <: TableEntity[_]](using t: TableSchema[T], ct: ClassTag[T
 
 case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
 
-class PostTable(alias: Option[String] = None) extends TableSchema[Post](alias) {
+class PostTable extends TableSchema[Post] {
     override val tableName: String = "post"
     val id = intColumn("id").primaryKey.bind(_.id)
     val userId = intColumn("user_id").bind(_.userId)

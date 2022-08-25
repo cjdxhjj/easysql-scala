@@ -18,12 +18,12 @@ def visitExpr(query: Expr[_] | Null): SqlExpr = {
             SqlBinaryExpr(visitExpr(left), op, visitExpr(right))
         case column: ColumnExpr[_] =>
             visitColumnExpr(column)
-        case tableColumn: TableColumnExpr[_, _] =>
-            SqlPropertyExpr(tableColumn.table, tableColumn.column)
-        case nullableColumn: NullableColumnExpr[_, _] =>
-            SqlPropertyExpr(nullableColumn.table, nullableColumn.column)
-        case primaryKeyColumnExpr: PrimaryKeyColumnExpr[_, _] =>
-            SqlPropertyExpr(primaryKeyColumnExpr.table, primaryKeyColumnExpr.column)
+        case TableColumnExpr(_, column, schema, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
+        case NullableColumnExpr(_, column, schema, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
+        case PrimaryKeyColumnExpr(_, column, schema, _, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
         case SubQueryExpr(selectQuery) =>
             SqlSelectQueryExpr(selectQuery.getSelect)
         case NormalFunctionExpr(name, args) =>
