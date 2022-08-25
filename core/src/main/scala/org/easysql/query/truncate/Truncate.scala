@@ -12,12 +12,8 @@ import java.sql.Connection
 class Truncate extends ReviseQuery {
     private val sqlTruncate = SqlTruncate()
 
-    infix def truncate(table: TableSchema | String): Truncate = {
-        val tableName = table match {
-            case i: TableSchema => i.tableName
-            case s: String => s
-        }
-        this.sqlTruncate.table = Some(SqlIdentifierExpr(tableName))
+    infix def truncate(table: TableSchema[_]): Truncate = {
+        this.sqlTruncate.table = Some(SqlIdentifierExpr(table.tableName))
 
         this
     }

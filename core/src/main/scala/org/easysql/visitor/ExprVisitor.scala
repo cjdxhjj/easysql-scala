@@ -8,7 +8,7 @@ import org.easysql.query.select.SelectQuery
 
 import java.util.Date
 
-def visitExpr(query: Expr[_, _] | Null): SqlExpr = {
+def visitExpr(query: Expr[_] | Null): SqlExpr = {
     query match {
         case null =>
             SqlNullExpr()
@@ -18,10 +18,12 @@ def visitExpr(query: Expr[_, _] | Null): SqlExpr = {
             SqlBinaryExpr(visitExpr(left), op, visitExpr(right))
         case column: ColumnExpr[_] =>
             visitColumnExpr(column)
-        case tableColumn: TableColumnExpr[_, _] =>
-            SqlPropertyExpr(tableColumn.table, tableColumn.column)
-        case primaryKeyColumnExpr: PrimaryKeyColumnExpr[_, _] =>
-            SqlPropertyExpr(primaryKeyColumnExpr.table, primaryKeyColumnExpr.column)
+        case TableColumnExpr(_, column, schema, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
+        case NullableColumnExpr(_, column, schema, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
+        case PrimaryKeyColumnExpr(_, column, schema, _, _) =>
+            SqlPropertyExpr(schema.aliasName.getOrElse(schema.tableName), column)
         case SubQueryExpr(selectQuery) =>
             SqlSelectQueryExpr(selectQuery.getSelect)
         case NormalFunctionExpr(name, args) =>
@@ -46,7 +48,6 @@ def visitExpr(query: Expr[_, _] | Null): SqlExpr = {
             SqlSubQueryPredicateExpr(SqlSelectQueryExpr(query.getSelect), predicate)
         case ListExpr(list) =>
             SqlListExpr(list.map(getExpr))
-        case _ => SqlNullExpr()
     }
 }
 
@@ -71,7 +72,7 @@ def visitAggFunctionExpr(aggFunctionExpr: AggFunctionExpr[_]): SqlAggFunctionExp
     SqlAggFunctionExpr(aggFunctionExpr.name, aggFunctionExpr.args.map(visitExpr), aggFunctionExpr.distinct, aggFunctionExpr.attributes.map((k, v) => k -> visitExpr(v)), aggFunctionExpr.orderBy.map(it => SqlOrderBy(visitExpr(it.query), it.order)))
 }
 
-def getExpr(value: SqlDataType | Null | Expr[_, _] | SelectQuery[_]): SqlExpr = {
+def getExpr(value: SqlDataType | Null | Expr[_] | SelectQuery[_]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)
@@ -82,7 +83,7 @@ def getExpr(value: SqlDataType | Null | Expr[_, _] | SelectQuery[_]): SqlExpr = 
         case number: BigDecimal => SqlNumberExpr(number)
         case boolean: Boolean => SqlBooleanExpr(boolean)
         case date: Date => SqlDateExpr(date)
-        case expr: Expr[_, _] => visitExpr(expr)
+        case expr: Expr[_] => visitExpr(expr)
         case selectQuery: SelectQuery[_] => SqlSelectQueryExpr(selectQuery.getSelect)
     }
 }

@@ -9,25 +9,24 @@ import org.easysql.ast.table.*
 import org.easysql.database.DB
 import org.easysql.visitor.visitExpr
 import org.easysql.util.toSqlString
-import org.easysql.macros.columnsMacro
 
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 
-class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[QueryType[T]] {
+class Query[T <: Tuple | Expr[_] | TableSchema[_]](t: T) extends SelectQuery[QueryType[T]] {
     private var sqlSelect: SqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     def getSelect: SqlSelectQuery = sqlSelect
 
-    def filter(f: T => Expr[Boolean, _]): Query[T] = {
+    def filter(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
         sqlSelect.addCondition(visitExpr(expr))
         this
     }
 
-    def withFilter(f: T => Expr[Boolean, _]): Query[T] = filter(f)
+    def withFilter(f: T => Expr[Boolean]): Query[T] = filter(f)
 
-    def map[R <: Tuple | Expr[_, _]](f: T => R): Query[RecursiveInverseMap[QueryType[R]]] = {
+    def map[R <: Tuple | Expr[_]](f: T => R): Query[RecursiveInverseMap[QueryType[R]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -35,7 +34,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this.asInstanceOf[Query[RecursiveInverseMap[QueryType[R]]]]
     }
 
-    def flatMap[R <: Tuple | Expr[_, _]](f: T => Query[R]): Query[R] = {
+    def flatMap[R <: Tuple | Expr[_]](f: T => Query[R]): Query[R] = {
         val join = f(t).sqlSelect.from.get
         val from = Some(SqlJoinTableSource(this.sqlSelect.from.get, SqlJoinType.INNER_JOIN, join))
         val where = if (f(t).sqlSelect.where.nonEmpty) {
@@ -53,49 +52,43 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this
     }
 
-    def sortBy[R <: Tuple | OrderBy[_]](f: T => R): Query[T] = {
+    def sortBy[R <: Tuple | OrderBy](f: T => R): Query[T] = {
         spread(f(t))(addSortBy)
         this
     }
 
-    def groupBy[R <: Tuple | Expr[_, _]](f: T => R): Query[(R, T)] = {
+    def groupBy[R <: Tuple | Expr[_]](f: T => R): Query[(R, T)] = {
         spread(f(t))(addGroupBy)
         val query = new Query[(R, T)](f(t) -> t)
         query.sqlSelect = this.sqlSelect
         query
     }
 
-    def having(f: T => Expr[Boolean, _]): Query[T] = {
+    def having(f: T => Expr[Boolean]): Query[T] = {
         val expr = f(t)
         sqlSelect.addHaving(visitExpr(expr))
         this
     }
 
-    private def join[JT <: TableSchema | AliasNameTableSchema](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
+    private def join[JT <: TableSchema[_]](joinTable: JT, joinType: SqlJoinType): Query[(T, JT)] = {
         val query = new Query[(T, JT)]((t, joinTable))
-        val join = joinTable match {
-            case t: TableSchema => SqlIdentifierTableSource(t.tableName)
-            case a: AliasNameTableSchema => {
-                val table = SqlIdentifierTableSource(a.tableName)
-                table.alias = Some(a.aliasName)
-                table
-            }
-        }
+        val join = SqlIdentifierTableSource(joinTable.tableName)
+        join.alias = joinTable.aliasName
         query.sqlSelect.from = Some(SqlJoinTableSource(this.sqlSelect.from.get, joinType, join))
         query
     }
 
-    def joinInner[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
+    def joinInner[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.INNER_JOIN)
 
-    def joinLeft[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
+    def joinLeft[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.LEFT_JOIN)
 
-    def joinRight[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
+    def joinRight[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.RIGHT_JOIN)
 
-    def joinCross[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
+    def joinCross[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.CROSS_JOIN)
 
-    def joinFull[JT <: TableSchema | AliasNameTableSchema](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
+    def joinFull[JT <: TableSchema[_]](joinTable: JT): Query[(T, JT)] = join(joinTable, SqlJoinType.FULL_JOIN)
 
-    def on(f: T => Expr[Boolean, _]): Query[T] = {
+    def on(f: T => Expr[Boolean]): Query[T] = {
         this.sqlSelect.from.get match {
             case j: SqlJoinTableSource => j.on = Some(visitExpr(f(t)))
             case _ => 
@@ -121,11 +114,11 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         this
     }
 
-    private def addGroupBy(column: Expr[_, _]): Unit = {
+    private def addGroupBy(column: Expr[_]): Unit = {
         this.sqlSelect.groupBy.append(visitExpr(column))
     }
 
-    private def addItem(column: Expr[_, _]): Unit = {
+    private def addItem(column: Expr[_]): Unit = {
         if (column.alias.isEmpty) {
             this.sqlSelect.addSelectItem(visitExpr(column))
         } else {
@@ -133,7 +126,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
         }
     }
 
-    private def addSortBy(sortBy: OrderBy[_]): Unit = {
+    private def addSortBy(sortBy: OrderBy): Unit = {
         val sqlOrderBy = SqlOrderBy(visitExpr(sortBy.query), sortBy.order)
         this.sqlSelect.orderBy.append(sqlOrderBy)
     }
@@ -152,7 +145,7 @@ class Query[T <: Tuple | Expr[_, _] | TableSchema](t: T) extends AliasNameQuery[
 }
 
 object Query {
-    inline def apply[T <: TableSchema](table: T): Query[T] = {
+    inline def apply[T <: TableSchema[_]](table: T): Query[T] = {
         val query = new Query[T](table)
         val from = SqlIdentifierTableSource(table.tableName)
         query.sqlSelect.from = Some(from)

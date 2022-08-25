@@ -10,16 +10,15 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
-import org.easysql.macros.findMacro
 
 import scala.annotation.targetName
 import scala.collection.mutable
 
-def const[T <: SqlDataType | Null](value: T) = ConstExpr[T](value)
+def const[T <: SqlDataType | Null](v: T) = ConstExpr[T](v)
 
-def typeCol[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
+def value[T <: SqlDataType | Null](v: T) = ConstExpr[T](v)
 
-def col(column: String) = ColumnExpr[SqlDataType | Null](column)
+def col[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
 
 def caseWhen[T <: SqlDataType | Null](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
 
@@ -33,47 +32,58 @@ def any[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredi
 
 def some[T <: SqlDataType | Null](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
 
-def cast[T <: SqlDataType | Null](expr: Expr[_, _], castType: String) = CastExpr[T](expr, castType)
+def cast[T <: SqlDataType | Null](expr: Expr[_], castType: String) = CastExpr[T](expr, castType)
 
-def table(name: String) = new TableSchema {
+def table(name: String) = new TableSchema() {
     override val tableName: String = name
 }
 
-extension[T <: SqlDataType | Null, Table <: TableSchema] (e: TableColumnExpr[T, Table] | ColumnExpr[T]) {
-    def to[V <: T](value: V | Expr[V, _] | SelectQuery[Tuple1[V]]) = (e, value)
+extension[T <: SqlDataType | Null] (e: TableColumnExpr[T & SqlDataType, _] | NullableColumnExpr[T & SqlDataType, _] | ColumnExpr[T]) {
+    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
 def * = AllColumnExpr()
 
-def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]] = {
+def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = {
     val sel = Select().select(items)
-    sel.asInstanceOf[Select[RecursiveInverseMap[U], EmptyTuple, FlatTables[QueryQuoteTables[items.type]]]]
+    sel.asInstanceOf[Select[RecursiveInverseMap[U]]]
 }
 
-def select[I <: SqlDataType | Null, Q <: Tuple](item: Expr[I, Q]): Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q] = {
+def select[I <: SqlDataType | Null](item: Expr[I]): Select[Tuple1[I]] = {
     val sel = Select().select(item)
-    sel.asInstanceOf[Select[InverseMap[Tuple1[item.type]],EmptyTuple, Q]]
+    sel.asInstanceOf[Select[Tuple1[I]]]
 }
 
-def dynamicSelect(columns: Expr[_, _]*): Select[Tuple1[Nothing], EmptyTuple, EmptyTuple] = Select().dynamicSelect(columns: _*)
+def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
-inline def find[T <: TableEntity[_]](pk: PK[T]): Select[_, _, _] = findMacro[T](Select(), pk)
+def find[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Select[_] = {
+    val select = Select()
+    select.from(t)
+    pk match {
+        case tuple: Tuple =>
+            t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
+                select.where(pkCol._1.equal(pkCol._2))
+            }
+        case _ => select.where(t.$pkCols.head.equal(pk))
+    }
+    select
+}
 
-def insertInto(table: TableSchema)(columns: Tuple) = Insert().insertInto(table)(columns)
+def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
 
-inline def insert[T <: TableEntity[_]](entity: T*) = Insert().insert(entity: _*)
+inline def insert[T <: TableEntity[_]](entity: T*)(using t: TableSchema[T]) = Insert().insert(entity: _*)(using t)
 
-inline def save[T <: TableEntity[_]](entity: T): Save = Save().save(entity)
+inline def save[T <: TableEntity[_]](entity: T)(using t: TableSchema[T]): Save = Save().save(entity)(using t)
 
-def update(table: TableSchema | String): Update = Update().update(table)
+def update(table: TableSchema[_]): Update = Update().update(table)
 
-inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true): Update = Update().update(entity, skipNull)
+inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = Update().update(entity, skipNull)(using t)
 
-def deleteFrom(table: TableSchema | String): Delete = Delete().deleteFrom(table)
+def deleteFrom(table: TableSchema[_]): Delete = Delete().deleteFrom(table)
 
-inline def delete[T <: TableEntity[_]](pk: PK[T]): Delete = Delete().delete[T](pk)
+inline def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = Delete().delete[T](pk)(using t)
 
-def truncate(table: TableSchema | String): Truncate = Truncate().truncate(table)
+def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
 
 extension (s: StringContext) {
     def sql(args: (SqlDataType | List[SqlDataType])*): String = {
