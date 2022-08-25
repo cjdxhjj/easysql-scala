@@ -14,7 +14,9 @@ import org.easysql.query.update.Update
 import scala.annotation.targetName
 import scala.collection.mutable
 
-def const[T <: SqlDataType | Null](value: T) = ConstExpr[T](value)
+def const[T <: SqlDataType | Null](v: T) = ConstExpr[T](v)
+
+def value[T <: SqlDataType | Null](v: T) = ConstExpr[T](v)
 
 def col[T <: SqlDataType | Null](column: String) = ColumnExpr[T](column)
 

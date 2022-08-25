@@ -5,7 +5,7 @@ import java.util.Date
 
 case class User(id: Int, key: String, name: Option[String]) extends TableEntity[(Int, String)]
 
-class UserTable extends TableSchema[User] {
+class UserTable extends TableSchema[User]() {
     override val tableName: String = "user"
     val id = intColumn("id").incr.bind(_.id)
     val key = varcharColumn("test_key").primaryKey.bind(_.key)
