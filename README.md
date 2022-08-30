@@ -18,7 +18,7 @@ val s = (select (user.*, post.*)
 s.where(userName.nonEmpty, user.name === userName)
 ```
 
-库内置了一个sql的抽象语法树，sql的任何部分都可以被转化为对象或者非法调用，可以灵活地动态构造查询，这在某些应用（比如低代码平台）中会非常有价值：
+库内置了一个sql的抽象语法树，sql的任何部分都可以被转化为对象或者方法调用，可以灵活地动态构造查询，这在某些应用（比如低代码平台）中会非常有价值：
 
 ```scala
 val s = select(user.*)
