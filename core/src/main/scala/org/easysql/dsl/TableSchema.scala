@@ -68,14 +68,14 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
     }
 
     transparent inline def * (using m: Mirror.ProductOf[E]) = {
-        val fields = fieldNamesMacro[E].toArray.map(n => ColumnExpr(s"$tableName.$n"))
+        val fields = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(tableName, n, this))
         Tuple.fromArray(fields).asInstanceOf[ExprType[m.MirroredElemTypes]]
     }
 }
 
-extension[T <: TableSchema[_]] (t: T) {
+extension[E <: Product, T <: TableSchema[E]] (t: T) {
     inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T = {
-        val table = aliasMacro[T]
+        val table = aliasMacro[E, T](t)
         table.aliasName = Some(aliasName)
         table
     }

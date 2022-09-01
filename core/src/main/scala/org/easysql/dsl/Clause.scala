@@ -40,11 +40,10 @@ def table(name: String) = new TableSchema() {
 }
 
 inline def asTable[T <: Product] = new TableSchema[T] {
-    // todo 添加字段列表
     override val tableName: String = fetchTableNameMacro[T]
 }
 
-extension[T <: SqlDataType | Null] (e: TableColumnExpr[T & SqlDataType] | ColumnExpr[T]) {
+extension[T <: SqlDataType | Null] (e: TableColumnExpr[T] | ColumnExpr[T]) {
     def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 

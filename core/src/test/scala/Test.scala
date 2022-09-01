@@ -59,6 +59,10 @@ object Test extends App {
 
     val s = select (tt.*) from tt where tt.id === 1
     println(s.toSql)
+
+    val t1 = tt as "t1"
+    val s1 = select (t1.*) from t1
+    println(s1.toSql)
 }
 
 @Table("test_table")

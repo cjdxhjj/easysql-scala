@@ -5,13 +5,19 @@ import org.easysql.dsl.{TableColumnExpr, TableSchema}
 import scala.quoted.{Expr, Quotes, Type}
 import scala.annotation.experimental
 
-def aliasMacroImpl[T <: TableSchema[_]](using quotes: Quotes, tpe: Type[T]): Expr[T] = {
+def aliasMacroImpl[E <: Product, T <: TableSchema[E]](table: Expr[T])(using quotes: Quotes, tt: Type[T], et: Type[E]): Expr[T] = {
     import quotes.reflect.*
 
     val className = TypeRepr.of[T].typeSymbol.fullName
-    val classSym = Symbol.requiredClass(className)
-    val tree = Apply(Select.unique(New(TypeIdent(classSym)), "<init>"), Nil)
-    tree.asExprOf[T]
+    if (className.trim != "org.easysql.dsl.TableSchema") {
+        val classSym = Symbol.requiredClass(className)
+        val tree = Apply(Select.unique(New(TypeIdent(classSym)), "<init>"), Nil)
+        tree.asExprOf[T]
+    } else '{
+        new TableSchema[E] {
+            override val tableName: String = $table.tableName
+        }.asInstanceOf[T]
+    }
 }
 
 def fetchTableNameMacroImpl[T <: Product](using quotes: Quotes, tpe: Type[T]): Expr[String] = {
