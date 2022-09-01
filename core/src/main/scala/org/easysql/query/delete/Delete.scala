@@ -19,19 +19,19 @@ class Delete extends ReviseQuery {
         this
     }
 
-    def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = {
-        sqlDelete.table = Some(SqlIdentifierExpr(t.tableName))
-
-        pk match {
-            case tuple: Tuple =>
-                t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
-                    sqlDelete.addCondition(getExpr(pkCol._1.equal(pkCol._2)))
-                }
-            case _ => sqlDelete.addCondition(getExpr(t.$pkCols.head.equal(pk)))
-        }
-
-        this
-    }
+//    def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = {
+//        sqlDelete.table = Some(SqlIdentifierExpr(t.tableName))
+//
+//        pk match {
+//            case tuple: Tuple =>
+//                t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
+//                    sqlDelete.addCondition(getExpr(pkCol._1.equal(pkCol._2)))
+//                }
+//            case _ => sqlDelete.addCondition(getExpr(t.$pkCols.head.equal(pk)))
+//        }
+//
+//        this
+//    }
 
     infix def where(condition: Expr[_]): Delete = {
         sqlDelete.addCondition(getExpr(condition))

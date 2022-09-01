@@ -22,38 +22,37 @@ class Update extends ReviseQuery {
         this
     }
 
-    def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = {
-        sqlUpdate.table = Some(SqlIdentifierExpr(t.tableName))
+//    def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = {
+//        sqlUpdate.table = Some(SqlIdentifierExpr(t.tableName))
+//
+//        t.$columns.foreach { col =>
+//            val (column, value) = col match {
+//                case TableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
+//                case NullableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
+//            }
+//
+//            if (!skipNull) {
+//                sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
+//            } else {
+//                if (value != null && value != None) {
+//                    sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
+//                }
+//            }
+//        }
+//
+//        t.$pkCols.foreach { pk =>
+//            sqlUpdate.addCondition(getExpr(pk.equal(pk.bind.get.apply(entity))))
+//        }
+//
+//        this
+//    }
 
-        t.$columns.foreach { col =>
-            val (column, value) = col match {
-                case TableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
-                case NullableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
-            }
-
-            if (!skipNull) {
-                sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
-            } else {
-                if (value != null && value != None) {
-                    sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
-                }
-            }
-        }
-
-        t.$pkCols.foreach { pk =>
-            sqlUpdate.addCondition(getExpr(pk.equal(pk.bind.get.apply(entity))))
-        }
-
-        this
-    }
-
-    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_, _] | NullableColumnExpr[_, _] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
+    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
         items.foreach { item =>
             val (column, value) = item
 
             val columnExpr = column match {
-                case t: TableColumnExpr[_, _] => visitExpr(ColumnExpr(t.column))
-                case n: NullableColumnExpr[_, _] => visitExpr(ColumnExpr(n.column))
+                case t: TableColumnExpr[_] => visitExpr(ColumnExpr(t.column))
                 case c: ColumnExpr[_] => visitExpr(c)
             }
 

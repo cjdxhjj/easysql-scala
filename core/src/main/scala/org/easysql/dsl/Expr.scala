@@ -199,103 +199,51 @@ case class BinaryExpr[T <: SqlDataType | Null](left: Expr[_],
 
 case class ColumnExpr[T <: SqlDataType | Null](column: String) extends Expr[T]()
 
-case class TableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
-                                                                  column: String,
-                                                                  schema: TableSchema[E],
-                                                                  bind: Option[E => T] = None) extends Expr[T]() {
-    def primaryKey: PrimaryKeyColumnExpr[T & SqlDataType, E] = {
+case class TableColumnExpr[T <: SqlDataType | Null](table: String,
+                                             column: String,
+                                             schema: TableSchema[_]) extends Expr[T]() {
+    def primaryKey: PrimaryKeyColumnExpr[T & SqlDataType] = {
         PrimaryKeyColumnExpr(table, column, schema)
     }
 
-    def nullable: NullableColumnExpr[T, E] = {
-        val copy: NullableColumnExpr[T, E] = NullableColumnExpr(table, column, schema, bind = None)
+    def nullable: TableColumnExpr[T | Null] = {
+        val copy: TableColumnExpr[T | Null] = TableColumnExpr(table, column, schema)
         copy
     }
 
     override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: TableColumnExpr[T, E] = this.copy()
+        val copy: TableColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
     }
 
     override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: TableColumnExpr[T, E] = this.copy()
+        val copy: TableColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
     }
-
-    inline def bind(inline f: E => T): TableColumnExpr[T, E] = {
-        import scala.compiletime.codeOf
-        import scala.language.unsafeNulls
-        
-        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
-        schema.$bind.put(fieldName, column)
-        val col = this.copy(bind = Some(f))
-        schema.$columns.append(col)
-        col
-    }
 }
 
-extension[T <: Int | Long, E <: TableEntity[_]] (t: TableColumnExpr[T, E]) {
-    def incr: PrimaryKeyColumnExpr[T, E] = {
+extension[T <: Int | Long] (t: TableColumnExpr[T]) {
+    def incr: PrimaryKeyColumnExpr[T] = {
         PrimaryKeyColumnExpr(t.table, t.column, t.schema, true)
     }
 }
 
-case class NullableColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
-                                                                            column: String,
-                                                                            schema: TableSchema[E],
-                                                                            bind: Option[E => Option[T]] = None) extends Expr[T | Null]() {
-    override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T | Null] = {
-        val copy: NullableColumnExpr[T, E] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
-
-    override infix def unsafeAs(name: String): Expr[T | Null] = {
-        val copy: NullableColumnExpr[T, E] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
-
-    inline def bind(inline f: E => Option[T]): NullableColumnExpr[T, E] = {
-        import scala.compiletime.codeOf
-        import scala.language.unsafeNulls
-        
-        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
-        schema.$bind.put(fieldName, column)
-        val col = this.copy(bind = Some(f))
-        schema.$columns.append(col)
-        col
-    }
-}
-
-case class PrimaryKeyColumnExpr[T <: SqlDataType, E <: TableEntity[_]](table: String,
-                                                                       column: String,
-                                                                       schema: TableSchema[E],
-                                                                       var isIncr: Boolean = false,
-                                                                       bind: Option[E => T] = None) extends Expr[T]() {
+case class PrimaryKeyColumnExpr[T <: SqlDataType](table: String,
+                                                  column: String,
+                                                  schema: TableSchema[_],
+                                                  var isIncr: Boolean = false) extends Expr[T]() {
     override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T, E] = this.copy()
+        val copy: PrimaryKeyColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
     }
 
     override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T, E] = this.copy()
+        val copy: PrimaryKeyColumnExpr[T] = this.copy()
         copy.alias = Some(name)
         copy
-    }
-
-    inline def bind(inline f: E => T): PrimaryKeyColumnExpr[T, E] = {
-        import scala.compiletime.codeOf
-        import scala.language.unsafeNulls
-
-        val fieldName = codeOf(f).split("\\.").last.split("\n").head.trim
-        schema.$bind.put(fieldName, column)
-        val col = this.copy(bind = Some(f))
-        schema.$pkCols.append(col)
-        col
     }
 }
 
