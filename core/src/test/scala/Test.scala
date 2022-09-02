@@ -14,6 +14,7 @@ import scala.annotation.{experimental, tailrec}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
+import java.util.Random
 
 object Test extends App {
     given DB = DB.MYSQL
@@ -66,8 +67,11 @@ object Test extends App {
     val u = update(testTable, false)
     println(u.toSql)
 
-    val d = delete[TestTable](1)
-    println(d.toSql)
+    for (i <- 1 to 100) {
+        val id = Random().nextInt(1000)
+        val d = delete[TestTable](id)
+        println(d.toSql)
+    }
 }
 
 @Table("test_table")

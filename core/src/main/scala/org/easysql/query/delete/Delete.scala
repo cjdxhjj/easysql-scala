@@ -11,6 +11,7 @@ import org.easysql.visitor.*
 import org.easysql.macros.*
 
 import java.sql.{Connection, SQLException}
+import java.util.Date
 
 class Delete extends ReviseQuery {
     private val sqlDelete = SqlDelete()
@@ -24,7 +25,7 @@ class Delete extends ReviseQuery {
         val (tableName, cols) = pkMacro[T, pk.type]
         sqlDelete.table = Some(SqlIdentifierExpr(tableName))
 
-        pk match {
+        inline pk match {
             case t: Tuple => t.toArray.zip(cols).foreach { (p, c) =>
                 sqlDelete.addCondition(visitExpr(ColumnExpr(c).equal(p)))
             }
