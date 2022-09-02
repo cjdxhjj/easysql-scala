@@ -1,15 +1,26 @@
-// import org.easysql.database.TableEntity
-// import org.easysql.dsl.{PrimaryKeyColumnExpr, TableColumnExpr, TableSchema}
-// import org.easysql.bind.bindData
+import org.easysql.bind.bindEntityMacro
+import org.easysql.dsl.*
 
-// import scala.reflect.ClassTag
+import java.util.Date
 
-// object Test extends App {
-//     val post = testBind[Post]
-//     println(post)
-// }
+object Test extends App {
+    val bind = bindEntityMacro[TestTable]
+    val data = bind(Map("id" -> 999, "name" -> "xxx", "test_option" -> "yyy", "date" -> Date("Sat Sep 03 01:26:06 CST 2019")))
+    println(data)
+    print(1111111)
+}
 
-// inline def testBind[T <: TableEntity[_]](using t: TableSchema[T], ct: ClassTag[T]): T = {
+@Table("test_table")
+case class TestTable(
+    @IncrKey id: Int,
+    @Column name: String,
+    @Column("test_option") testOption: Option[String],
+    @Column date: Date
+)
+
+given tt: TableSchema[TestTable] = asTable[TestTable]
+
+// inline def testBind[T <: Product](using t: TableSchema[T], ct: ClassTag[T]): T = {
 //     val result = Map("id" -> 15, "user_id" -> 59, "post_name" -> "xxx")
 //     bindData[T](result)
 // }

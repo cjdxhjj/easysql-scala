@@ -10,7 +10,7 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
-import org.easysql.macros.fetchTableNameMacro
+import org.easysql.macros.*
 
 import scala.annotation.targetName
 import scala.collection.mutable
@@ -61,24 +61,26 @@ def select[I <: SqlDataType | Null](item: Expr[I]): Select[Tuple1[I]] = {
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
-//def find[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Select[_] = {
-//    val select = Select()
-//    select.from(t)
-//    pk match {
-//        case tuple: Tuple =>
-//            t.$pkCols.zip(tuple.toArray).foreach { pkCol =>
-//                select.where(pkCol._1.equal(pkCol._2))
-//            }
-//        case _ => select.where(t.$pkCols.head.equal(pk))
-//    }
-//    select
-//}
+inline def find[T <: Product](pk: SqlDataType | Tuple): Select[_] = {
+    val (tableName, cols) = pkMacro[T, pk.type]
+
+    val select = Select()
+    select.from(table(tableName))
+    inline pk match {
+        case t: Tuple => t.toArray.zip(cols).foreach { (p, c) =>
+            select.where(ColumnExpr(c).equal(p))
+        }
+        case _ => select.where(ColumnExpr(cols.head).equal(pk))
+    }
+
+    select
+}
 
 def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
 
 inline def insert[T <: Product](entities: T*) = Insert().insert(entities: _*)
 
-//inline def save[T <: TableEntity[_]](entity: T)(using t: TableSchema[T]): Save = Save().save(entity)(using t)
+inline def save[T <: Product](entity: T): Save = Save().save(entity)
 
 def update(table: TableSchema[_]): Update = Update().update(table)
 

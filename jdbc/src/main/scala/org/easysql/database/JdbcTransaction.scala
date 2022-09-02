@@ -4,7 +4,7 @@ import org.easysql.query.ReviseQuery
 import org.easysql.query.insert.Insert
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.jdbc.*
-import org.easysql.dsl.{PK, TableSchema}
+import org.easysql.dsl.TableSchema
 
 import java.sql.Connection
 import scala.reflect.ClassTag

@@ -7,7 +7,7 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.{Select, SelectQuery}
 import org.easysql.query.update.Update
 import org.easysql.jdbc.*
-import org.easysql.dsl.{TableSchema, PK}
+import org.easysql.dsl.TableSchema
 
 import java.sql.Connection
 import javax.sql.DataSource
