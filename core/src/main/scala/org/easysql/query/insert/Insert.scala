@@ -7,8 +7,9 @@ import org.easysql.database.{DB, TableEntity}
 import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
 import org.easysql.util.{anyToExpr, toSqlString}
-import org.easysql.visitor.getExpr
+import org.easysql.visitor.*
 import org.easysql.query.select.*
+import org.easysql.macros.*
 
 import java.sql.Connection
 import scala.collection.mutable.ListBuffer
@@ -16,36 +17,20 @@ import scala.collection.mutable.ListBuffer
 class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
     var sqlInsert: SqlInsert = SqlInsert()
 
-//    def insert[T <: TableEntity[_], SS >: S <: InsertEntity](entities: T*)(using t: TableSchema[T]): Insert[_, InsertEntity] = {
-//        sqlInsert.table = Some(SqlIdentifierExpr(t.tableName))
-//
-//        val notIncr = t.$pkCols.filter(!_.isIncr)
-//
-//        notIncr.foreach { pk =>
-//            sqlInsert.columns.addOne(SqlIdentifierExpr(pk.column))
-//        }
-//        t.$columns.foreach { col =>
-//            val colName = col match {
-//                case TableColumnExpr(_, name, _) => name
-//                case NullableColumnExpr(_, name, _) => name
-//            }
-//
-//            sqlInsert.columns.addOne(SqlIdentifierExpr(colName))
-//        }
-//
-//        val values = entities.map { entity =>
-//            val value = notIncr.map(pk => getExpr(anyToExpr(pk.bind.get.apply(entity)))) ++ t.$columns.map {
-//                case TableColumnExpr(_, _, _, bind) => getExpr(anyToExpr(bind.get.apply(entity)))
-//                case NullableColumnExpr(_, _, _, bind) => getExpr(anyToExpr(bind.get.apply(entity)))
-//            }
-//
-//            value.toList
-//        }
-//
-//        sqlInsert.values.addAll(values)
-//
-//        this.asInstanceOf[Insert[_, InsertEntity]]
-//    }
+    inline def insert[T <: Product, SS >: S <: InsertEntity](entities: T*): Insert[_, InsertEntity] = {
+        val insertMetaData = insertMacro[T]
+
+        sqlInsert.table = Some(SqlIdentifierExpr(insertMetaData._1))
+        val insertList = entities.toList map { entity =>
+            insertMetaData._2 map { i =>
+                visitExpr(anyToExpr(i._2.apply(entity)))
+            }
+        }
+        sqlInsert.values.addAll(insertList)
+        sqlInsert.columns.addAll(insertMetaData._2.map(e => visitExpr(ColumnExpr(e._1))))
+
+        this.asInstanceOf[Insert[_, InsertEntity]]
+    }
 
     infix def insertInto(table: TableSchema[_])(columns: Tuple): Insert[InverseMap[columns.type], Nothing] = {
         type ValueTypes = InverseMap[columns.type]

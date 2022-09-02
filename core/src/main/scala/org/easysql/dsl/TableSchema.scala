@@ -31,12 +31,6 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
     val tableName: String
 
     var aliasName: Option[String] = None
-
-    val $columns: ListBuffer[TableColumnExpr[_]] = ListBuffer[TableColumnExpr[_]]()
-
-    val $pkCols: ListBuffer[PrimaryKeyColumnExpr[_]] = ListBuffer[PrimaryKeyColumnExpr[_]]()
-
-    val $bind: mutable.Map[String, String] = mutable.Map()
     
     def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
         val c = TableColumnExpr[T](aliasName.getOrElse(tableName), name, this)

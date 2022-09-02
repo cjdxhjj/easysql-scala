@@ -76,7 +76,7 @@ def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamic
 
 def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
 
-//inline def insert[T <: TableEntity[_]](entity: T*)(using t: TableSchema[T]) = Insert().insert(entity: _*)(using t)
+inline def insert[T <: Product](entities: T*) = Insert().insert(entities: _*)
 
 //inline def save[T <: TableEntity[_]](entity: T)(using t: TableSchema[T]): Save = Save().save(entity)(using t)
 

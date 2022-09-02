@@ -7,7 +7,6 @@ import org.easysql.macros.*
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
 
-import java.lang.reflect.Constructor
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.+
 import java.util.Date
@@ -57,17 +56,24 @@ object Test extends App {
 //    val f2 = find[Post](1)
 //    println(f2.toSql)
 
-    val s = select (tt.*) from tt where tt.id === 1
-    println(s.toSql)
+//    val s = select(tt.*) from tt where tt.id === 1 && tt.testOption === "x"
+//    println(s.toSql)
+    val testTable = TestTable(1, "x", None)
 
-    val t1 = tt as "t1"
-    val s1 = select (t1.*) from t1
-    println(s1.toSql)
+
+
+
+
+
+    val i = insert(testTable)
+    print(i.toSql)
 }
 
 @Table("test_table")
-case class TestTable(@PrimaryKey id: Int,
-                     @Column name: String,
-                     @Column("test_option") testOption: Option[String])
+case class TestTable(
+    @IncrKey id: Int,
+    @Column name: String,
+    @Column("test_option") testOption: Option[String]
+)
 
 given tt: TableSchema[TestTable] = asTable[TestTable]
