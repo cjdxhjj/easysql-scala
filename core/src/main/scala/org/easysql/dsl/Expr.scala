@@ -6,7 +6,6 @@ import org.easysql.ast.order.SqlOrderByOption
 import org.easysql.dsl.const
 import org.easysql.query.select.SelectQuery
 import org.easysql.ast.{SqlDataType, SqlNumberType}
-import org.easysql.database.TableEntity
 import org.easysql.util.anyToExpr
 
 import java.util.Date

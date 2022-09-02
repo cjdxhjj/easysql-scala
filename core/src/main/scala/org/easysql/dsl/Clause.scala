@@ -2,7 +2,7 @@ package org.easysql.dsl
 
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.SqlSubQueryPredicate
-import org.easysql.database.{DB, TableEntity}
+import org.easysql.database.DB
 import org.easysql.dsl.ConstExpr
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
@@ -82,11 +82,11 @@ inline def insert[T <: Product](entities: T*) = Insert().insert(entities: _*)
 
 def update(table: TableSchema[_]): Update = Update().update(table)
 
-//inline def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = Update().update(entity, skipNull)(using t)
+inline def update[T <: Product](entity: T, skipNull: Boolean = true): Update = Update().update(entity, skipNull)
 
 def deleteFrom(table: TableSchema[_]): Delete = Delete().deleteFrom(table)
 
-//inline def delete[T <: TableEntity[_]](pk: PK[T])(using t: TableSchema[T]): Delete = Delete().delete[T](pk)(using t)
+inline def delete[T <: Product](pk: SqlDataType | Tuple): Delete = Delete().delete[T](pk)
 
 def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
 

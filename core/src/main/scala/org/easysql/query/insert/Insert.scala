@@ -3,7 +3,7 @@ package org.easysql.query.insert
 import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.insert.SqlInsert
 import org.easysql.ast.SqlDataType
-import org.easysql.database.{DB, TableEntity}
+import org.easysql.database.DB
 import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
 import org.easysql.util.{anyToExpr, toSqlString}

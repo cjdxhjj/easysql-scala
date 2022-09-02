@@ -2,7 +2,7 @@ import org.easysql.dsl.*
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
 import org.easysql.query.select.*
-import org.easysql.database.{DB, TableEntity}
+import org.easysql.database.DB
 import org.easysql.macros.*
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType
@@ -60,13 +60,14 @@ object Test extends App {
 //    println(s.toSql)
     val testTable = TestTable(1, "x", None)
 
-
-
-
-
-
     val i = insert(testTable)
-    print(i.toSql)
+    println(i.toSql)
+
+    val u = update(testTable, false)
+    println(u.toSql)
+
+    val d = delete[TestTable](1)
+    println(d.toSql)
 }
 
 @Table("test_table")

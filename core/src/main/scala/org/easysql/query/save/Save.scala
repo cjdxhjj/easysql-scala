@@ -1,7 +1,7 @@
 package org.easysql.query.save
 
 import org.easysql.ast.expr.SqlIdentifierExpr
-import org.easysql.database.{DB, TableEntity}
+import org.easysql.database.DB
 import org.easysql.query.ReviseQuery
 import org.easysql.ast.statement.upsert.SqlUpsert
 import org.easysql.dsl.*

@@ -1,6 +1,5 @@
 package org.easysql.dsl
 
-import org.easysql.database.TableEntity
 import org.easysql.dsl.{AllColumnExpr, TableColumnExpr}
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.table.SqlJoinType

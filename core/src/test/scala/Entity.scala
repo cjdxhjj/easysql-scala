@@ -1,10 +1,9 @@
-import org.easysql.database.TableEntity
 import org.easysql.dsl
 import org.easysql.dsl.*
 
 import java.util.Date
 
-case class User(id: Int, key: String, name: Option[String]) extends TableEntity[(Int, String)]
+case class User(id: Int, key: String, name: Option[String])
 
 class UserTable extends TableSchema[User]() {
     override val tableName: String = "user"
@@ -16,7 +15,7 @@ class UserTable extends TableSchema[User]() {
 
 given user: UserTable = UserTable()
 
-case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
+case class Post(id: Int, userId: Int, name: String)
 
 class PostTable extends TableSchema[Post] {
     override val tableName: String = "post"

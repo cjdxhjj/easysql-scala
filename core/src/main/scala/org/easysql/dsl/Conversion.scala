@@ -1,7 +1,6 @@
 package org.easysql.dsl
 
 import org.easysql.ast.SqlDataType
-import org.easysql.database.TableEntity
 import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 
 import scala.compiletime.ops.any.*
@@ -46,10 +45,6 @@ type QueryType[T <: Tuple | Expr[_] | TableSchema[_]] <: Tuple = T match {
 type MapUnionNull[T <: Tuple] <: Tuple = T match {
     case h *: t => (h | Null) *: MapUnionNull[t]
     case EmptyTuple => EmptyTuple
-}
-
-type PK[T <: TableEntity[_]] = T match {
-    case TableEntity[t] => t
 }
 
 type Union[X <: Tuple, Y <: Tuple] <: Tuple = (X, Y) match {
