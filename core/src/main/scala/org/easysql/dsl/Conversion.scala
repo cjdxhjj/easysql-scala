@@ -1,7 +1,6 @@
 package org.easysql.dsl
 
 import org.easysql.ast.SqlDataType
-import org.easysql.database.TableEntity
 import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 
 import scala.compiletime.ops.any.*
@@ -48,10 +47,6 @@ type MapUnionNull[T <: Tuple] <: Tuple = T match {
     case EmptyTuple => EmptyTuple
 }
 
-type PK[T <: TableEntity[_]] = T match {
-    case TableEntity[t] => t
-}
-
 type Union[X <: Tuple, Y <: Tuple] <: Tuple = (X, Y) match {
     case (a *: at, b *: bt) => UnionTo[a, b] *: Union[at, bt]
     case (EmptyTuple, EmptyTuple) => EmptyTuple
@@ -92,4 +87,41 @@ type SelectType[T <: Tuple] = T match {
     case Tuple20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20] => Select[Tuple20[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20]] {val _1: Expr[t1]; val _2: Expr[t2]; val _3: Expr[t3]; val _4: Expr[t4]; val _5: Expr[t5]; val _6: Expr[t6]; val _7: Expr[t7]; val _8: Expr[t8]; val _9: Expr[t9]; val _10: Expr[t10]; val _11: Expr[t11]; val _12: Expr[t12]; val _13: Expr[t13]; val _14: Expr[t14]; val _15: Expr[t15]; val _16: Expr[t16]; val _17: Expr[t17]; val _18: Expr[t18]; val _19: Expr[t19]; val _20: Expr[t20]}
     case Tuple21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21] => Select[Tuple21[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21]] {val _1: Expr[t1]; val _2: Expr[t2]; val _3: Expr[t3]; val _4: Expr[t4]; val _5: Expr[t5]; val _6: Expr[t6]; val _7: Expr[t7]; val _8: Expr[t8]; val _9: Expr[t9]; val _10: Expr[t10]; val _11: Expr[t11]; val _12: Expr[t12]; val _13: Expr[t13]; val _14: Expr[t14]; val _15: Expr[t15]; val _16: Expr[t16]; val _17: Expr[t17]; val _18: Expr[t18]; val _19: Expr[t19]; val _20: Expr[t20]; val _21: Expr[t21]}
     case Tuple22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22] => Select[Tuple22[t1, t2, t3, t4, t5, t6, t7, t8, t9, t10, t11, t12, t13, t14, t15, t16, t17, t18, t19, t20, t21, t22]] {val _1: Expr[t1]; val _2: Expr[t2]; val _3: Expr[t3]; val _4: Expr[t4]; val _5: Expr[t5]; val _6: Expr[t6]; val _7: Expr[t7]; val _8: Expr[t8]; val _9: Expr[t9]; val _10: Expr[t10]; val _11: Expr[t11]; val _12: Expr[t12]; val _13: Expr[t13]; val _14: Expr[t14]; val _15: Expr[t15]; val _16: Expr[t16]; val _17: Expr[t17]; val _18: Expr[t18]; val _19: Expr[t19]; val _20: Expr[t20]; val _21: Expr[t21]; val _22: Expr[t22]}
+}
+
+type ElementType[T <: Tuple, N <: Tuple, Name <: String] <: SqlDataType | Null = (T, N) match {
+    case (t *: tt, n *: nt) => n == Name match {
+        case true => t match {
+            case Option[x] => x match {
+                case Int => Int | Null
+                case String => String | Null
+                case Long => Long | Null
+                case Double => Double | Null
+                case Float => Float | Null
+                case Boolean => Boolean | Null
+                case Date => Date | Null
+                case BigDecimal => BigDecimal | Null
+                case _ => Nothing
+            }
+            case Int => Int
+            case String => String
+            case Long => Long
+            case Double => Double
+            case Float => Float
+            case Boolean => Boolean
+            case Date => Date
+            case BigDecimal => BigDecimal
+            case _ => Nothing
+        }
+        case false => ElementType[tt, nt, Name]
+    }
+    case (EmptyTuple, EmptyTuple) => Nothing
+}
+
+type ExprType[T <: Tuple] = T match {
+    case h *: t => h match {
+        case Option[x] => Expr[x | Null] *: ExprType[t]
+        case _ => Expr[h] *: ExprType[t]
+    }
+    case EmptyTuple => EmptyTuple
 }

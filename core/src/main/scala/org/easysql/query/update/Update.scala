@@ -3,13 +3,14 @@ package org.easysql.query.update
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.{SqlIdentifierExpr, SqlPropertyExpr}
 import org.easysql.ast.statement.update.SqlUpdate
-import org.easysql.database.{DB, TableEntity}
+import org.easysql.database.DB
 import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
 import org.easysql.query.select.SelectQuery
 import org.easysql.util.toSqlString
 import org.easysql.util.anyToExpr
 import org.easysql.visitor.{getExpr, visitExpr}
+import org.easysql.macros.*
 
 import java.sql.{Connection, SQLException}
 import java.util.Date
@@ -22,38 +23,35 @@ class Update extends ReviseQuery {
         this
     }
 
-    def update[T <: TableEntity[_]](entity: T, skipNull: Boolean = true)(using t: TableSchema[T]): Update = {
-        sqlUpdate.table = Some(SqlIdentifierExpr(t.tableName))
+    inline def update[T <: Product](entity: T, skipNull: Boolean = true): Update = {
+        val (tableName, pkList, updateList) = updateMacro[T]
 
-        t.$columns.foreach { col =>
-            val (column, value) = col match {
-                case TableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
-                case NullableColumnExpr(_, name, _, bind) => ColumnExpr(name) -> bind.get.apply(entity)
-            }
-
-            if (!skipNull) {
-                sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
-            } else {
-                if (value != null && value != None) {
-                    sqlUpdate.setList.addOne(getExpr(column) -> getExpr(anyToExpr(value)))
-                }
+        sqlUpdate.table = Some(SqlIdentifierExpr(tableName))
+        updateList.foreach { u =>
+            val value = u._2.apply(entity)
+            if (!skipNull || value != null && value != None) {
+                val updatePair = getExpr(ColumnExpr(u._1)) -> getExpr(anyToExpr(value))
+                sqlUpdate.setList.addOne(updatePair)
             }
         }
 
-        t.$pkCols.foreach { pk =>
-            sqlUpdate.addCondition(getExpr(pk.equal(pk.bind.get.apply(entity))))
+        if (sqlUpdate.setList.size == 0) {
+            throw Exception("实体类中没有需要更新的字段")
+        }
+
+        pkList.foreach { pk =>
+            sqlUpdate.addCondition(visitExpr(ColumnExpr(pk._1).equal(pk._2.apply(entity))))
         }
 
         this
     }
 
-    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_, _] | NullableColumnExpr[_, _] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
+    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
         items.foreach { item =>
             val (column, value) = item
 
             val columnExpr = column match {
-                case t: TableColumnExpr[_, _] => visitExpr(ColumnExpr(t.column))
-                case n: NullableColumnExpr[_, _] => visitExpr(ColumnExpr(n.column))
+                case t: TableColumnExpr[_] => visitExpr(ColumnExpr(t.column))
                 case c: ColumnExpr[_] => visitExpr(c)
             }
 

@@ -1,28 +1,21 @@
-import org.easysql.database.TableEntity
-import org.easysql.dsl._
+import org.easysql.dsl
+import org.easysql.dsl.*
 
 import java.util.Date
 
-case class User(id: Int, key: String, name: Option[String]) extends TableEntity[(Int, String)]
+@Table("user")
+case class User(@IncrKey id: Int, @PrimaryKey key: String, @Column name: Option[String])
 
-class UserTable extends TableSchema[User]() {
-    override val tableName: String = "user"
-    val id = intColumn("id").incr.bind(_.id)
-    val key = varcharColumn("test_key").primaryKey.bind(_.key)
-    val name = varcharColumn("user_name").nullable.bind(_.name)
-    val * = (id, key, name)
+val user = asTable[User]
+
+@Table("post")
+case class Post(@IncrKey id: Int, @Column("user_id") userId: Int, @Column name: String)
+
+val post = asTable[Post]
+
+class NothingTable extends TableSchema() {
+    override val tableName: String = "n"
+    val id = intColumn("id").incr
+    val name = varcharColumn("name")
+    val * = (id, name)
 }
-
-given user: UserTable = UserTable()
-
-case class Post(id: Int, userId: Int, name: String) extends TableEntity[Int]
-
-class PostTable extends TableSchema[Post] {
-    override val tableName: String = "post"
-    val id = intColumn("id").incr.bind(_.id)
-    val userId = intColumn("user_id").bind(_.userId)
-    val name = varcharColumn("post_name").bind(_.name)
-    val * = (id, userId, name)
-}
-
-given post: PostTable = PostTable()

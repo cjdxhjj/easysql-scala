@@ -3,12 +3,13 @@ package org.easysql.query.insert
 import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.insert.SqlInsert
 import org.easysql.ast.SqlDataType
-import org.easysql.database.{DB, TableEntity}
-import org.easysql.dsl.{ConstExpr, Expr, InverseMap, NullableColumnExpr, PrimaryKeyColumnExpr, TableColumnExpr, TableSchema, col}
+import org.easysql.database.DB
+import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
 import org.easysql.util.{anyToExpr, toSqlString}
-import org.easysql.visitor.getExpr
+import org.easysql.visitor.*
 import org.easysql.query.select.*
+import org.easysql.macros.*
 
 import java.sql.Connection
 import scala.collection.mutable.ListBuffer
@@ -16,33 +17,17 @@ import scala.collection.mutable.ListBuffer
 class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
     var sqlInsert: SqlInsert = SqlInsert()
 
-    def insert[T <: TableEntity[_], SS >: S <: InsertEntity](entities: T*)(using t: TableSchema[T]): Insert[_, InsertEntity] = {
-        sqlInsert.table = Some(SqlIdentifierExpr(t.tableName))
+    inline def insert[T <: Product, SS >: S <: InsertEntity](entities: T*): Insert[_, InsertEntity] = {
+        val insertMetaData = insertMacro[T]
 
-        val notIncr = t.$pkCols.filter(!_.isIncr)
-
-        notIncr.foreach { pk =>
-            sqlInsert.columns.addOne(SqlIdentifierExpr(pk.column))
-        }
-        t.$columns.foreach { col =>
-            val colName = col match {
-                case TableColumnExpr(_, name, _, _) => name
-                case NullableColumnExpr(_, name, _, _) => name
+        sqlInsert.table = Some(SqlIdentifierExpr(insertMetaData._1))
+        val insertList = entities.toList map { entity =>
+            insertMetaData._2 map { i =>
+                visitExpr(anyToExpr(i._2.apply(entity)))
             }
-
-            sqlInsert.columns.addOne(SqlIdentifierExpr(colName))
         }
-
-        val values = entities.map { entity =>
-            val value = notIncr.map(pk => getExpr(anyToExpr(pk.bind.get.apply(entity)))) ++ t.$columns.map {
-                case TableColumnExpr(_, _, _, bind) => getExpr(anyToExpr(bind.get.apply(entity)))
-                case NullableColumnExpr(_, _, _, bind) => getExpr(anyToExpr(bind.get.apply(entity)))
-            }
-
-            value.toList
-        }
-
-        sqlInsert.values.addAll(values)
+        sqlInsert.values.addAll(insertList)
+        sqlInsert.columns.addAll(insertMetaData._2.map(e => visitExpr(ColumnExpr(e._1))))
 
         this.asInstanceOf[Insert[_, InsertEntity]]
     }
@@ -53,8 +38,8 @@ class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
         val insert = new Insert[ValueTypes, Nothing]()
         insert.sqlInsert.table = Some(SqlIdentifierExpr(table.tableName))
         insert.sqlInsert.columns.addAll(columns.toArray.map {
-            case t: TableColumnExpr[_, _] => getExpr(col(t.column))
-            case p: PrimaryKeyColumnExpr[_, _] => getExpr(col(p.column))
+            case t: TableColumnExpr[_] => getExpr(col(t.column))
+            case p: PrimaryKeyColumnExpr[_] => getExpr(col(p.column))
         })
 
         insert

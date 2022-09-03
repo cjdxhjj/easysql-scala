@@ -1,16 +1,17 @@
 package org.easysql.jdbc
 
-import java.sql.*
+import java.sql.{Connection, Statement, ResultSet}
 import java.util.Date
 import java.time.{LocalDateTime, ZoneId}
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.unsafeNulls
 
-def jdbcQuery(conn: Connection, sql: String): List[List[(String, Any)]] = {
+
+def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
     var stmt: Statement = null
     var rs: ResultSet = null
-    val result = ListBuffer[List[(String, Any)]]()
+    val result = ListBuffer[Map[String, Any]]()
 
     try {
         stmt = conn.createStatement()
@@ -18,12 +19,36 @@ def jdbcQuery(conn: Connection, sql: String): List[List[(String, Any)]] = {
         val metadata = rs.getMetaData
 
         while (rs.next()) {
-            val rowList = mutable.ListBuffer[(String, Any)]()
-            (1 to metadata.getColumnCount).foreach { it =>
-                val cell = rs.getObject(it)
-                rowList.addOne(metadata.getColumnLabel(it) -> cell)
+            val rowMap = (1 to metadata.getColumnCount()).map { it =>
+                metadata.getColumnLabel(it) -> rs.getObject(it)
+            }.toMap
+            result.addOne(rowMap)
+        }
+    } catch {
+        case e: Exception => e.printStackTrace()
+    } finally {
+        stmt.close()
+        rs.close()
+    }
+
+    result.toList
+}
+
+def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
+    var stmt: Statement = null
+    var rs: ResultSet = null
+    val result = ListBuffer[Array[Any]]()
+
+    try {
+        stmt = conn.createStatement()
+        rs = stmt.executeQuery(sql)
+        val metadata = rs.getMetaData
+
+        while (rs.next()) {
+            val rowList = (1 to metadata.getColumnCount()).toArray.map { it =>
+                rs.getObject(it)
             }
-            result.addOne(rowList.toList)
+            result.addOne(rowList)
         }
     } catch {
         case e: Exception => e.printStackTrace()
