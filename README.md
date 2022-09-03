@@ -47,144 +47,50 @@ if (true) {
 
 # 元数据配置
 
-在大多数应用中，我们需要预先对数据表进行建模，比如创建数据库实体类等，而使用easysql构造查询时，我们需要创建一个表的元数据类（**并非是数据库实体类**），来注册表名，字段名等信息。
+在大多数应用中，我们需要预先对数据表进行建模，比如创建数据库实体类，easysql支持从实体类中进行元数据抽取。
 
 如果你的业务里，并不能事先知道表结构信息，可以先跳过此部分，后续部分将会介绍如何使用动态的表名和字段名来构造查询。
 
-我们创建一个类，继承`TableSchema`，添加几个字段，然后使用`given`创建一个实例（**此处最好使用`given`，而非`val`**，原因将会在后续说明）：
+下面有一个`case class`组织的实体类：
 
 ```scala
-class UserTable extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id")
-    val name = varcharColumn("name")
-}
-
-given user: UserTable = UserTable()
+case class User(id: Int, name: String, testOption: Option[String])
 ```
 
-然后就可以这样构造查询了：
+我们可以在类上添加注解`Table`，在字段上添加注解`Column`，主键字段添加`PrimaryKey`或`IncrKey`（对应自增主键）：
 
 ```scala
-val s = select (user.id, user.name) from user
+@Table("user")
+case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") testOption: Option[String])
 ```
 
-字段类型支持：
+注解的参数为实际的数据库表名或字段名，如果名字与字段名相同，则可以省略。
 
-`intColumn` `longColumn` `varcharColumn` `floatColumn` 
-
-`doubleColumn` `booleanColumn` `dateColumn` `decimalColumn`
-
-
-
-## 其他配置
-
-对于主键字段，可以添加`.primaryKey`调用：
+然后使用`asTable`来从实体类中生成表的元数据：
 
 ```scala
-class UserTable extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id").primaryKey
-    val name = varcharColumn("name")
-}
+@Table("user")
+case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") testOption: Option[String])
 
-given user: UserTable = UserTable()
+val user = asTable[User]
 ```
 
-如果是自增主键，则添加`.incr`调用：
+这样我们就能用这些元数据来构造查询了：
 
 ```scala
-class UserTable extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id").incr
-    val name = varcharColumn("name")
-}
-
-given user: UserTable = UserTable()
-```
-
-**更新主键字段时会产生编译错误。**
-
-使用`.nullable`来创建可空字段：
-
-```scala
-class UserTable extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id").primaryKey
-    val name = varcharColumn("name").nullable
-}
-
-given user: UserTable = UserTable()
-```
-
-**非空字段会在与空值比较时产生编译错误。**
-
-为了更方便使用，推荐在元数据配置中添加一个字段元组：
-
-```scala
-class UserTable extends TableSchema() {
-    override val tableName: String = "user"
-    val id = intColumn("id").primaryKey
-    val name = varcharColumn("name").nullable
-
-    val * = (id, name)
-}
-
-given user: UserTable = UserTable()
-```
-
-然后就可以这样使用了：
-
-```scala
-val s = select (user.*) from user
-```
-
-生成sql时会递归展开元组中的字段
-
-## 实体类绑定
-
-使用实体类对象来生成插入语句或是生成按主键更新或查找数据的sql语句，是orm的基本功能之一，easysql理所应当地支持这些功能，前提是把实体类和元数据类关联起来。
-
-我们首先需要让实体类继承`TableEntity`这个`trait`，其中泛型参数为主键类型，联合主键的话，可以使用元组类型（注意顺序要与元数据类配置中的一致）；
-
-然后我们需要在`TableSchema`的泛型参数中填写实体类的类型，并使用`bind`方法，把实体类和元数据关联起来。
-
-来看一个完整的例子：
-
-```scala
-case class User(id: Int, name: Option[String]) extends TableEntity[Int]
-
-class UserTable extends TableSchema[User]() {
-    override val tableName: String = "user"
-    val id = intColumn("id").incr.bind(_.id)
-    val name = varcharColumn("name").nullable.bind(_.name)
-    val * = (id, name)
-}
-
-given user: UserTable = UserTable()
-```
-
-然后我们就能使用实体类来生成insert、update等语句：
-
-```scala
-val user = User(1, Some("x"))
-
-val i = insert(user)
-val u = update(user)
-val d = delete[User](1)
+// 查询
+val s = select (user.*) from user where user.id === 1
 val f = find[User](1)
-val s = save(user)
+
+// 增删改
+val userRow = User(1, "x", None)
+val i = insert(userRow)
+val u = update(userRow)
+val sv = save(userRow)
+val d = delete[User](1)
 ```
 
-现在，可以解释一下为什么需要使用`given`来创建表结构实例了，以insert方法为例，其定义如下：
-
-```scala
-def insert[T <: TableEntity[_]](entity: T*)(using t: TableSchema[T])
-```
-
-方法中使用`using`引入了一个隐式参数，这样，调用方法时就不需要显式传入一个表结构参数，使用更加方便；也能在不借助反射等手段的前提下生成sql语句，获得更好的性能。
-
-更详细的使用实体类创建查询的方法，将会在查询构造部分说明。
+更详细的构造api会在后文查询构造部分介绍。
 
 # 查询构造
 
