@@ -49,4 +49,4 @@ case class TestTable(
     @Column("test_option") testOption: Option[String]
 )
 
-given tt: TableSchema[TestTable] = asTable[TestTable]
+val tt = asTable[TestTable]

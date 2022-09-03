@@ -3,26 +3,19 @@ import org.easysql.dsl.*
 
 import java.util.Date
 
-case class User(id: Int, key: String, name: Option[String])
+@Table("user")
+case class User(@IncrKey id: Int, @PrimaryKey key: String, @Column name: Option[String])
 
-class UserTable extends TableSchema[User]() {
-    override val tableName: String = "user"
+val user = asTable[User]
+
+@Table("post")
+case class Post(@IncrKey id: Int, @Column("user_id") userId: Int, @Column name: String)
+
+val post = asTable[Post]
+
+class NothingTable extends TableSchema() {
+    override val tableName: String = "n"
     val id = intColumn("id").incr
-    val key = varcharColumn("test_key").primaryKey
-    val name = varcharColumn("user_name").nullable
-    val * = (id, key, name)
+    val name = varcharColumn("name")
+    val * = (id, name)
 }
-
-given user: UserTable = UserTable()
-
-case class Post(id: Int, userId: Int, name: String)
-
-class PostTable extends TableSchema[Post] {
-    override val tableName: String = "post"
-    val id = intColumn("id").incr
-    val userId = intColumn("user_id")
-    val name = varcharColumn("post_name")
-    val * = (id, userId, name)
-}
-
-given post: PostTable = PostTable()

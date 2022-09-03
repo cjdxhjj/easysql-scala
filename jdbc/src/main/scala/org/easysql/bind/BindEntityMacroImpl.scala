@@ -20,14 +20,13 @@ def bindEntityMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[Map[S
             annotation match {
                 case Apply(Select(New(TypeIdent(name)), _), args) =>
                     if (name == "PrimaryKey" || name == "IncrKey" || name == "Column") {
-                        val fieldName = args match {
+                        args match {
                             case Literal(v) :: Nil => key = Expr(v.value.toString())
                             case _ =>
                         }
                     }
             }
         }
-        
 
         f.tree match {
             case vd: ValDef => {
@@ -36,71 +35,71 @@ def bindEntityMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[Map[S
                     case '[Int] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Int])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(0).asInstanceOf[Int] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, 0).asInstanceOf[Int] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Int]
                     }
                     case '[String] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[String])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse("").asInstanceOf[String] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, "").asInstanceOf[String] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => String]
                     }
                     case '[Long] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Long])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(0l).asInstanceOf[Long] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, 0l).asInstanceOf[Long] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Long]
                     }
                     case '[Float] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Float])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(0f).asInstanceOf[Float] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, 0f).asInstanceOf[Float] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Float]
                     }
                     case '[Double] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Double])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(0d).asInstanceOf[Double] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, 0d).asInstanceOf[Double] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Double]
                     }
                     case '[BigDecimal] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[BigDecimal])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(BigDecimal(0)).asInstanceOf[BigDecimal] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, BigDecimal(0)).asInstanceOf[BigDecimal] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => BigDecimal]
                     }
                     case '[Boolean] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Boolean])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(false).asInstanceOf[Boolean] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, false).asInstanceOf[Boolean] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Boolean]
                     }
                     case '[Date] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Date])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(Date()).asInstanceOf[Date] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, Date()).asInstanceOf[Date] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Date]
                     }
                     case '[Option[t]] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Option[t]])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
                             '{ $x.get($key).asInstanceOf[Option[t]] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Option[t]]
@@ -108,8 +107,8 @@ def bindEntityMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[Map[S
                     case '[t] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[t])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                        val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).getOrElse(null).asInstanceOf[t] }.asTerm
+                            val x = paramRefs.head.asExprOf[Map[String, Any]]
+                            '{ $x.getOrElse($key, null).asInstanceOf[t] }.asTerm
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => t]
                     }
