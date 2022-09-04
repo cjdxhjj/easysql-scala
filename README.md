@@ -75,6 +75,16 @@ case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") t
 val user = asTable[User]
 ```
 
+`asTable`会从实体类中抽取字段表达式，并生成一个名为`*`的方法，返回一个字段元组，实际产生的类型如下：
+
+```scala
+// 下面的类型都是自动生成的，不需要显式写出，此处仅用于说明
+val id: PrimaryKeyExpr[Int] = user.id
+val name: TableColumnExpr[String] = user.name
+val testOption: TableColumnExpr[String | Null] = user.testOption
+val all: (Expr[Int], Expr[String], Expr[String | Null])  = user.*
+```
+
 这样我们就能用这些元数据来构造查询了：
 
 ```scala
