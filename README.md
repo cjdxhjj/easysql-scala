@@ -106,10 +106,16 @@ val d = delete[User](1)
 
 字段是最基本的表达式，上文中，我们创建的元数据里，便是创建了字段类型的表达式。
 
-有了元数据对象，我们就可以写这样的查询：
+有了元数据，我们就可以写这样的查询：
 
 ```scala
 val s = select (user.id) from user
+```
+
+并且`asTable`会自动创建一个名为`*`的方法，查询时会自动展开表的全部字段：
+
+```scala
+val s = select (user.*) from user
 ```
 
 但是有些应用里，表是运行期动态创建的，我们恐怕并不能构建出元数据对象，这时候可以使用`col`方法来创建一个动态字段；
@@ -126,7 +132,7 @@ val idCol = col[Int]("t.id")
 val s = select (idCol) from table("t") where idCol > 1
 ```
 
-库内置了一个名为\*的方法，用来产生一个字段通配符：
+库内置了一个名为`*`的方法，用来产生一个字段通配符：
 
 ```scala
 val s = select (*) from table("t")
@@ -140,9 +146,9 @@ val s = select (*) from table("t")
 val s = select (user.id as "c1", user.name as "c2") from user
 ```
 
-当然，`as`方法可以推广到后续介绍的任何sql表达式类型，后续就不再赘述了。
+当然，`as`方法可以推广到后续介绍的任何sql表达式类型，后文便不再赘述。
 
-值得一提的是：`as`方法使用了一种名为`refinement type`的手段达到类型安全，`as`的参数如果为空字符串，则不能通过编译：
+值得一提的是：`as`方法使用了一种名为`refinement type`的手段达到类型安全，`as`的参数如果为**空字符串**，则不能通过编译：
 
 ```scala
 // 编译错误
@@ -333,7 +339,7 @@ val t2 = user as "t2"
 val s = select (t1.*, t2.*) from t1 join t2 on t1.id === t2.id
 ```
 
-**`table`方法创建的表，起别名要使用`unsafeAs`方法**。
+如果别名是运行期确定，要使用`unsafeAs`方法。
 
 ### where
 
@@ -562,7 +568,7 @@ val sql = i.toSql
 
 values中的每个元组的类型必须与insertInto中传入的参数一致，否则会编译错误。
 
-如果我们在上文元数据配置环节，绑定了元数据和实体类，那么就可以使用实体类来生成insert语句：
+配置好实体类上的元数据注解后，我们可以使用实体对象来插入数据：
 
 ```scala
 val user = User(1, Some("x"))
@@ -635,6 +641,8 @@ val sql = d.toSql
 val d = delete[User](1)
 val sql = d.toSql
 ```
+
+如果参数类型与实体类注解定义的主键类型不一致，则会产生编译错误，如果是联合主键的表，此处依次传入多个参数或者一个对应类型的元组即可。
 
 ## 插入或更新
 
