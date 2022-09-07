@@ -40,6 +40,11 @@ object Test extends App {
 
     val f = find[TestTable](1)
     println(f.toSql)
+
+
+    val join = select (user.name, post.id) from user leftJoin post on user.id === post.userId as "join"
+    
+    val a = join._2 === null
 }
 
 @Table("test_table")
