@@ -13,13 +13,13 @@ class Query[T](val t: T, val s: Select[_]) {
     private var tableNum = 1
 
     def map[R <: Expr[_] | TableSchema[_] | Tuple](f: T => R): Query[R] = {
-        // s.clear
+        s.clear
         val mapResult = f(t)
         def addSelectItem(r: Any): Unit = r match {
             case e @ TableColumnExpr(t, n, schema) =>
-                s.select(e.unsafeAs(s"${schema.aliasName.get}__$n"))
+                s.select(e)
             case p @ PrimaryKeyColumnExpr(t, n, schema, _) =>
-                s.select(p.unsafeAs(s"${schema.aliasName.get}__$n"))
+                s.select(p)
             case e: Expr[_] => s.select(e)
             case t: Tuple => {
                 val selectArray = t.toArray
@@ -95,8 +95,8 @@ class Query[T](val t: T, val s: Select[_]) {
     // def take
 
     def count: Query[Int] = {
-        // s.clear
-        s.select(org.easysql.dsl.count().as("count"))
+        s.clear
+        s.select(org.easysql.dsl.count())
         new Query(0, s)
     }
 
@@ -110,9 +110,9 @@ class Query[T](val t: T, val s: Select[_]) {
         new Query(false, s)
     }
 
-    def resultType: List[
-      FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]
-    ] = ???
+    def resultType: List[FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]] = List()
+
+    def sql(db: DB): String = s.sql(db)
 
     def toSql(using db: DB): String = s.toSql
 }

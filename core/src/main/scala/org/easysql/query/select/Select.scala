@@ -368,6 +368,8 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         case "_22" => col(s"${aliasName.getOrElse("")}.${selectItems(21)}")
         case _ => col[SqlDataType | Null](s"${aliasName.get}.$name")
     }
+
+    private[select] def clear: Unit = this.sqlSelect.selectList.clear
 }
 
 object Select {

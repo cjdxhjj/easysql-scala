@@ -4,7 +4,7 @@ import org.easysql.query.ReviseQuery
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
 import org.easysql.query.save.Save
-import org.easysql.query.select.{Select, SelectQuery}
+import org.easysql.query.select.{Select, SelectQuery, Query}
 import org.easysql.query.update.Update
 import org.easysql.jdbc.*
 import org.easysql.dsl.TableSchema
@@ -55,6 +55,9 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
 
     override inline def fetchCount(query: Select[_]): Int = 
         exec(conn => jdbcQueryCount(conn, query.countSql(db)))
+
+    inline def queryToList[T](query: Query[T]) = 
+        exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindQuery[T].apply(i)))
 
     def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection

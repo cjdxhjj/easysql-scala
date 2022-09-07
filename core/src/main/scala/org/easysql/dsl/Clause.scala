@@ -7,13 +7,14 @@ import org.easysql.dsl.ConstExpr
 import org.easysql.query.delete.Delete
 import org.easysql.query.insert.Insert
 import org.easysql.query.save.Save
-import org.easysql.query.select.{Select, SelectQuery}
+import org.easysql.query.select.{Select, SelectQuery, Query}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
 import org.easysql.macros.*
 
 import scala.annotation.targetName
 import scala.collection.mutable
+import scala.deriving.*
 
 def const[T <: SqlDataType | Null](v: T) = ConstExpr[T](v)
 
@@ -91,6 +92,8 @@ def deleteFrom(table: TableSchema[_]): Delete = Delete().deleteFrom(table)
 inline def delete[T <: Product](pk: SqlDataType | Tuple): Delete = Delete().delete[T](pk)
 
 def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
+
+inline def query[T <: Product](using m: Mirror.ProductOf[T]) = Query[T]
 
 extension (s: StringContext) {
     def sql(args: (SqlDataType | List[SqlDataType])*): String = {
