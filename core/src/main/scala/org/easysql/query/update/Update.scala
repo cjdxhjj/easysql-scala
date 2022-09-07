@@ -29,7 +29,7 @@ class Update extends ReviseQuery {
         sqlUpdate.table = Some(SqlIdentifierExpr(tableName))
         updateList.foreach { u =>
             val value = u._2.apply(entity)
-            if (!skipNull || value != null && value != None) {
+            if (!skipNull || value != null) {
                 val updatePair = getExpr(ColumnExpr(u._1)) -> getExpr(anyToExpr(value))
                 sqlUpdate.setList.addOne(updatePair)
             }
