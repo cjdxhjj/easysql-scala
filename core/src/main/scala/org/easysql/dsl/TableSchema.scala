@@ -56,7 +56,7 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
         inline exprMetaMacro[E](name) match {
             case ("pk", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)
             case ("incr", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this, true)
-            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type]](tableName, n, this)
+            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & (SqlDataType | Null)](tableName, n, this)
         }
     }
 
@@ -73,10 +73,8 @@ extension[E <: Product, T <: TableSchema[E]] (t: T) {
         table
     }
 
-    infix def unsafeAs(aliasName: String): TableSchema[_] = {
-        val table = new TableSchema {
-            override val tableName: String = t.tableName
-        }
+    inline infix def unsafeAs(aliasName: String): T = {
+        val table = aliasMacro[E, T](t)
         table.aliasName = Some(aliasName)
         table
     }

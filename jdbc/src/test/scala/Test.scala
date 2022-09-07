@@ -7,14 +7,13 @@ object Test extends App {
     val bind = bindEntityMacro[TestTable]
     val data = bind(Map("id" -> 999, "name" -> "xxx", "test_option" -> "yyy", "date" -> Date("Sat Sep 03 01:26:06 CST 2019")))
     println(data)
-    print(1111111)
 }
 
 @Table("test_table")
 case class TestTable(
     @IncrKey id: Int,
     @Column name: String,
-    @Column("test_option") testOption: Option[String],
+    @Column("test_nullable") testOption: String | Null,
     @Column date: Date
 )
 

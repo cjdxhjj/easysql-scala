@@ -96,14 +96,6 @@ def bindEntityMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[Map[S
                         }
                         Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Date]
                     }
-                    case '[Option[t]] => {
-                        val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[Option[t]])
-                        def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                            val x = paramRefs.head.asExprOf[Map[String, Any]]
-                            '{ $x.get($key).asInstanceOf[Option[t]] }.asTerm
-                        }
-                        Lambda(f, mtpe, rhsFn).asExprOf[Map[String, Any] => Option[t]]
-                    }
                     case '[t] => {
                         val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[Map[String, Any]]), _ => TypeRepr.of[t])
                         def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {

@@ -19,10 +19,10 @@ import java.util.Random
 object Test extends App {
     given DB = DB.MYSQL
 
-    val s = select(tt.*) from tt where tt.id === 1 && tt.testOption === "x"
+    val s = select(tt.*) from tt where tt.id === 1 && tt.testNullable === "x"
     println(s.toSql)
 
-    val testTable = TestTable(1, "x", None)
+    val testTable = TestTable(1, "x", null)
 
     val i = insert(testTable)
     println(i.toSql)
@@ -46,7 +46,7 @@ object Test extends App {
 case class TestTable(
     @IncrKey id: Int,
     @Column name: String,
-    @Column("test_option") testOption: Option[String]
+    @Column("test_nullable") testNullable: String | Null
 )
 
 val tt = asTable[TestTable]
