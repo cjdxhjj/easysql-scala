@@ -42,6 +42,13 @@ def table(name: String) = new TableSchema() {
 
 inline def asTable[T <: Product] = new TableSchema[T] {
     override val tableName: String = fetchTableNameMacro[T]
+
+    override val _cols: mutable.ListBuffer[TableColumnExpr[?]] = {
+        val cols = mutable.ListBuffer[TableColumnExpr[_]]()
+        val colList = fieldNamesMacro[T].map(n => TableColumnExpr(tableName, n, this))
+        cols.addAll(colList)
+        cols
+    }
 }
 
 extension[T <: SqlDataType | Null] (e: TableColumnExpr[T] | ColumnExpr[T]) {

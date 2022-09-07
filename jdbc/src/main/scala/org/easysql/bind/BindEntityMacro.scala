@@ -12,10 +12,9 @@ inline def bindQueryMacro[T](inline nextIndex: Int): (Int, Array[Any] => T) = ${
 
 inline def bindSingleton[T](nextIndex: Int): (Int, Array[Any] => T) = {
     inline erasedValue[T] match {
-        case _: SqlDataType =>
-            nextIndex + 1 -> { (data: Array[Any]) => data(nextIndex).asInstanceOf[T] }
+        case _: Product => bindQueryMacro[T](nextIndex)
 
-        case _ => bindQueryMacro[T](nextIndex)
+        case _ => nextIndex + 1 -> { (data: Array[Any]) => data(nextIndex).asInstanceOf[T] }
     }
 }
 

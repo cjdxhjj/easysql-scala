@@ -6,6 +6,7 @@ import org.easysql.ast.SqlDataType
 import org.easysql.macros.*
 import org.easysql.database.*
 import org.easysql.util.toSqlString
+import org.easysql.visitor.visitExpr
 
 import scala.deriving.*
 
@@ -16,11 +17,11 @@ class Query[T](val t: T, val s: Select[_]) {
         s.clear
         val mapResult = f(t)
         def addSelectItem(r: Any): Unit = r match {
-            case e @ TableColumnExpr(t, n, schema) =>
-                s.select(e)
-            case p @ PrimaryKeyColumnExpr(t, n, schema, _) =>
-                s.select(p)
             case e: Expr[_] => s.select(e)
+            case ts: TableSchema[_] => {
+                val cols = ts._cols.map(e => col(s"${ts.aliasName.get}.${e.column}")).toArray
+                s.dynamicSelect(cols: _*)
+            }
             case t: Tuple => {
                 val selectArray = t.toArray
                 selectArray.foreach(addSelectItem(_))
@@ -45,11 +46,7 @@ class Query[T](val t: T, val s: Select[_]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n =>
-            TableColumnExpr(joinTable.tableName, n, joinTable).unsafeAs(
-              s"t${tableNum}__$n"
-            )
-        )
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).join(joinTable)
 
         val jt = inline this.t match {
@@ -120,9 +117,7 @@ class Query[T](val t: T, val s: Select[_]) {
 object Query {
     inline def apply[T <: Product](using m: Mirror.ProductOf[T]): Query[TableSchema[T]] = {
         val table = asTable[T].as("t1")
-        val cols = fieldNamesMacro[T].toArray.map(n =>
-            TableColumnExpr(table.tableName, n, table).unsafeAs(s"t1__$n")
-        )
+        val cols = fieldNamesMacro[T].toArray.map(n => TableColumnExpr(table.tableName, n, table))
         val s = dynamicSelect(cols: _*).from(table)
         new Query[TableSchema[T]](table, s)
     }
