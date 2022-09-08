@@ -22,10 +22,11 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
 given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
 
-given queryToExpr[T <: SqlDataType | Null]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
+given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case Expr[x] *: t => x *: InverseMap[t]
+    case TableSchema[x] *: t => x *: InverseMap[t]
     case EmptyTuple => EmptyTuple
 }
 
@@ -33,6 +34,7 @@ type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
     case x *: t => x match {
         case Tuple => Tuple.Concat[RecursiveInverseMap[x], RecursiveInverseMap[t]]
         case Expr[y] => y *: RecursiveInverseMap[t]
+        case TableSchema[y] => y *: RecursiveInverseMap[t]
     }
     case EmptyTuple => EmptyTuple
 }
@@ -40,11 +42,6 @@ type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
 type QueryType[T <: Tuple | Expr[_] | TableSchema[_]] <: Tuple = T match {
     case h *: t => h *: t
     case _ => Tuple1[T]
-}
-
-type MapUnionNull[T <: Tuple] <: Tuple = T match {
-    case h *: t => (h | Null) *: MapUnionNull[t]
-    case EmptyTuple => EmptyTuple
 }
 
 type Union[X <: Tuple, Y <: Tuple] <: Tuple = (X, Y) match {
@@ -92,7 +89,7 @@ type SelectType[T <: Tuple] = T match {
 type ElementType[T <: Tuple, N <: Tuple, Name <: String] = (T, N) match {
     case (t *: tt, n *: nt) => n == Name match {
         case true => t match {
-            case SqlDataType | Null => t 
+            case SqlDataType => t 
             case _ => Nothing
         }
         case false => ElementType[tt, nt, Name]
@@ -120,4 +117,9 @@ type Append[X, Y] <: Tuple = X match {
     case x *: xs => x *: Append[xs, Y]
     case EmptyTuple => Y *: EmptyTuple
     case _ => X *: Y *: EmptyTuple
+}
+
+type EliminateTuple1[T <: Tuple] = T match {
+    case Tuple1[t] => t
+    case _ => T
 }

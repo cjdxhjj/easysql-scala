@@ -2,10 +2,11 @@ package org.easysql.query.select
 
 import org.easysql.dsl.*
 import org.easysql.dsl.TableSchema
-import org.easysql.ast.SqlDataType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.macros.*
 import org.easysql.database.*
 import org.easysql.util.toSqlString
+import org.easysql.visitor.visitExpr
 
 import scala.deriving.*
 
@@ -13,14 +14,14 @@ class Query[T](val t: T, val s: Select[_]) {
     private var tableNum = 1
 
     def map[R <: Expr[_] | TableSchema[_] | Tuple](f: T => R): Query[R] = {
-        // s.clear
+        s.clear
         val mapResult = f(t)
         def addSelectItem(r: Any): Unit = r match {
-            case e @ TableColumnExpr(t, n, schema) =>
-                s.select(e.unsafeAs(s"${schema.aliasName.get}__$n"))
-            case p @ PrimaryKeyColumnExpr(t, n, schema, _) =>
-                s.select(p.unsafeAs(s"${schema.aliasName.get}__$n"))
             case e: Expr[_] => s.select(e)
+            case ts: TableSchema[_] => {
+                val cols = ts._cols.map(e => col(s"${ts.aliasName.get}.${e.column}")).toArray
+                s.dynamicSelect(cols: _*)
+            }
             case t: Tuple => {
                 val selectArray = t.toArray
                 selectArray.foreach(addSelectItem(_))
@@ -45,12 +46,72 @@ class Query[T](val t: T, val s: Select[_]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n =>
-            TableColumnExpr(joinTable.tableName, n, joinTable).unsafeAs(
-              s"t${tableNum}__$n"
-            )
-        )
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).join(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def leftJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).leftJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def rightJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).rightJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def fullJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).fullJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def crossJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).crossJoin(joinTable)
 
         val jt = inline this.t match {
             case tup: Tuple => tup ++ Tuple1(joinTable)
@@ -91,28 +152,58 @@ class Query[T](val t: T, val s: Select[_]) {
         this
     }
 
-    // def drop
-    // def take
+    def drop(n: Int): Query[T] = {
+        s.offset(n)
+        this
+    }
+
+    def take(n: Int): Query[T] = {
+        s.limit(n)
+        this
+    }
 
     def count: Query[Int] = {
-        // s.clear
-        s.select(org.easysql.dsl.count().as("count"))
+        s.clear
+        s.select(org.easysql.dsl.count())
         new Query(0, s)
     }
 
-    // def max
-    // def min
-    // def avg
-    // def sum
+    def max[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.max(item))
+        new Query(item, s)
+    }
+
+    def min[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.min(item))
+        new Query(item, s)
+    }
+
+    def avg[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.avg(item))
+        new Query(item, s)
+    }
+
+    def sum[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[BigDecimal]] = {
+        s.clear
+        val item = org.easysql.dsl.sum(f(t))
+        s.select(item)
+        new Query(item, s)
+    }
 
     def exists: Query[Boolean] = {
         val s = select(org.easysql.dsl.exists(this.s))
         new Query(false, s)
     }
 
-    def resultType: List[
-      FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]
-    ] = ???
+    def resultType: List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = List()
+
+    def sql(db: DB): String = s.sql(db)
 
     def toSql(using db: DB): String = s.toSql
 }
@@ -120,9 +211,7 @@ class Query[T](val t: T, val s: Select[_]) {
 object Query {
     inline def apply[T <: Product](using m: Mirror.ProductOf[T]): Query[TableSchema[T]] = {
         val table = asTable[T].as("t1")
-        val cols = fieldNamesMacro[T].toArray.map(n =>
-            TableColumnExpr(table.tableName, n, table).unsafeAs(s"t1__$n")
-        )
+        val cols = fieldNamesMacro[T].toArray.map(n => TableColumnExpr(table.tableName, n, table))
         val s = dynamicSelect(cols: _*).from(table)
         new Query[TableSchema[T]](table, s)
     }

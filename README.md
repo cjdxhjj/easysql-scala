@@ -81,8 +81,8 @@ val user = asTable[User]
 // 下面的类型都是自动生成的，不需要显式写出，此处仅用于说明
 val id: PrimaryKeyExpr[Int] = user.id
 val name: TableColumnExpr[String] = user.name
-val testNullable: TableColumnExpr[String | Null] = user.testNullable
-val all: (Expr[Int], Expr[String], Expr[String | Null])  = user.*
+val testOption: TableColumnExpr[String] = user.testOption
+val all: (Expr[Int], Expr[String], Expr[String])  = user.*
 ```
 
 这样我们就能用这些元数据来构造查询了：
@@ -735,7 +735,7 @@ SELECT RANK() OVER (PARTITION BY user.id ORDER BY user.user_name ASC) AS over FR
 创建一个普通函数`LEFT`：
 
 ```scala
-def left(e: Expr[String] | Expr[String | Null], size: Int): NormalFunctionExpr[String] = {
+def left(e: Expr[String], size: Int): NormalFunctionExpr[String] = {
     import org.easysql.dsl.given
     NormalFunctionExpr("LEFT", List(e, size))
 }
@@ -865,7 +865,7 @@ val result: List[Long] = db.runAndReturnKey(insert)
 val select = select (user.id, user.name) from user
 
 val result1: List[Map[String, Any]] = db.queryMap(select)
-val result2: List[(Int, String | Null)] = db.queryTuple(select)
+val result2: List[(Int, String)] = db.queryTuple(select)
 val result3: List[User] = db.query[User](select)
 ```
 
@@ -877,7 +877,7 @@ val result3: List[User] = db.query[User](select)
 val select = select (user.id, user.name) from user
 
 val result1: Option[Map[String, Any]] = db.findMap(select)
-val result2: Option[(Int, String | Null)] = db.findTuple(select)
+val result2: Option[(Int, String)] = db.findTuple(select)
 val result3: Option[User] = db.find[User](1)
 ```
 
@@ -897,7 +897,7 @@ case class Page[T](totalPage: Int = 0, totalCount: Int = 0, data: List[T] = List
 val select = select (user.id, user.name) from user
 
 val result1: Page[Map[String, Any]] = db.queryPageOfMap(select)(10, 1)
-val result2: Page[(Int, String | Null)] = db.queryPageOfTuple(select)(10, 1, true)
+val result2: Page[(Int, String)] = db.queryPageOfTuple(select)(10, 1, true)
 val result3: Page[User] = db.queryPage[User](select)(10, 1, false)
 ```
 

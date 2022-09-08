@@ -3,8 +3,7 @@ name := "easysql-scala"
 lazy val commonSettings = Seq(
     organization := "org.easysql",
     version := "1.0.0",
-    scalaVersion := "3.1.3",
-    scalacOptions += "-Yexplicit-nulls"
+    scalaVersion := "3.1.3"
 )
 
 lazy val core = project.in(file("core")).settings(commonSettings)

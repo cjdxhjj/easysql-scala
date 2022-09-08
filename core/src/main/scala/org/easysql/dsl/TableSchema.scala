@@ -30,9 +30,12 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
     val tableName: String
 
     var aliasName: Option[String] = None
+
+    val _cols: ListBuffer[TableColumnExpr[_]] = ListBuffer()
     
     def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
         val c = TableColumnExpr[T](aliasName.getOrElse(tableName), name, this)
+        _cols.addOne(c)
         c
     }
 
@@ -56,7 +59,7 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
         inline exprMetaMacro[E](name) match {
             case ("pk", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)
             case ("incr", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this, true)
-            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & (SqlDataType | Null)](tableName, n, this)
+            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)
         }
     }
 

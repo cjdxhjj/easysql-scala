@@ -9,13 +9,13 @@ def count(query: Expr[_]) = AggFunctionExpr[Int]("COUNT", List(query))
 
 def countDistinct(query: Expr[_]) = AggFunctionExpr[Int]("COUNT", List(query), true)
 
-def sum[T <: SqlNumberType | Null](query: Expr[T]) = AggFunctionExpr[T]("SUM", List(query))
+def sum[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[BigDecimal]("SUM", List(query))
 
-def avg[T <: SqlNumberType | Null](query: Expr[T]) = AggFunctionExpr[T]("AVG", List(query))
+def avg[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[T]("AVG", List(query))
 
-def max[T <: SqlDataType | Null](query: Expr[T]) = AggFunctionExpr[T]("MAX", List(query))
+def max[T <: SqlDataType](query: Expr[T]) = AggFunctionExpr[T]("MAX", List(query))
 
-def min[T <: SqlDataType | Null](query: Expr[T]) = AggFunctionExpr[T]("MIN", List(query))
+def min[T <: SqlDataType](query: Expr[T]) = AggFunctionExpr[T]("MIN", List(query))
 
 def rank() = AggFunctionExpr[Int]("RANK", List())
 

@@ -2,9 +2,9 @@ package org.easysql.database
 
 import org.easysql.query.ReviseQuery
 import org.easysql.query.insert.Insert
-import org.easysql.query.select.{Select, SelectQuery}
+import org.easysql.query.select.{Select, SelectQuery, Query}
 import org.easysql.jdbc.*
-import org.easysql.dsl.TableSchema
+import org.easysql.dsl.*
 import org.easysql.bind.*
 import org.easysql.ast.SqlDataType
 
@@ -13,38 +13,29 @@ import java.sql.Connection
 class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
     override inline def run(query: ReviseQuery): Int = jdbcExec(conn, query.sql(db))
 
-    override inline def runAndReturnKey(query: Insert[_, _]): List[Long] = jdbcExecReturnKey(conn, query.sql(db))
+    override inline def runAndReturnKey(query: Insert[_, _]): List[Long] = 
+        jdbcExecReturnKey(conn, query.sql(db))
 
-    override inline def queryMap(query: SelectQuery[_]): List[Map[String, Any]] = jdbcQuery(conn, query.sql(db))
+    override inline def queryToList(sql: String): List[Map[String, Any]] = 
+        jdbcQuery(conn, sql)
 
-    override inline def queryTuple[T <: Tuple](query: SelectQuery[T]): List[T] = jdbcQueryToArray(conn, query.sql(db)).map(Tuple.fromArray(_).asInstanceOf[T])
+    override inline def queryToList[T <: Tuple](query: SelectQuery[T]): List[EliminateTuple1[T]] =
+        jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[EliminateTuple1[T]].apply(i))
 
-    override inline def query[T <: Product](query: SelectQuery[_]): List[T] = jdbcQuery(conn, query.sql(db)).map(it => bindEntityMacro[T](it))
+    override inline def queryToList[T](query: Query[T]): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
+        jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]].apply(i))
 
-    override inline def queryMap(sql: String): List[Map[String, Any]] = jdbcQuery(conn, sql)
+    override inline def find[T <: Tuple](query: SelectQuery[T]): Option[EliminateTuple1[T]] = 
+        jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[EliminateTuple1[T]].apply(i))
 
-    override inline def findMap(query: Select[_]): Option[Map[String, Any]] = jdbcQuery(conn, query.sql(db)).headOption
+    override inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
+        jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]].apply(i))
 
-    override inline def findTuple[T <: Tuple](query: Select[T]): Option[T] = jdbcQueryToArray(conn, query.sql(db)).headOption.map(Tuple.fromArray(_).asInstanceOf[T])
-
-    override inline def find[T <: Product](pk: SqlDataType | Tuple): Option[T] = jdbcQuery(conn, org.easysql.dsl.find[T](pk).sql(db)).headOption.map(it => bindEntityMacro[T](it))
-
-    override inline def queryPageOfMap(query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[Map[String, Any]] =
-        page(query)(pageSize, pageNum, needCount)(jdbcQuery)(it => it)
-
-    override inline def queryPageOfTuple[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[T] =
-        page(query)(pageSize, pageNum, needCount)(jdbcQueryToArray)(Tuple.fromArray(_).asInstanceOf[T])
-
-    override inline def queryPage[T <: Product](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[T] =
-        page(query)(pageSize, pageNum, needCount)(jdbcQuery)(it => bindEntityMacro[T](it))
-
-    override inline def fetchCount(query: Select[_]): Int = jdbcQueryCount(conn, query.countSql(db))
-
-    private def page[T, R](query: Select[_])(pageSize: Int, pageNum: Int, needCount: Boolean)(handler: (Connection, String) => List[R])(bind: R => T): Page[T] = {
+    override inline def page[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean): Page[EliminateTuple1[T]] = {
         val data = if (pageSize == 0) {
-            List[T]()
+            List[EliminateTuple1[T]]()
         } else {
-            handler(conn, query.pageSql(pageNum, pageNum)(db)).map(bind)
+            jdbcQueryToArray(conn, query.pageSql(pageSize, pageNum)(db)).map(i => bindSelect[EliminateTuple1[T]].apply(i))
         }
 
         val count = if (needCount) {
@@ -63,6 +54,8 @@ class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
             }
         }
 
-        new Page[T](totalPage, count, data)
+        new Page[EliminateTuple1[T]](totalPage, count, data)
     }
+
+    override inline def fetchCount(query: Select[?]): Int = jdbcQueryCount(conn, query.countSql(db))
 }

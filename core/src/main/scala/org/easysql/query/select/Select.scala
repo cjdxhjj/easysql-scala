@@ -84,6 +84,12 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
             items.toArray.foreach {
                 case t: Tuple => spread(t)
                 case expr: Expr[_] => addItem(expr)
+                case t: TableSchema[_] => {
+                    t._cols.foreach { c =>
+                        sqlSelect.addSelectItem(visitExpr(c))
+                        selectItems.append(c.alias.getOrElse(""))
+                    }
+                }
             }
         }
 
@@ -92,7 +98,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]]]]
     }
 
-    infix def select[I <: SqlDataType | Null](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]]] = {
+    infix def select[I <: SqlDataType](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
@@ -105,6 +111,19 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         selectItems.append(item.alias.getOrElse(""))
 
         this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]]]]
+    }
+
+    infix def select[P <: Product](table: TableSchema[P]): Select[Tuple.Concat[T, Tuple1[P]]] = {
+        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
+            this.sqlSelect.selectList.clear()
+        }
+
+        table._cols.foreach { c =>
+            sqlSelect.addSelectItem(visitExpr(c))
+            selectItems.append(c.alias.getOrElse(""))
+        }
+
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[P]]]]
     }
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
@@ -244,67 +263,67 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     infix def join(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN)
 
-    infix def join(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def join(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.JOIN)
 
     infix def joinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN, true)
 
-    infix def leftJoin(table: TableSchema[_]): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.LEFT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def leftJoin(table: TableSchema[_]): Select[T] = 
+        joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.LEFT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def leftJoin(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.LEFT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def leftJoin(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoinLateral(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.LEFT_JOIN, true).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def leftJoinLateral(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.LEFT_JOIN, true)
 
-    infix def rightJoin(table: TableSchema[_]): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.RIGHT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def rightJoin(table: TableSchema[_]): Select[T] = 
+        joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.RIGHT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def rightJoin(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.RIGHT_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def rightJoin(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoinLateral(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.RIGHT_JOIN, true).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def rightJoinLateral(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.RIGHT_JOIN, true)
 
     infix def innerJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
 
     infix def innerJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.INNER_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def innerJoin(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.INNER_JOIN)
 
     infix def innerJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN, true)
 
-    infix def crossJoin(table: TableSchema[_]): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.CROSS_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def crossJoin(table: TableSchema[_]): Select[T] = 
+        joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.CROSS_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def crossJoin(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.CROSS_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def crossJoin(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoinLateral(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.CROSS_JOIN, true).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def crossJoinLateral(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.CROSS_JOIN, true)
 
-    infix def fullJoin(table: TableSchema[_]): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.FULL_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def fullJoin(table: TableSchema[_]): Select[T] = 
+        joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.FULL_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def fullJoin(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(table: JoinTableSchema): Select[MapUnionNull[T]] = 
-        joinClause(table, SqlJoinType.FULL_JOIN).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def fullJoin(table: JoinTableSchema): Select[T] = 
+        joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoinLateral(query: SelectQuery[_]): Select[MapUnionNull[T]] = 
-        joinClause(query, SqlJoinType.FULL_JOIN, true).asInstanceOf[Select[MapUnionNull[T]]]
+    infix def fullJoinLateral(query: SelectQuery[_]): Select[T] = 
+        joinClause(query, SqlJoinType.FULL_JOIN, true)
 
     def forUpdate: Select[T] = {
         this.sqlSelect.forUpdate = true
@@ -366,8 +385,10 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         case "_20" => col(s"${aliasName.getOrElse("")}.${selectItems(19)}")
         case "_21" => col(s"${aliasName.getOrElse("")}.${selectItems(20)}")
         case "_22" => col(s"${aliasName.getOrElse("")}.${selectItems(21)}")
-        case _ => col[SqlDataType | Null](s"${aliasName.get}.$name")
+        case _ => col[SqlDataType](s"${aliasName.get}.$name")
     }
+
+    private[select] def clear: Unit = this.sqlSelect.selectList.clear
 }
 
 object Select {

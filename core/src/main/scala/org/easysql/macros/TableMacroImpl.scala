@@ -4,6 +4,7 @@ import org.easysql.dsl.{TableColumnExpr, TableSchema}
 
 import scala.quoted.{Expr, Quotes, Type}
 import scala.annotation.experimental
+import scala.collection.mutable.ListBuffer
 
 def aliasMacroImpl[E <: Product, T <: TableSchema[E]](table: Expr[T])(using quotes: Quotes, tt: Type[T], et: Type[E]): Expr[T] = {
     import quotes.reflect.*
@@ -16,6 +17,7 @@ def aliasMacroImpl[E <: Product, T <: TableSchema[E]](table: Expr[T])(using quot
     } else '{
         new TableSchema[E] {
             override val tableName: String = $table.tableName
+            override val _cols = $table._cols
         }.asInstanceOf[T]
     }
 }

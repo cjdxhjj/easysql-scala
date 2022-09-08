@@ -19,39 +19,38 @@ import java.util.Random
 object Test extends App {
     given DB = DB.MYSQL
 
-    val s = select(tt.*) from tt where tt.id === 1 && tt.testNullable === "x"
-    println(s.toSql)
-
-    val testTable = TestTable(1, "x", null)
-
-    val i = insert(testTable)
-    println(i.toSql)
-
-    val u = update(testTable, false)
-    println(u.toSql)
-
-    val d = delete[TestTable](1)
-    println(d.toSql)
-
-    val sv = save[TestTable](testTable)
-    println(sv.sql(DB.MYSQL))
-    println(sv.sql(DB.PGSQL))
-    println(sv.sql(DB.SQLITE))
-
-    val f = find[TestTable](1)
-    println(f.toSql)
+    // val s = select(tt.*) from tt where tt.id === 1 && tt.testNullable === "x"
+    // println(s.toSql)
 
 
-    val join = select (user.name, post.id) from user leftJoin post on user.id === post.userId as "join"
-    
-    val a = join._2 === null
+    // val testTable = TestTable(1, "x", null)
+
+    // val i = insert(testTable)
+    // println(i.toSql)
+
+    // val u = update(testTable, false)
+    // println(u.toSql)
+
+    // val d = delete[TestTable](1)
+    // println(d.toSql)
+
+    // val sv = save[TestTable](testTable)
+    // println(sv.sql(DB.MYSQL))
+    // println(sv.sql(DB.PGSQL))
+    // println(sv.sql(DB.SQLITE))
+
+    // val f = find[TestTable](1)
+    // println(f.toSql)
+
+    val s1 = select (user, user.id as "u", post, post.id as "p") from user join post on user.id === post.userId where user.id === 1
+    println(s1.toSql)
 }
 
 @Table("test_table")
 case class TestTable(
     @IncrKey id: Int,
     @Column name: String,
-    @Column("test_nullable") testNullable: String | Null
+    @Column("test_nullable") testNullable: String
 )
 
 val tt = asTable[TestTable]
