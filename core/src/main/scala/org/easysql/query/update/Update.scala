@@ -46,7 +46,7 @@ class Update extends ReviseQuery {
         this
     }
 
-    def set[T <: SqlDataType | Null](items: (TableColumnExpr[_] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
+    def set[T <: SqlDataType](items: (TableColumnExpr[_] | ColumnExpr[_], T | Expr[_] | SelectQuery[_])*): Update = {
         items.foreach { item =>
             val (column, value) = item
 

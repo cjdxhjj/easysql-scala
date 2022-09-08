@@ -18,8 +18,8 @@ inline def bindSingleton[T](nextIndex: Int): (Int, Array[Any] => T) = {
     }
 }
 
-inline def bindQuery[T]: Array[Any] => FlatType[FlatType[T, SqlDataType | Null, Expr],Product,TableSchema] = { (data: Array[Any]) =>
-    val bind = inline erasedValue[FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]] match {
+inline def bindQuery[T]: Array[Any] => FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema] = { (data: Array[Any]) =>
+    val bind = inline erasedValue[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] match {
         case _: Tuple1[t1] => bindSingleton[t1](0)._2.apply(data)
         case _: Tuple2[t1, t2] => {
             val b1 = bindSingleton[t1](0)
@@ -336,8 +336,8 @@ inline def bindQuery[T]: Array[Any] => FlatType[FlatType[T, SqlDataType | Null, 
             val b22 = bindSingleton[t22](b21._1)
             Tuple22(b1._2(data), b2._2(data), b3._2(data), b4._2(data), b5._2(data), b6._2(data), b7._2(data), b8._2(data), b9._2(data), b10._2(data), b11._2(data), b12._2(data), b13._2(data), b14._2(data), b15._2(data), b16._2(data), b17._2(data), b18._2(data), b19._2(data), b20._2(data), b21._2(data), b22._2(data))
         }
-        case _ => bindSingleton[FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]](0)._2.apply(data)
+        case _ => bindSingleton[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]](0)._2.apply(data)
     }
 
-    bind.asInstanceOf[FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]]
+    bind.asInstanceOf[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]]
 }

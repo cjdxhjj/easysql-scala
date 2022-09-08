@@ -23,6 +23,7 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
                 var data = rs.getObject(it)
                 data match {
                     case b: java.math.BigDecimal => data = BigDecimal(b)
+                    case _ =>
                 }
                 metadata.getColumnLabel(it) -> data
             }.toMap
@@ -53,6 +54,7 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
                 var data = rs.getObject(it)
                 data match {
                     case b: java.math.BigDecimal => data = BigDecimal(b)
+                    case _ =>
                 }
                 data.asInstanceOf[Any]
             }

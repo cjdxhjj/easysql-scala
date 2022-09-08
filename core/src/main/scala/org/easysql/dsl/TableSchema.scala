@@ -59,7 +59,7 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic {
         inline exprMetaMacro[E](name) match {
             case ("pk", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)
             case ("incr", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this, true)
-            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & (SqlDataType | Null)](tableName, n, this)
+            case (_, n) => TableColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)
         }
     }
 

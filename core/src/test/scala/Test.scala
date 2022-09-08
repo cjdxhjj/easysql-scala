@@ -46,7 +46,7 @@ object Test extends App {
 case class TestTable(
     @IncrKey id: Int,
     @Column name: String,
-    @Column("test_nullable") testNullable: String | Null
+    @Column("test_nullable") testNullable: String
 )
 
 val tt = asTable[TestTable]

@@ -8,7 +8,7 @@ import org.easysql.query.select.SelectQuery
 
 import java.util.Date
 
-def visitExpr(query: Expr[_] | Null): SqlExpr = {
+def visitExpr(query: Expr[_]): SqlExpr = {
     query match {
         case null =>
             SqlNullExpr()
@@ -70,7 +70,7 @@ def visitAggFunctionExpr(aggFunctionExpr: AggFunctionExpr[_]): SqlAggFunctionExp
     SqlAggFunctionExpr(aggFunctionExpr.name, aggFunctionExpr.args.map(visitExpr), aggFunctionExpr.distinct, aggFunctionExpr.attributes.map((k, v) => k -> visitExpr(v)), aggFunctionExpr.orderBy.map(it => SqlOrderBy(visitExpr(it.query), it.order)))
 }
 
-def getExpr(value: SqlDataType | Null | Expr[_] | SelectQuery[_]): SqlExpr = {
+def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)

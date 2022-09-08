@@ -137,7 +137,7 @@ class Query[T](val t: T, val s: Select[_]) {
         new Query(false, s)
     }
 
-    def resultType: List[FlatType[FlatType[T, SqlDataType | Null, Expr], Product, TableSchema]] = List()
+    def resultType: List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = List()
 
     def sql(db: DB): String = s.sql(db)
 
