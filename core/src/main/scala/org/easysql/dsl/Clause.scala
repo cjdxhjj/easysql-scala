@@ -67,6 +67,11 @@ def select[I <: SqlDataType](item: Expr[I]): Select[Tuple1[I]] = {
     sel.asInstanceOf[Select[Tuple1[I]]]
 }
 
+def select[P <: Product](table: TableSchema[P]): Select[Tuple1[P]] = {
+    val sel = Select().select(table)
+    sel.asInstanceOf[Select[Tuple1[P]]]
+}
+
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
 inline def find[T <: Product](pk: SqlDataType | Tuple): Select[_] = {

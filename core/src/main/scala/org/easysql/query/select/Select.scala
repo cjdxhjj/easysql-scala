@@ -84,6 +84,12 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
             items.toArray.foreach {
                 case t: Tuple => spread(t)
                 case expr: Expr[_] => addItem(expr)
+                case t: TableSchema[_] => {
+                    t._cols.foreach { c =>
+                        sqlSelect.addSelectItem(visitExpr(c))
+                        selectItems.append(c.alias.getOrElse(""))
+                    }
+                }
             }
         }
 
@@ -105,6 +111,19 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         selectItems.append(item.alias.getOrElse(""))
 
         this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]]]]
+    }
+
+    infix def select[P <: Product](table: TableSchema[P]): Select[Tuple.Concat[T, Tuple1[P]]] = {
+        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
+            this.sqlSelect.selectList.clear()
+        }
+
+        table._cols.foreach { c =>
+            sqlSelect.addSelectItem(visitExpr(c))
+            selectItems.append(c.alias.getOrElse(""))
+        }
+
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[P]]]]
     }
 
     infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {

@@ -59,6 +59,9 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     inline def queryToList[T](query: Query[T]) = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindQuery[T].apply(i)))
 
+    inline def queryToList[T <: Tuple](query: Select[T]) = 
+        exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[T].apply(i)))
+
     def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection
         conn.setAutoCommit(false)

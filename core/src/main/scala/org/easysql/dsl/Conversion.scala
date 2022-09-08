@@ -26,6 +26,7 @@ given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T]], SubQuery
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case Expr[x] *: t => x *: InverseMap[t]
+    case TableSchema[x] *: t => x *: InverseMap[t]
     case EmptyTuple => EmptyTuple
 }
 
@@ -33,6 +34,7 @@ type RecursiveInverseMap[X <: Tuple] <: Tuple = X match {
     case x *: t => x match {
         case Tuple => Tuple.Concat[RecursiveInverseMap[x], RecursiveInverseMap[t]]
         case Expr[y] => y *: RecursiveInverseMap[t]
+        case TableSchema[y] => y *: RecursiveInverseMap[t]
     }
     case EmptyTuple => EmptyTuple
 }
