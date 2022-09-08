@@ -2,7 +2,7 @@ package org.easysql.query.select
 
 import org.easysql.dsl.*
 import org.easysql.dsl.TableSchema
-import org.easysql.ast.SqlDataType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.macros.*
 import org.easysql.database.*
 import org.easysql.util.toSqlString
@@ -88,8 +88,15 @@ class Query[T](val t: T, val s: Select[_]) {
         this
     }
 
-    // def drop
-    // def take
+    def drop(n: Int): Query[T] = {
+        s.offset(n)
+        this
+    }
+
+    def take(n: Int): Query[T] = {
+        s.limit(n)
+        this
+    }
 
     def count: Query[Int] = {
         s.clear
@@ -97,10 +104,33 @@ class Query[T](val t: T, val s: Select[_]) {
         new Query(0, s)
     }
 
-    // def max
-    // def min
-    // def avg
-    // def sum
+    def max[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.max(item))
+        new Query(item, s)
+    }
+
+    def min[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.min(item))
+        new Query(item, s)
+    }
+
+    def avg[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+        s.clear
+        val item = f(t)
+        s.select(org.easysql.dsl.avg(item))
+        new Query(item, s)
+    }
+
+    def sum[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[BigDecimal]] = {
+        s.clear
+        val item = org.easysql.dsl.sum(f(t))
+        s.select(item)
+        new Query(item, s)
+    }
 
     def exists: Query[Boolean] = {
         val s = select(org.easysql.dsl.exists(this.s))

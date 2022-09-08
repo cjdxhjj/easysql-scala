@@ -20,7 +20,11 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
 
         while (rs.next()) {
             val rowMap = (1 to metadata.getColumnCount()).map { it =>
-                metadata.getColumnLabel(it) -> rs.getObject(it)
+                var data = rs.getObject(it)
+                data match {
+                    case b: java.math.BigDecimal => data = BigDecimal(b)
+                }
+                metadata.getColumnLabel(it) -> data
             }.toMap
             result.addOne(rowMap)
         }
@@ -46,7 +50,11 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
 
         while (rs.next()) {
             val rowList = (1 to metadata.getColumnCount()).toArray.map { it =>
-                rs.getObject(it)
+                var data = rs.getObject(it)
+                data match {
+                    case b: java.math.BigDecimal => data = BigDecimal(b)
+                }
+                data.asInstanceOf[Any]
             }
             result.addOne(rowList)
         }
