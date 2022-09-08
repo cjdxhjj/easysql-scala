@@ -118,3 +118,8 @@ type Append[X, Y] <: Tuple = X match {
     case EmptyTuple => Y *: EmptyTuple
     case _ => X *: Y *: EmptyTuple
 }
+
+type EliminateTuple1[T <: Tuple] = T match {
+    case Tuple1[t] => t
+    case _ => T
+}
