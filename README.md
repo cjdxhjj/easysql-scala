@@ -51,17 +51,17 @@ if (true) {
 
 如果你的业务里，并不能事先知道表结构信息，可以先跳过此部分，后续部分将会介绍如何使用动态的表名和字段名来构造查询。
 
-下面有一个`case class`组织的实体类：
+下面有一个`case class`组织的实体类（可空字段使用 | Null类型标识）：
 
 ```scala
-case class User(id: Int, name: String, testOption: Option[String])
+case class User(id: Int, name: String, testNullable: String | Null)
 ```
 
 我们可以在类上添加注解`Table`，在字段上添加注解`Column`，主键字段添加`PrimaryKey`或`IncrKey`（对应自增主键）：
 
 ```scala
 @Table("user")
-case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") testOption: Option[String])
+case class User(@IncrKey id: Int, @Column name: String, @Column("test_nullable") testOption: String | Null)
 ```
 
 注解的参数为实际的数据库表名或字段名，如果名字与字段名相同，则可以省略。
@@ -70,7 +70,7 @@ case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") t
 
 ```scala
 @Table("user")
-case class User(@IncrKey id: Int, @Column name: String, @Column("test_option") testOption: Option[String])
+case class User(@IncrKey id: Int, @Column name: String, @Column("test_nullable") testOption: String | Null)
 
 val user = asTable[User]
 ```
