@@ -57,6 +57,70 @@ class Query[T](val t: T, val s: Select[_]) {
         new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
     }
 
+    inline def leftJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).leftJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def rightJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).rightJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def fullJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).fullJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
+    inline def crossJoin[E <: Product](using
+        m: Mirror.ProductOf[E]
+    ): Query[Append[T, TableSchema[E]]] = {
+        tableNum += 1
+        val joinTable = asTable[E].unsafeAs(s"t$tableNum")
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val s = this.s.dynamicSelect(cols: _*).crossJoin(joinTable)
+
+        val jt = inline this.t match {
+            case tup: Tuple => tup ++ Tuple1(joinTable)
+            case _          => Tuple2(this.t, joinTable)
+        }
+
+        new Query(jt.asInstanceOf[Append[T, TableSchema[E]]], s)
+    }
+
     def on(f: T => Expr[Boolean]): Query[T] = {
         s.on(f(t))
         this
