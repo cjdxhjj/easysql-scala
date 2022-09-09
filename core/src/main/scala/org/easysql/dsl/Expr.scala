@@ -220,7 +220,7 @@ case class TableColumnExpr[T <: SqlDataType](table: String,
 
 extension[T <: Int | Long] (t: TableColumnExpr[T]) {
     def incr: PrimaryKeyColumnExpr[T] = {
-        PrimaryKeyColumnExpr(t.table, t.column, t.schema, true)
+        PrimaryKeyColumnExpr[T](t.table, t.column, t.schema, true)
     }
 }
 

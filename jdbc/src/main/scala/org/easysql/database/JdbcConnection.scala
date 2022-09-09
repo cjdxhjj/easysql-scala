@@ -49,7 +49,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
         val count = if (needCount) {
             fetchCount(query)
         } else {
-            0
+            0l
         }
 
         val totalPage = if (count == 0 || pageSize == 0) {
@@ -65,7 +65,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
         new Page[EliminateTuple1[T]](totalPage, count, data)
     }
 
-    override inline def fetchCount(query: Select[?]): Int = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
+    override inline def fetchCount(query: Select[?]): Long = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
 
     def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection
