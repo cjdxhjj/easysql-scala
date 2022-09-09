@@ -23,5 +23,5 @@ trait DBOperater {
 
     inline def page[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[EliminateTuple1[T]]
 
-    inline def fetchCount(query: Select[_]): Int
+    inline def fetchCount(query: Select[_]): Long
 }

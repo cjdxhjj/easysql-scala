@@ -162,7 +162,7 @@ class Query[T](val t: T, val s: Select[_]) {
         this
     }
 
-    def count: Query[Int] = {
+    def count: Query[Long] = {
         s.clear
         s.select(org.easysql.dsl.count())
         new Query(0, s)
@@ -182,14 +182,14 @@ class Query[T](val t: T, val s: Select[_]) {
         new Query(item, s)
     }
 
-    def avg[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[N]] = {
+    def avg[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[Number]] = {
         s.clear
-        val item = f(t)
-        s.select(org.easysql.dsl.avg(item))
+        val item = org.easysql.dsl.avg(f(t))
+        s.select(item)
         new Query(item, s)
     }
 
-    def sum[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[BigDecimal]] = {
+    def sum[N <: SqlNumberType](f: T => Expr[N]): Query[Expr[Number]] = {
         s.clear
         val item = org.easysql.dsl.sum(f(t))
         s.select(item)
