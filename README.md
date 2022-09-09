@@ -2,9 +2,9 @@
 
 easysql是一个使用Scala3编写的sql构造器，其充分利用了Scala3优秀的类型系统，可以在编译期解决掉绝大多数的错误sql。并且，得益于Scala强大的表达能力，api与原生sql非常相似，极大降低了学习成本。
 
-虽然定位并非orm，但我们仍然可以把它当做轻量级的orm使用，比如执行查询，并把结果映射到类，或是使用case class直接生成insert、update等语句，避免样板代码。（此部分使用内联函数和宏实现，而非运行期反射，接近0开销）。
+虽然本身定位并非orm，但完全可以把它当做轻量级的orm使用，比如执行查询，并把结果映射到类（支持多表），或是使用case class直接生成insert、update等语句，避免样板代码。（以上功能使用内联函数和宏实现，而非运行期反射，接近0开销）。
 
-我们可以这样来构造一个查询模板：
+我们可以使用原生sql风格的api来构造一个查询模板：
 
 ```scala
 val userName: Option[String] = ???
@@ -16,6 +16,12 @@ val s = (select (user.*, post.*)
         limit 10 offset 10)
 
 s.where(userName.nonEmpty, user.name === userName)
+```
+
+如果你不喜欢sql风格，也可以使用集合函数风格的api：
+
+```scala
+val q = query[User].filter(_.id === 1).map(u => u.id -> u.name)
 ```
 
 库内置了一个sql的抽象语法树，sql的任何部分都可以被转化为对象或者方法调用，可以灵活地动态构造查询，这在某些应用（比如低代码平台）中会非常有价值：
