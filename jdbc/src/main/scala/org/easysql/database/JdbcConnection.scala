@@ -31,13 +31,13 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[EliminateTuple1[T]].apply(i)))
 
     override inline def queryToList[T](query: Query[T]): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
-        exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr],Product, TableSchema]].apply(i)))
+        exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i)))
 
     override inline def find[T <: Tuple](query: SelectQuery[T]): Option[EliminateTuple1[T]] = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[EliminateTuple1[T]].apply(i)))
 
     override inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
-        exec(conn => jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr],Product, TableSchema]].apply(i)))
+        exec(conn => jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i)))
 
     override inline def page[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean): Page[EliminateTuple1[T]] = {
         val data = if (pageSize == 0) {
