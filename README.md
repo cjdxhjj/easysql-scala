@@ -57,17 +57,17 @@ if (true) {
 
 如果你的业务里，并不能事先知道表结构信息，可以先跳过此部分，后续部分将会介绍如何使用动态的表名和字段名来构造查询。
 
-下面有一个`case class`组织的实体类（可空字段使用 | Null类型标识）：
+下面有一个`case class`组织的实体类：
 
 ```scala
-case class User(id: Int, name: String, testNullable: String | Null)
+case class User(id: Int, name: String)
 ```
 
 我们可以在类上添加注解`Table`，在字段上添加注解`Column`，主键字段添加`PrimaryKey`或`IncrKey`（对应自增主键）：
 
 ```scala
 @Table("user")
-case class User(@IncrKey id: Int, @Column name: String, @Column("test_nullable") testOption: String | Null)
+case class User(@IncrKey id: Int, @Column("user_name") name: String)
 ```
 
 注解的参数为实际的数据库表名或字段名，如果名字与字段名相同，则可以省略。
@@ -76,7 +76,7 @@ case class User(@IncrKey id: Int, @Column name: String, @Column("test_nullable")
 
 ```scala
 @Table("user")
-case class User(@IncrKey id: Int, @Column name: String, @Column("test_nullable") testOption: String | Null)
+case class User(@IncrKey id: Int, @Column("user_name") name: String)
 
 val user = asTable[User]
 ```
@@ -87,8 +87,7 @@ val user = asTable[User]
 // 下面的类型都是自动生成的，不需要显式写出，此处仅用于说明
 val id: PrimaryKeyExpr[Int] = user.id
 val name: TableColumnExpr[String] = user.name
-val testOption: TableColumnExpr[String] = user.testOption
-val all: (Expr[Int], Expr[String], Expr[String])  = user.*
+val all: (Expr[Int], Expr[String])  = user.*
 ```
 
 这样我们就能用这些元数据来构造查询了：
@@ -96,15 +95,25 @@ val all: (Expr[Int], Expr[String], Expr[String])  = user.*
 ```scala
 // 查询
 val s = select (user.*) from user where user.id === 1
-val f = find[User](1)
+val q = query[User].filter(_.id === 1)
 
 // 增删改
-val userRow = User(1, "x", None)
+val userRow = User(1, "x")
 val i = insert(userRow)
 val u = update(userRow)
 val sv = save(userRow)
 val d = delete[User](1)
 ```
+
+此处有一个细节，上面使用`asTable`生成的变量user可以被传入select方法中，与user.*的区别是：
+
+```scala
+val s1: Select[Tuple1[User]] = select (user) from user
+
+val s2: Select[(Int, String)] = select (user.*) from user
+```
+
+两个方式，生成的sql是没有区别的，唯一的区别是推断出的类型，前者会在数据库查询后被映射成`List[User]`，而后者会被映射成`List[(Int, String)]`。
 
 更详细的构造api会在后文查询构造部分介绍。
 
@@ -306,7 +315,7 @@ val sql2 = s2.toSql
 
 ### select
 
-使用select方法，传入若干表达式，来创建select子句：
+使用select方法，传入若干表达式或使用asTable创建的表，来生成select子句：
 
 ```scala
 val s = select(user.id)
@@ -587,7 +596,7 @@ values中的每个元组的类型必须与insertInto中传入的参数一致，�
 配置好实体类上的元数据注解后，我们可以使用实体对象来插入数据：
 
 ```scala
-val user = User(1, Some("x"))
+val user = User(1, "x")
 val i = insert(user)
 val sql = i.toSql
 ```
@@ -624,7 +633,7 @@ val u = update(a).set(a.x to a.x + 1)
 与insert类似，做好绑定后就可以使用实体类，来按主键更新其他字段：
 
 ```scala
-val user = User(1, Some("x"))
+val user = User(1, "x")
 val u = update(user)
 val sql = u.toSql
 ```
@@ -633,9 +642,9 @@ val sql = u.toSql
 
 ```scala
 // 省略元数据配置代码
-case class Entity(a: Int, b: Option[Int], c: Option[Int]) extends TableEntity[Int]
+case class Entity(a: Int, b: Int, c: Int)
 
-val e = Entity(1, Some(2), None)
+val e = Entity(1, 2, null)
 
 // UPDATE entity SET b = 2 WHERE a = 1
 val u1 = update(e)
@@ -664,7 +673,7 @@ val sql = d.toSql
 
 使用实体类生成按主键插入或更新的sql：
 ```scala
-val user = User(1, Some("x"))
+val user = User(1, "x")
 val s = save(user)
 val sql = s.toSql
 ```
@@ -853,43 +862,31 @@ val insert = insertInto(User)(user.id, user.name)((1, "x"), (2, "y"))
 val result: List[Long] = db.runAndReturnKey(insert)
 ```
 
-## 接收查询结果
+## 查询结果集
 
-对于select、values临时表等查询类sql，可以使用`JdbcConnection`类进行查询，并返回查询结果。
-
-支持的单条结果映射类型有三种：
-
-1. 映射到继承了TableEntity的实体类（**可空字段将会被映射到Option类型**）；
-2. 映射到一个Tuple，Tuple的实际类型取决于select方法的参数（**此时不能使用select \*或者无类型参数的col，否则会出现运行时异常**）；
-3. 映射到一个Map[String, Any]，map的key为字段名（或查询中的别名），value为查询结果的值。
-
-### 查询结果集
-
-使用`queryMap`、`queryTuple`、`query`来查询结果集，返回结果是一个`List`，如果没有查询到结果，返回一个0元素的List：
+使用`queryToList`来将查询结果映射到List：
 
 ```scala
-val select = select (user.id, user.name) from user
+val s = select (user, post) from user join post on user.id === post.userId
 
-val result1: List[Map[String, Any]] = db.queryMap(select)
-val result2: List[(Int, String)] = db.queryTuple(select)
-val result3: List[User] = db.query[User](select)
+val result: List[(User, Post)] = db.queryToList(s)
 ```
+
+List中的类型由select中的参数决定。
 
 ### 查询单条结果
 
-使用`findMap`、`findTuple`、`find`来查询单条结果，返回结果是一个`Option`，如果没有查询到结果，返回一个None：
+使用`find`来将符合条件的第一条结果映射到Option：
 
 ```scala
-val select = select (user.id, user.name) from user
+val s = select (user) from user
 
-val result1: Option[Map[String, Any]] = db.findMap(select)
-val result2: Option[(Int, String)] = db.findTuple(select)
-val result3: Option[User] = db.find[User](1)
+val result: Option[User] = db.find(s)
 ```
 
 ### 分页查询
 
-使用`queryPageOfMap`、`queryPageOfTuple`、`queryPage`来进行分页查询，返回结果是一个`Page`类型，其定义如下：
+使用`page`，返回结果是一个`Page`类型，其定义如下：
 
 ```scala
 case class Page[T](totalPage: Int = 0, totalCount: Int = 0, data: List[T] = List())
@@ -900,11 +897,9 @@ case class Page[T](totalPage: Int = 0, totalCount: Int = 0, data: List[T] = List
 其中最后一个参数，默认值为true，为true时会附带执行一个查询count的sql，如无必要，请传入false，以便提升效率：
 
 ```scala
-val select = select (user.id, user.name) from user
+val s = select (user) from user
 
-val result1: Page[Map[String, Any]] = db.queryPageOfMap(select)(10, 1)
-val result2: Page[(Int, String)] = db.queryPageOfTuple(select)(10, 1, true)
-val result3: Page[User] = db.queryPage[User](select)(10, 1, false)
+val result: Page[User] = db.page(s)(10, 1, false)
 ```
 
 ### 查询count
@@ -914,9 +909,9 @@ val result3: Page[User] = db.queryPage[User](select)(10, 1, false)
 **此处会对生成的sql语法树进行复制，并去除对于查询count无用的order by和limit信息，并把select列表替换成COUNT(*)，以提高查询效率**：
 
 ```scala
-val select = select (user.id, user.name) from user orderBy user.id.asc limit 10 offset 10
+val s = select (user.id, user.name) from user orderBy user.id.asc limit 10 offset 10
 
-val count: Int = db.fetchCount(select)
+val count: Int = db.fetchCount(s)
 ```
 
 此处实际生成的sql为：
