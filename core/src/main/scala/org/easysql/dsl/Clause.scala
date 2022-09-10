@@ -74,7 +74,7 @@ def select[P <: Product](table: TableSchema[P]): Select[Tuple1[P]] = {
 
 def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
 
-inline def find[T <: Product](pk: SqlDataType | Tuple): Select[_] = {
+inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T]] = {
     val (tableName, cols) = pkMacro[T, pk.type]
 
     val select = Select()
@@ -86,7 +86,7 @@ inline def find[T <: Product](pk: SqlDataType | Tuple): Select[_] = {
         case _ => select.where(ColumnExpr(cols.head).equal(pk))
     }
 
-    select
+    select.asInstanceOf[Select[Tuple1[T]]]
 }
 
 def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)
