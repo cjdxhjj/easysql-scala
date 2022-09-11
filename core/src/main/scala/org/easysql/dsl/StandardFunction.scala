@@ -13,9 +13,9 @@ def sum[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[Number]("SUM", Lis
 
 def avg[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[Number]("AVG", List(query))
 
-def max[T <: SqlDataType](query: Expr[T]) = AggFunctionExpr[T]("MAX", List(query))
+def max[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[T]("MAX", List(query))
 
-def min[T <: SqlDataType](query: Expr[T]) = AggFunctionExpr[T]("MIN", List(query))
+def min[T <: SqlNumberType](query: Expr[T]) = AggFunctionExpr[T]("MIN", List(query))
 
 def rank() = AggFunctionExpr[Number]("RANK", List())
 
