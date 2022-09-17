@@ -14,35 +14,35 @@ import scala.collection.mutable.ListBuffer
 import scala.Tuple.Concat
 
 sealed trait Expr[T <: SqlDataType](var alias: Option[String] = None) {
-    def +[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, const(value))
+    // def +[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, const(value))
 
-    def +[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, expr)
+    // def +[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, expr)
 
-    def +[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
+    // def +[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
 
-    def -[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, const(value))
+    // def -[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, const(value))
 
-    def -[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, expr)
+    // def -[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, expr)
 
-    def -[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
+    // def -[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
 
-    def *[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, const(value))
+    // def *[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, const(value))
 
-    def *[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, expr)
+    // def *[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, expr)
 
-    def *[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
+    // def *[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
 
-    def /[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, const(value))
+    // def /[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, const(value))
 
-    def /[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, expr)
+    // def /[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, expr)
 
-    def /[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
+    // def /[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
 
-    def %[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, const(value))
+    // def %[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, const(value))
 
-    def %[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, expr)
+    // def %[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, expr)
 
-    def %[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, SubQueryExpr(subQuery))
+    // def %[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(this, SqlBinaryOperator.MOD, SubQueryExpr(subQuery))
 
     def ==[V <: T](value: V): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
 
@@ -168,7 +168,39 @@ sealed trait Expr[T <: SqlDataType](var alias: Option[String] = None) {
     }
 }
 
-extension[T <: String] (e: Expr[T]) {
+extension [T <: SqlNumberType] (e: Expr[T]) {
+    def +[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+    def +[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+
+    def +[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
+
+    def -[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+    def -[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
+
+    def -[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
+
+    def *[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+    def *[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
+
+    def *[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
+
+    def /[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
+
+    def /[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
+
+    def /[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
+
+    def %[V <: SqlNumberType](value: V): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+    def %[V <: SqlNumberType](expr: Expr[V]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+
+    def %[V <: SqlNumberType](subQuery: SelectQuery[Tuple1[V]]): BinaryExpr[Number] = BinaryExpr(e, SqlBinaryOperator.MOD, SubQueryExpr(subQuery))
+}
+
+extension [T <: String] (e: Expr[T]) {
     infix def like(value: String): BinaryExpr[Boolean] = {
         BinaryExpr(e, SqlBinaryOperator.LIKE, const(value))
     }
@@ -218,7 +250,7 @@ case class TableColumnExpr[T <: SqlDataType](table: String,
     }
 }
 
-extension[T <: Int | Long] (t: TableColumnExpr[T]) {
+extension [T <: Int | Long] (t: TableColumnExpr[T]) {
     def incr: PrimaryKeyColumnExpr[T] = {
         PrimaryKeyColumnExpr[T](t.table, t.column, t.schema, true)
     }
