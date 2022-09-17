@@ -51,11 +51,13 @@ inline def asTable[T <: Product] = new TableSchema[T] {
     }
 }
 
-extension[T <: SqlDataType] (e: TableColumnExpr[T] | ColumnExpr[T]) {
+extension [T <: SqlDataType] (e: TableColumnExpr[T] | ColumnExpr[T]) {
     def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
 }
 
-def * = AllColumnExpr()
+object AllColumn {
+    def * = AllColumnExpr()
+}
 
 def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = {
     val sel = Select().select(items)
