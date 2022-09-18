@@ -70,7 +70,7 @@ def visitAggFunctionExpr(aggFunctionExpr: AggFunctionExpr[_]): SqlAggFunctionExp
     SqlAggFunctionExpr(aggFunctionExpr.name, aggFunctionExpr.args.map(visitExpr), aggFunctionExpr.distinct, aggFunctionExpr.attributes.map((k, v) => k -> visitExpr(v)), aggFunctionExpr.orderBy.map(it => SqlOrderBy(visitExpr(it.query), it.order)))
 }
 
-def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_]): SqlExpr = {
+def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_, _]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)
@@ -83,6 +83,6 @@ def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_]): SqlExpr = {
         case boolean: Boolean => SqlBooleanExpr(boolean)
         case date: Date => SqlDateExpr(date)
         case expr: Expr[_] => visitExpr(expr)
-        case selectQuery: SelectQuery[_] => SqlSelectQueryExpr(selectQuery.getSelect)
+        case selectQuery: SelectQuery[_, _] => SqlSelectQueryExpr(selectQuery.getSelect)
     }
 }

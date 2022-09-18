@@ -54,7 +54,7 @@ class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
         this.asInstanceOf[Insert[T, InsertValues]]
     }
 
-    infix def select[SS >: S <: InsertSelect](s: SelectQuery[T]): Insert[T, InsertSelect] = {
+    infix def select[SS >: S <: InsertSelect](s: SelectQuery[T, _]): Insert[T, InsertSelect] = {
         sqlInsert.query = Some(s.getSelect)
         this.asInstanceOf[Insert[T, InsertSelect]]
     }

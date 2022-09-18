@@ -23,7 +23,7 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
 given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
 
-given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T]], SubQueryExpr[T]] = SubQueryExpr(_)
+given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case SelectItem[x] *: t => x *: InverseMap[t]

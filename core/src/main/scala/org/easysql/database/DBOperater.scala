@@ -13,11 +13,11 @@ trait DBOperater {
 
     inline def queryToList(sql: String): List[Map[String, Any]]
 
-    inline def queryToList[T <: Tuple](query: SelectQuery[T]): List[EliminateTuple1[T]]
+    inline def queryToList[T <: Tuple](query: SelectQuery[T, _]): List[EliminateTuple1[T]]
 
     inline def queryToList[T](query: Query[T]): List[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
 
-    inline def find[T <: Tuple](query: SelectQuery[T]): Option[EliminateTuple1[T]]
+    inline def find[T <: Tuple](query: SelectQuery[T, _]): Option[EliminateTuple1[T]]
 
     inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
 

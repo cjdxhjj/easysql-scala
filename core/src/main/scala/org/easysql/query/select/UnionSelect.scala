@@ -6,9 +6,9 @@ import org.easysql.util.toSqlString
 
 import java.sql.Connection
 
-class UnionSelect[T <: Tuple](val left: SelectQuery[_],
+class UnionSelect[T <: Tuple, AliasNames <: Tuple](val left: SelectQuery[_, _],
                   val operator: SqlUnionType,
-                  val right: SelectQuery[_]) extends SelectQuery[T] {
+                  val right: SelectQuery[_, _]) extends SelectQuery[T, AliasNames] {
     private val unionSelect = SqlUnionSelect(left.getSelect, operator, right.getSelect)
 
     override def sql(db: DB): String = toSqlString(unionSelect, db)
