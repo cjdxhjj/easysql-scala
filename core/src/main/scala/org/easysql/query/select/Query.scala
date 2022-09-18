@@ -10,7 +10,7 @@ import org.easysql.visitor.visitExpr
 
 import scala.deriving.*
 
-class Query[T](val t: T, val s: Select[_]) {
+class Query[T](val t: T, val s: Select[_, _]) {
     private var tableNum = 1
 
     def map[R <: Expr[_] | TableSchema[_] | Tuple](f: T => R): Query[R] = {

@@ -26,7 +26,7 @@ sealed trait AnyTable {
     infix def fullJoin(table: AnyTable): JoinTableSchema = JoinTableSchema(this, SqlJoinType.FULL_JOIN, table)
 }
 
-trait TableSchema[E <: Product] extends AnyTable with Dynamic {
+trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E] {
     val tableName: String
 
     var aliasName: Option[String] = None

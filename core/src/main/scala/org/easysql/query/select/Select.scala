@@ -13,8 +13,10 @@ import org.easysql.visitor.*
 
 import java.sql.Connection
 import scala.collection.mutable.ListBuffer
+import scala.language.dynamics
+import scala.compiletime.ops.int.*
 
-class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
+class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T] with Dynamic {
     private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
@@ -23,17 +25,17 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     var aliasName: Option[String] = None
 
-    infix def as(name: String)(using NonEmpty[name.type] =:= Any): SelectType[T] = {
-        this.aliasName = Some(name)
-        this.asInstanceOf[SelectType[T]]
-    }
-
-    infix def unsafeAs(name: String): Select[T] = {
+    infix def as(name: String)(using NonEmpty[name.type] =:= Any): Select[T, AliasNames] = {
         this.aliasName = Some(name)
         this
     }
 
-    infix def from[Table <: TableSchema[_]](table: Table): Select[T] = {
+    infix def unsafeAs(name: String): Select[T, AliasNames]  = {
+        this.aliasName = Some(name)
+        this
+    }
+
+    infix def from[Table <: TableSchema[_]](table: Table): Select[T, AliasNames]  = {
         val from = SqlIdentifierTableSource(table.tableName)
         from.alias = table.aliasName
         joinLeft = from
@@ -42,10 +44,10 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def from(table: SelectQuery[_]): Select[T] = {
+    infix def from(table: SelectQuery[_]): Select[T, AliasNames]  = {
         val from = SqlSubQueryTableSource(table.getSelect)
         table match {
-            case s: Select[_] => from.alias = s.aliasName
+            case s: Select[_, _] => from.alias = s.aliasName
         }
 
         joinLeft = from
@@ -54,10 +56,10 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def fromLateral(table: SelectQuery[_]): Select[T] = {
+    infix def fromLateral(table: SelectQuery[_]): Select[T, AliasNames]  = {
         val from = SqlSubQueryTableSource(table.getSelect, true)
         table match {
-            case s: Select[_] => from.alias = s.aliasName
+            case s: Select[_, _] => from.alias = s.aliasName
         }
 
         joinLeft = from
@@ -66,28 +68,28 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]]] = {
+    infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]], Tuple.Concat[AliasNames, ExtractAliasNames[U]]] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
 
-        def addItem(column: Expr[_]): Unit = {
-            if (column.alias.isEmpty) {
-                sqlSelect.addSelectItem(visitExpr(column))
-            } else {
-                sqlSelect.addSelectItem(visitExpr(column), column.alias)
-            }
-            selectItems.append(column.alias.getOrElse(""))
+        def addExpr(column: Expr[_]): Unit = {
+            sqlSelect.addSelectItem(visitExpr(column))
+        }
+
+        def addItem(item: AliasExpr[_, _]): Unit = {
+            sqlSelect.addSelectItem(visitExpr(item.expr), Some(item.name))
+            selectItems.addOne(item.name)
         }
 
         def spread(items: Tuple): Unit = {
             items.toArray.foreach {
                 case t: Tuple => spread(t)
-                case expr: Expr[_] => addItem(expr)
+                case expr: Expr[_] => addExpr(expr)
+                case item: AliasExpr[_, _] => addItem(item)
                 case t: TableSchema[_] => {
                     t._cols.foreach { c =>
                         sqlSelect.addSelectItem(visitExpr(c))
-                        selectItems.append(c.alias.getOrElse(""))
                     }
                 }
             }
@@ -95,66 +97,72 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
         spread(items)
 
-        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, RecursiveInverseMap[U]], Tuple.Concat[AliasNames, ExtractAliasNames[U]]]]
     }
 
-    infix def select[I <: SqlDataType](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]]] = {
+    infix def select[I <: SqlDataType](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]], AliasNames] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
 
-        if (item.alias.isEmpty) {
-            sqlSelect.addSelectItem(visitExpr(item))
-        } else {
-            sqlSelect.addSelectItem(visitExpr(item), item.alias)
-        }
-        selectItems.append(item.alias.getOrElse(""))
+        sqlSelect.addSelectItem(visitExpr(item))
 
-        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]], AliasNames]]
     }
 
-    infix def select[P <: Product](table: TableSchema[P]): Select[Tuple.Concat[T, Tuple1[P]]] = {
+    infix def select[I <: SqlDataType, N <: String](item: AliasExpr[I, N]): Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]] = {
+        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
+            this.sqlSelect.selectList.clear()
+        }
+
+        sqlSelect.addSelectItem(visitExpr(item.expr), Some(item.name))
+
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]]]
+    }
+
+    infix def select[P <: Product](table: TableSchema[P]): Select[Tuple.Concat[T, Tuple1[P]], AliasNames] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
 
         table._cols.foreach { c =>
             sqlSelect.addSelectItem(visitExpr(c))
-            selectItems.append(c.alias.getOrElse(""))
         }
 
-        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[P]]]]
+        this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[P]], AliasNames]]
     }
 
-    infix def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = {
+    infix def dynamicSelect(columns: Expr[_] | AliasExpr[_, _]*): Select[T, AliasNames] = {
         if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
             this.sqlSelect.selectList.clear()
         }
 
         columns.foreach { item =>
-            if (item.alias.isEmpty) {
-                sqlSelect.addSelectItem(visitExpr(item))
-            } else {
-                sqlSelect.addSelectItem(visitExpr(item), item.alias)
+            item match {
+                case e: Expr[_] => sqlSelect.addSelectItem(visitExpr(e))
+                case s: AliasExpr[_, _] => {
+                    sqlSelect.addSelectItem(visitExpr(s.expr), Some(s.name))
+                    selectItems.append(s.name)
+                }
             }
-            selectItems.append(item.alias.getOrElse(""))
+        
         }
 
-        this.asInstanceOf[Select[Tuple1[Nothing]]]
+        this
     }
 
-    def distinct: Select[T] = {
+    def distinct: Select[T, AliasNames] = {
         sqlSelect.distinct = true
         this
     }
 
-    infix def where(condition: Expr[_]): Select[T] = {
+    infix def where(condition: Expr[_]): Select[T, AliasNames] = {
         sqlSelect.addCondition(getExpr(condition))
 
         this
     }
 
-    def where(test: () => Boolean, condition: Expr[_]): Select[T] = {
+    def where(test: () => Boolean, condition: Expr[_]): Select[T, AliasNames] = {
         if (test()) {
             sqlSelect.addCondition(getExpr(condition))
         }
@@ -162,7 +170,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    def where(test: Boolean, condition: Expr[_]): Select[T] = {
+    def where(test: Boolean, condition: Expr[_]): Select[T, AliasNames] = {
         if (test) {
             sqlSelect.addCondition(getExpr(condition))
         }
@@ -170,20 +178,20 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def having(condition: Expr[_]): Select[T] = {
+    infix def having(condition: Expr[_]): Select[T, AliasNames] = {
         sqlSelect.addHaving(getExpr(condition))
 
         this
     }
 
-    infix def orderBy(item: OrderBy*): Select[T] = {
+    infix def orderBy(item: OrderBy*): Select[T, AliasNames] = {
         val sqlOrderBy = item.map(o => SqlOrderBy(visitExpr(o.query), o.order))
         this.sqlSelect.orderBy.addAll(sqlOrderBy)
 
         this
     }
 
-    infix def limit(count: Int): Select[T] = {
+    infix def limit(count: Int): Select[T, AliasNames] = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(count, 0))
         } else {
@@ -192,7 +200,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def offset(offset: Int): Select[T] = {
+    infix def offset(offset: Int): Select[T, AliasNames] = {
         if (this.sqlSelect.limit.isEmpty) {
             this.sqlSelect.limit = Some(SqlLimit(1, offset))
         } else {
@@ -201,13 +209,13 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def groupBy(item: Expr[_]*): Select[T] = {
+    infix def groupBy(item: Expr[_]*): Select[T, AliasNames] = {
         this.sqlSelect.groupBy.appendAll(item.map(i => visitExpr(i)))
 
         this
     }
 
-    private def joinClause(table: TableSchema[_], joinType: SqlJoinType): Select[T] = {
+    private def joinClause(table: TableSchema[_], joinType: SqlJoinType): Select[T, AliasNames] = {
         val joinTable = SqlIdentifierTableSource(table.tableName)
         joinTable.alias = table.aliasName
         val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
@@ -217,10 +225,10 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    private def joinClause(table: SelectQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T] = {
+    private def joinClause(table: SelectQuery[_], joinType: SqlJoinType, isLateral: Boolean = false): Select[T, AliasNames] = {
         val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral))
         table match {
-            case s: Select[_] => join.alias = s.aliasName
+            case s: Select[_, _] => join.alias = s.aliasName
         }
 
         sqlSelect.from = Some(join)
@@ -229,7 +237,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T] = {
+    private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T, AliasNames] = {
         def unapplyTable(t: AnyTable): SqlTableSource = {
             t match {
                 case table: TableSchema[_] =>
@@ -249,7 +257,7 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def on(onCondition: Expr[_]): Select[T] = {
+    infix def on(onCondition: Expr[_]): Select[T, AliasNames] = {
         val from = this.sqlSelect.from.get
         from match {
             case table: SqlJoinTableSource => table.on = Some(visitExpr(onCondition))
@@ -259,73 +267,73 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
         this
     }
 
-    infix def join(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.JOIN)
+    infix def join(table: TableSchema[_]): Select[T, AliasNames] = joinClause(table, SqlJoinType.JOIN)
 
-    infix def join(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN)
+    infix def join(query: SelectQuery[_]): Select[T, AliasNames] = joinClause(query, SqlJoinType.JOIN)
 
-    infix def join(table: JoinTableSchema): Select[T] = 
+    infix def join(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.JOIN)
 
-    infix def joinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.JOIN, true)
+    infix def joinLateral(query: SelectQuery[_]): Select[T, AliasNames] = joinClause(query, SqlJoinType.JOIN, true)
 
-    infix def leftJoin(table: TableSchema[_]): Select[T] = 
+    infix def leftJoin(table: TableSchema[_]): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(query: SelectQuery[_]): Select[T] = 
+    infix def leftJoin(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoin(table: JoinTableSchema): Select[T] = 
+    infix def leftJoin(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.LEFT_JOIN)
 
-    infix def leftJoinLateral(query: SelectQuery[_]): Select[T] = 
+    infix def leftJoinLateral(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.LEFT_JOIN, true)
 
-    infix def rightJoin(table: TableSchema[_]): Select[T] = 
+    infix def rightJoin(table: TableSchema[_]): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(query: SelectQuery[_]): Select[T] = 
+    infix def rightJoin(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoin(table: JoinTableSchema): Select[T] = 
+    infix def rightJoin(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.RIGHT_JOIN)
 
-    infix def rightJoinLateral(query: SelectQuery[_]): Select[T] = 
+    infix def rightJoinLateral(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.RIGHT_JOIN, true)
 
-    infix def innerJoin(table: TableSchema[_]): Select[T] = joinClause(table, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(table: TableSchema[_]): Select[T, AliasNames] = joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN)
+    infix def innerJoin(query: SelectQuery[_]): Select[T, AliasNames] = joinClause(query, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoin(table: JoinTableSchema): Select[T] = 
+    infix def innerJoin(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.INNER_JOIN)
 
-    infix def innerJoinLateral(query: SelectQuery[_]): Select[T] = joinClause(query, SqlJoinType.INNER_JOIN, true)
+    infix def innerJoinLateral(query: SelectQuery[_]): Select[T, AliasNames] = joinClause(query, SqlJoinType.INNER_JOIN, true)
 
-    infix def crossJoin(table: TableSchema[_]): Select[T] = 
+    infix def crossJoin(table: TableSchema[_]): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(query: SelectQuery[_]): Select[T] = 
+    infix def crossJoin(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoin(table: JoinTableSchema): Select[T] = 
+    infix def crossJoin(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.CROSS_JOIN)
 
-    infix def crossJoinLateral(query: SelectQuery[_]): Select[T] = 
+    infix def crossJoinLateral(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.CROSS_JOIN, true)
 
-    infix def fullJoin(table: TableSchema[_]): Select[T] = 
+    infix def fullJoin(table: TableSchema[_]): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(query: SelectQuery[_]): Select[T] = 
+    infix def fullJoin(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoin(table: JoinTableSchema): Select[T] = 
+    infix def fullJoin(table: JoinTableSchema): Select[T, AliasNames] =
         joinClause(table, SqlJoinType.FULL_JOIN)
 
-    infix def fullJoinLateral(query: SelectQuery[_]): Select[T] = 
+    infix def fullJoinLateral(query: SelectQuery[_]): Select[T, AliasNames] =
         joinClause(query, SqlJoinType.FULL_JOIN, true)
 
-    def forUpdate: Select[T] = {
+    def forUpdate: Select[T, AliasNames] = {
         this.sqlSelect.forUpdate = true
         this
     }
@@ -362,35 +370,15 @@ class Select[T <: Tuple] extends SelectQuery[T] with Selectable {
 
     def toPageSql(pageSize: Int, pageNumber: Int)(using db: DB): String = pageSql(pageSize, pageNumber)(db)
 
-    def selectDynamic(name: String): Any = name match {
-        case "_1" => col(s"${aliasName.getOrElse("")}.${selectItems.head}")
-        case "_2" => col(s"${aliasName.getOrElse("")}.${selectItems(1)}")
-        case "_3" => col(s"${aliasName.getOrElse("")}.${selectItems(2)}")
-        case "_4" => col(s"${aliasName.getOrElse("")}.${selectItems(3)}")
-        case "_5" => col(s"${aliasName.getOrElse("")}.${selectItems(4)}")
-        case "_6" => col(s"${aliasName.getOrElse("")}.${selectItems(5)}")
-        case "_7" => col(s"${aliasName.getOrElse("")}.${selectItems(6)}")
-        case "_8" => col(s"${aliasName.getOrElse("")}.${selectItems(7)}")
-        case "_9" => col(s"${aliasName.getOrElse("")}.${selectItems(8)}")
-        case "_10" => col(s"${aliasName.getOrElse("")}.${selectItems(9)}")
-        case "_11" => col(s"${aliasName.getOrElse("")}.${selectItems(10)}")
-        case "_12" => col(s"${aliasName.getOrElse("")}.${selectItems(11)}")
-        case "_13" => col(s"${aliasName.getOrElse("")}.${selectItems(12)}")
-        case "_14" => col(s"${aliasName.getOrElse("")}.${selectItems(13)}")
-        case "_15" => col(s"${aliasName.getOrElse("")}.${selectItems(14)}")
-        case "_16" => col(s"${aliasName.getOrElse("")}.${selectItems(15)}")
-        case "_17" => col(s"${aliasName.getOrElse("")}.${selectItems(16)}")
-        case "_18" => col(s"${aliasName.getOrElse("")}.${selectItems(17)}")
-        case "_19" => col(s"${aliasName.getOrElse("")}.${selectItems(18)}")
-        case "_20" => col(s"${aliasName.getOrElse("")}.${selectItems(19)}")
-        case "_21" => col(s"${aliasName.getOrElse("")}.${selectItems(20)}")
-        case "_22" => col(s"${aliasName.getOrElse("")}.${selectItems(21)}")
-        case _ => col[SqlDataType](s"${aliasName.get}.$name")
+    transparent inline def selectDynamic(inline name: String) = {
+        val item = selectItems.find(_ == name).get
+
+        col[FindTypeByName[Tuple.Zip[T, AliasNames], Tuple.Size[T] - 1, name.type] & SqlDataType](s"${aliasName.get}.$item")
     }
 
     private[select] def clear: Unit = this.sqlSelect.selectList.clear
 }
 
 object Select {
-    def apply(): Select[EmptyTuple] = new Select()
+    def apply(): Select[EmptyTuple, EmptyTuple] = new Select()
 }

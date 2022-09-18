@@ -13,7 +13,11 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.Tuple.Concat
 
-sealed trait Expr[T <: SqlDataType](var alias: Option[String] = None) {
+trait SelectItem[T]
+
+case class AliasExpr[T <: SqlDataType, Alias <: String](expr: Expr[T], name: Alias) extends SelectItem[T]
+
+sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
     def ==[V <: T](value: V): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
 
     def ==[V <: T](value: Option[V]): BinaryExpr[Boolean] = {
@@ -127,15 +131,9 @@ sealed trait Expr[T <: SqlDataType](var alias: Option[String] = None) {
 
     def desc: OrderBy = OrderBy(this, SqlOrderByOption.DESC)
 
-    infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        this.alias = Some(name)
-        this
-    }
+    inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[T, name.type](this, name)
 
-    infix def unsafeAs(name: String): Expr[T] = {
-        this.alias = Some(name)
-        this
-    }
+    infix def unsafeAs(name: String) = AliasExpr[T, name.type](this, name)
 }
 
 extension [T <: SqlNumberType] (e: Expr[T]) {
@@ -206,18 +204,6 @@ case class TableColumnExpr[T <: SqlDataType](table: String,
     def primaryKey: PrimaryKeyColumnExpr[T] = {
         PrimaryKeyColumnExpr(table, column, schema)
     }
-
-    override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: TableColumnExpr[T] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
-
-    override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: TableColumnExpr[T] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
 }
 
 extension [T <: Int | Long] (t: TableColumnExpr[T]) {
@@ -229,19 +215,7 @@ extension [T <: Int | Long] (t: TableColumnExpr[T]) {
 case class PrimaryKeyColumnExpr[T <: SqlDataType](table: String,
                                                   column: String,
                                                   schema: TableSchema[_],
-                                                  var isIncr: Boolean = false) extends Expr[T]() {
-    override infix def as(name: String)(using NonEmpty[name.type] =:= Any): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
-
-    override infix def unsafeAs(name: String): Expr[T] = {
-        val copy: PrimaryKeyColumnExpr[T] = this.copy()
-        copy.alias = Some(name)
-        copy
-    }
-}
+                                                  var isIncr: Boolean = false) extends Expr[T]()
 
 case class SubQueryExpr[T <: SqlDataType](selectQuery: SelectQuery[Tuple1[T]]) extends Expr[T]()
 

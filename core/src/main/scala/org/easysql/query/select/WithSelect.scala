@@ -17,7 +17,7 @@ class WithSelect extends SelectQuery[Nothing] {
         this
     }
 
-    def add(query: Select[_], columns: List[String]): WithSelect = {
+    def add(query: Select[_, _], columns: List[String]): WithSelect = {
         val withItem = SqlWithItem(
             getExpr(col(query.aliasName.get)),
             query.getSelect,
