@@ -59,24 +59,17 @@ object AllColumn {
     def * = AllColumnExpr()
 }
 
-def select[U <: Tuple](items: U): Select[RecursiveInverseMap[U]] = {
-    val sel = Select().select(items)
-    sel.asInstanceOf[Select[RecursiveInverseMap[U]]]
-}
+def select[U <: Tuple](items: U) = Select().select(items)
 
-def select[I <: SqlDataType](item: Expr[I]): Select[Tuple1[I]] = {
-    val sel = Select().select(item)
-    sel.asInstanceOf[Select[Tuple1[I]]]
-}
+def select[I <: SqlDataType](item: Expr[I]) = Select().select(item)
 
-def select[P <: Product](table: TableSchema[P]): Select[Tuple1[P]] = {
-    val sel = Select().select(table)
-    sel.asInstanceOf[Select[Tuple1[P]]]
-}
+def select[I <: SqlDataType, N <: String](item: AliasExpr[I, N]) = Select().select(item)
 
-def dynamicSelect(columns: Expr[_]*): Select[Tuple1[Nothing]] = Select().dynamicSelect(columns: _*)
+def select[P <: Product](table: TableSchema[P]) = Select().select(table)
 
-inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T]] = {
+def dynamicSelect(columns: Expr[_]*) = Select().dynamicSelect(columns: _*)
+
+inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T], _] = {
     val (tableName, cols) = pkMacro[T, pk.type]
 
     val select = Select()
@@ -88,7 +81,7 @@ inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T]] = {
         case _ => select.where(ColumnExpr(cols.head).equal(pk))
     }
 
-    select.asInstanceOf[Select[Tuple1[T]]]
+    select.asInstanceOf[Select[Tuple1[T], _]]
 }
 
 def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(table)(columns)

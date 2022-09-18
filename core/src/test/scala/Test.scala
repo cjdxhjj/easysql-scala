@@ -42,8 +42,14 @@ object Test extends App {
     // val f = find[TestTable](1)
     // println(f.toSql)
 
-    val s1 = select (user, user.id as "u", post, post.id as "p") from user join post on user.id === post.userId where user.id === 1
-    println(s1.toSql)
+    // val s1 = select (post, post.id as "p1", post.name as "p2") from user join post on user.id === post.userId where user.id === 1
+    // println(s1.toSql)
+
+    val sub = select (user.id as "c1", user.name as "c2") from user as "sub"
+
+
+    val s = select (sub.c1, sub.c2) from sub
+    println(s.toSql)
 }
 
 @Table("test_table")

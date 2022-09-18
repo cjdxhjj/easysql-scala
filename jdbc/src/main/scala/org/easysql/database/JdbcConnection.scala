@@ -39,7 +39,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     override inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i)))
 
-    override inline def page[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean): Page[EliminateTuple1[T]] = {
+    override inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean): Page[EliminateTuple1[T]] = {
         val data = if (pageSize == 0) {
             List[EliminateTuple1[T]]()
         } else {
@@ -65,7 +65,7 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
         new Page[EliminateTuple1[T]](totalPage, count, data)
     }
 
-    override inline def fetchCount(query: Select[?]): Long = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
+    override inline def fetchCount(query: Select[_, _]): Long = exec(conn => jdbcQueryCount(conn, query.countSql(db)))
 
     def transaction(isolation: Int)(query: JdbcTransaction => Unit): Unit = {
         val conn = getConnection

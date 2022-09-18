@@ -21,7 +21,7 @@ trait DBOperater {
 
     inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
 
-    inline def page[T <: Tuple](query: Select[T])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[EliminateTuple1[T]]
+    inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean = true): Page[EliminateTuple1[T]]
 
-    inline def fetchCount(query: Select[_]): Long
+    inline def fetchCount(query: Select[_, _]): Long
 }
