@@ -24,15 +24,15 @@ def col[T <: SqlDataType](column: String) = ColumnExpr[T](column)
 
 def caseWhen[T <: SqlDataType](conditions: CaseBranch[T]*) = CaseExpr[T](conditions.toList)
 
-def exists(select: SelectQuery[_]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.EXISTS)
+def exists(select: SelectQuery[_, _]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.EXISTS)
 
-def notExists(select: SelectQuery[_]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.NOT_EXISTS)
+def notExists(select: SelectQuery[_, _]) = SubQueryPredicateExpr[Boolean](select, SqlSubQueryPredicate.NOT_EXISTS)
 
-def all[T <: SqlDataType](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ALL)
+def all[T <: SqlDataType](select: SelectQuery[Tuple1[T], _]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ALL)
 
-def any[T <: SqlDataType](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ANY)
+def any[T <: SqlDataType](select: SelectQuery[Tuple1[T], _]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.ANY)
 
-def some[T <: SqlDataType](select: SelectQuery[Tuple1[T]]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
+def some[T <: SqlDataType](select: SelectQuery[Tuple1[T], _]) = SubQueryPredicateExpr[T](select, SqlSubQueryPredicate.SOME)
 
 def cast[T <: SqlDataType](expr: Expr[_], castType: String) = CastExpr[T](expr, castType)
 
@@ -52,7 +52,7 @@ inline def asTable[T <: Product] = new TableSchema[T] {
 }
 
 extension [T <: SqlDataType] (e: TableColumnExpr[T] | ColumnExpr[T]) {
-    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V]]) = (e, value)
+    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V], _]) = (e, value)
 }
 
 object AllColumn {

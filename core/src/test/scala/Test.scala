@@ -45,7 +45,9 @@ object Test extends App {
     // val s1 = select (post, post.id as "p1", post.name as "p2") from user join post on user.id === post.userId where user.id === 1
     // println(s1.toSql)
 
-    val sub = select (user.id as "c1", user.name as "c2") from user as "sub"
+    val sub1 = select (user.id as "c1", user.name as "c2") from user
+    val sub2 = select (user.id, user.name) from user
+    val sub = sub1 union sub2 union sub2 as "sub"
 
 
     val s = select (sub.c1, sub.c2) from sub

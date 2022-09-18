@@ -30,7 +30,6 @@ object Test extends App {
 case class TestTable(
     @IncrKey id: Int,
     @Column name: String,
-    @Column("test_nullable") testOption: String | Null,
     @Column date: Date
 )
 

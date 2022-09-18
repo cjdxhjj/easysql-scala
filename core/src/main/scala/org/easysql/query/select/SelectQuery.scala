@@ -2,105 +2,95 @@ package org.easysql.query.select
 
 import org.easysql.ast.statement.select.{SqlSelectQuery, SqlUnionType}
 import org.easysql.database.DB
-import org.easysql.dsl.{Expr, SubQueryExpr, Union}
+import org.easysql.dsl.*
 import org.easysql.query.BasedQuery
+import org.easysql.ast.SqlDataType
 
-trait SelectQuery[T <: Tuple] extends BasedQuery {
+import scala.collection.mutable.ListBuffer
+import scala.language.dynamics
+import scala.compiletime.ops.int.*
+
+trait SelectQuery[T <: Tuple, AliasNames <: Tuple] extends BasedQuery with Dynamic {
     def getSelect: SqlSelectQuery
 
-    infix def union[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.UNION, select)
+    private[select] val selectItems: ListBuffer[String] = ListBuffer()
+
+    var aliasName: Option[String] = None
+
+    infix def as(name: String)(using NonEmpty[name.type] =:= Any): SelectQuery[T, AliasNames] = {
+        this.aliasName = Some(name)
+        this
     }
 
-    infix def union(tuple: T): UnionSelect[T] = {
+    infix def unsafeAs(name: String): SelectQuery[T, AliasNames]  = {
+        this.aliasName = Some(name)
+        this
+    }
+
+    private def unionClause[U <: Tuple](select: SelectQuery[U, _], unionType: SqlUnionType): UnionSelect[Union[T, U], AliasNames] = {
+        val union = new UnionSelect[Union[T, U], AliasNames](this, unionType, select)
+        union.selectItems.clear()
+        union.selectItems.addAll(selectItems)
+        union
+    }
+
+    private def unionClause(tuple: T, unionType: SqlUnionType): UnionSelect[T, AliasNames] = {
         val values = new ValuesSelect[T]
         values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.UNION, values)
+        val union = new UnionSelect[T, AliasNames](this, unionType, values)
+        union.selectItems.clear()
+        union.selectItems.addAll(selectItems)
+        union
     }
 
-    infix def union(list: List[T]): UnionSelect[T] = {
+    private def unionClause(list: List[T], unionType: SqlUnionType): UnionSelect[T, AliasNames] = {
         val values = new ValuesSelect[T]
         list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.UNION, values)
+        val union = new UnionSelect[T, AliasNames](this, unionType, values)
+        union.selectItems.clear()
+        union.selectItems.addAll(selectItems)
+        union
     }
 
-    infix def unionAll[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.UNION_ALL, select)
-    }
+    infix def union[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.UNION)
 
-    infix def unionAll(tuple: T): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.UNION_ALL, values)
-    }
+    infix def union(tuple: T) = unionClause(tuple, SqlUnionType.UNION)
 
-    infix def unionAll(list: List[T]): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.UNION_ALL, values)
-    }
+    infix def union(list: List[T]) = unionClause(list, SqlUnionType.UNION)
 
-    infix def except[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.EXCEPT, select)
-    }
+    infix def unionAll[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.UNION_ALL)
 
-    infix def except(tuple: T): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.EXCEPT, values)
-    }
+    infix def unionAll(tuple: T) = unionClause(tuple, SqlUnionType.UNION_ALL)
 
-    infix def except(list: List[T]): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.EXCEPT, values)
-    }
+    infix def unionAll(list: List[T]) = unionClause(list, SqlUnionType.UNION_ALL)
 
-    infix def exceptAll[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.EXCEPT_ALL, select)
-    }
+    infix def except[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.EXCEPT)
 
-    infix def exceptAll(tuple: T): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.EXCEPT_ALL, values)
-    }
+    infix def except(tuple: T) = unionClause(tuple, SqlUnionType.EXCEPT)
 
-    infix def exceptAll(list: List[T]): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.EXCEPT_ALL, values)
-    }
+    infix def except(list: List[T]) = unionClause(list, SqlUnionType.EXCEPT)
 
-    infix def intersect[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.INTERSECT, select)
-    }
+    infix def exceptAll[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.EXCEPT_ALL)
 
-    infix def intersect(tuple: T): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.INTERSECT, values)
-    }
+    infix def exceptAll(tuple: T) = unionClause(tuple, SqlUnionType.EXCEPT_ALL)
 
-    infix def intersect(list: List[T]): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.INTERSECT, values)
-    }
+    infix def exceptAll(list: List[T]) = unionClause(list, SqlUnionType.EXCEPT_ALL)
 
-    infix def intersectAll[U <: Tuple](select: SelectQuery[U]): UnionSelect[Union[T, U]] = {
-        new UnionSelect(this, SqlUnionType.INTERSECT_ALL, select)
-    }
+    infix def intersect[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.INTERSECT)
 
-    infix def intersectAll(tuple: T): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        values.addRow(tuple)
-        new UnionSelect[T](this, SqlUnionType.INTERSECT_ALL, values)
-    }
+    infix def intersect(tuple: T) = unionClause(tuple, SqlUnionType.INTERSECT)
 
-    infix def intersectAll(list: List[T]): UnionSelect[T] = {
-        val values = new ValuesSelect[T]
-        list.foreach(it => values.addRow(it))
-        new UnionSelect[T](this, SqlUnionType.INTERSECT_ALL, values)
+    infix def intersect(list: List[T]) = unionClause(list, SqlUnionType.INTERSECT)
+
+    infix def intersectAll[U <: Tuple](select: SelectQuery[U, _]) = unionClause(select, SqlUnionType.INTERSECT_ALL)
+
+    infix def intersectAll(tuple: T) = unionClause(tuple, SqlUnionType.INTERSECT_ALL)
+
+    infix def intersectAll(list: List[T]) = unionClause(list, SqlUnionType.INTERSECT_ALL)
+
+    transparent inline def selectDynamic(inline name: String) = {
+        val item = selectItems.find(_ == name).get
+
+        col[FindTypeByName[Tuple.Zip[T, AliasNames], Tuple.Size[T] - 1, name.type] & SqlDataType](s"${aliasName.get}.$item")
     }
 }

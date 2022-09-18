@@ -27,13 +27,13 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
     override inline def queryToList(sql: String): List[Map[String, Any]] = 
         exec(conn => jdbcQuery(conn, sql))
 
-    override inline def queryToList[T <: Tuple](query: SelectQuery[T]): List[EliminateTuple1[T]] = 
+    override inline def queryToList[T <: Tuple](query: SelectQuery[T, _]): List[EliminateTuple1[T]] = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[EliminateTuple1[T]].apply(i)))
 
     override inline def queryToList[T](query: Query[T]): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i)))
 
-    override inline def find[T <: Tuple](query: SelectQuery[T]): Option[EliminateTuple1[T]] = 
+    override inline def find[T <: Tuple](query: SelectQuery[T, _]): Option[EliminateTuple1[T]] = 
         exec(conn => jdbcQueryToArray(conn, query.sql(db)).headOption.map(i => bindSelect[EliminateTuple1[T]].apply(i)))
 
     override inline def find[T](query: Query[T]): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = 

@@ -11,7 +11,7 @@ import org.easysql.visitor.getExpr
 
 import java.sql.Connection
 
-class ValuesSelect[T <: Tuple] extends SelectQuery[T] {
+class ValuesSelect[T <: Tuple] extends SelectQuery[T, EmptyTuple] {
     private var sqlValuesSelect = SqlValuesSelect()
 
     def addRow[U <: Tuple](row: U): ValuesSelect[InverseMap[U]] = {
