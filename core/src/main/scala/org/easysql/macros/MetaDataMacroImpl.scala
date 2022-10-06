@@ -7,13 +7,13 @@ import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable.*
 import scala.annotation.experimental
 
-def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, List[(String, T => Any)])] = {
+def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, List[(String, (T => Any) | (() => Any))])] = {
     import q.reflect.*
 
     val sym = TypeTree.of[T].symbol
     var tableName = sym.name
     val insertFieldExprs = ListBuffer[Expr[String]]()
-    val insertFunctionExprs = ListBuffer[Expr[T => Any]]()
+    val insertFunctionExprs = ListBuffer[Expr[(T => Any) | (() => Any)]]()
 
     if (sym.annotations.size > 0) {
         val annotation = sym.annotations(1)
@@ -38,16 +38,37 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
                 case Apply(Select(New(TypeIdent(name)), _), args) =>
                     if (name == "PrimaryKey" || name == "Column") {
                         val insertName = args match {
-                            case Literal(v) :: Nil => v.value.toString()
+                            case Literal(v) :: _ => v.value.toString()
                             case _ => field.name
                         }
 
-                        val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
-                        def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                            val x = paramRefs.head.asExprOf[T].asTerm
-                            Select.unique(x, field.name)
+                        def createLambda = {
+                            val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
+                            def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
+                                val x = paramRefs.head.asExprOf[T].asTerm
+                                Select.unique(x, field.name)
+                            }
+                            Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
                         }
-                        val lambda = Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
+
+                        def createGeneratorLambda(s: Statement) = {
+                            val mtpe = MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Any])
+                            def rhsFn(sym: Symbol, paramRefs: List[Tree]): Tree = s match {
+                                case DefDef(_, _, _, t) => t.get
+                            }
+                            Lambda(field, mtpe, rhsFn).asExprOf[() => Any]
+                        }
+
+                        val lambda = if (name == "PrimaryKey") {
+                            args(1) match {
+                                case NamedArg(_, Block(l, _)) => createGeneratorLambda(l.head)
+                                case Block(l, _) => createGeneratorLambda(l.head)
+                                case _ => createLambda
+                            }
+                        } else {
+                            createLambda
+                        }
+                        
                         insertFieldExprs.addOne(Expr.apply(insertName))
                         insertFunctionExprs.addOne(lambda)
                     }
@@ -103,7 +124,7 @@ def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
                 case Apply(Select(New(TypeIdent(name)), _), args) =>
                     if (name == "PrimaryKey" || name == "IncrKey" || name == "Column") {
                         val fieldName = args match {
-                            case Literal(v) :: Nil => v.value.toString()
+                            case Literal(v) :: _ => v.value.toString()
                             case _ => field.name
                         }
 
@@ -193,7 +214,7 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
                 case Apply(Select(New(TypeIdent(name)), _), args) =>
                     if (name == "PrimaryKey" || name == "IncrKey") {
                         val fieldName = args match {
-                            case Literal(v) :: Nil => v.value.toString()
+                            case Literal(v) :: _ => v.value.toString()
                             case _ => field.name
                         }
                         pkFieldExprs.addOne(Expr.apply(fieldName))

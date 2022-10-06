@@ -23,7 +23,10 @@ class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
         sqlInsert.table = Some(SqlIdentifierExpr(insertMetaData._1))
         val insertList = entities.toList map { entity =>
             insertMetaData._2 map { i =>
-                visitExpr(anyToExpr(i._2.apply(entity)))
+                i._2 match {
+                    case f: Function1[_, _] => visitExpr(anyToExpr(f.asInstanceOf[T => Any].apply(entity)))
+                    case f: Function0[_] => visitExpr(anyToExpr(f.apply()))
+                }
             }
         }
         sqlInsert.values.addAll(insertList)
