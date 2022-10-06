@@ -15,6 +15,7 @@ import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import java.util.Random
+import java.util.UUID
 
 object Test extends App {
     given DB = DB.MYSQL
@@ -23,10 +24,10 @@ object Test extends App {
     // println(s.toSql)
 
 
-    // val testTable = TestTable(1, "x", null)
-
-    // val i = insert(testTable)
-    // println(i.toSql)
+    val testTable = TestTable("1", "x")
+    println(testTable)
+    val i = insert(testTable)
+    println(i.toSql)
 
     // val u = update(testTable, false)
     // println(u.toSql)
@@ -45,20 +46,19 @@ object Test extends App {
     // val s1 = select (post, post.id as "p1", post.name as "p2") from user join post on user.id === post.userId where user.id === 1
     // println(s1.toSql)
 
-    val sub1 = select (user.id as "c1", user.name as "c2") from user
-    val sub2 = select (user.id, user.name) from user
-    val sub = sub1 union sub2 union sub2 as "sub"
+    // val sub1 = select (user.id as "c1", user.name as "c2") from user
+    // val sub2 = select (user.id, user.name) from user
+    // val sub = sub1 union sub2 union sub2 as "sub"
 
 
-    val s = select (sub.c1, sub.c2) from sub
-    println(s.toSql)
+    // val s = select (sub.c1, sub.c2) from sub
+    // println(s.toSql)
 }
 
 @Table("test_table")
 case class TestTable(
-    @IncrKey id: Int,
-    @Column name: String,
-    @Column("test_nullable") testNullable: String
+    @PrimaryKey("id", () => UUID.randomUUID()) id: String,
+    @Column name: String
 )
 
 val tt = asTable[TestTable]

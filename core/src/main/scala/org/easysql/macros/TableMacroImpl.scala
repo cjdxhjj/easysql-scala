@@ -71,7 +71,7 @@ def exprMetaMacroImpl[T](name: Expr[String])(using q: Quotes, t: Type[T]): Expr[
                 }
 
                 args match {
-                    case Literal(v) :: Nil => eleName = v.value.toString
+                    case Literal(v) :: _ => eleName = v.value.toString
                     case _ =>
                 }
         }
@@ -91,7 +91,7 @@ def fieldNamesMacroImpl[T](using q: Quotes, t: Type[T]): Expr[List[String]] = {
             annotation match {
                 case Apply(Select(New(TypeIdent(name)), _), args) =>
                     args match {
-                        case Literal(v) :: Nil => fieldName = v.value.toString
+                        case Literal(v) :: _ => fieldName = v.value.toString
                         case _ =>
                     }
             }

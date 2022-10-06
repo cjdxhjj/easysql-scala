@@ -6,7 +6,7 @@ import scala.annotation.StaticAnnotation
 case class Table(tableName: String = "") extends StaticAnnotation
 
 @scala.annotation.meta.field
-case class PrimaryKey(columnName: String = "") extends StaticAnnotation
+case class PrimaryKey(columnName: String = "", generator: () => Any = null) extends StaticAnnotation
 
 @scala.annotation.meta.field
 case class IncrKey(columnName: String = "") extends StaticAnnotation
