@@ -1,6 +1,6 @@
 package org.easysql.dsl
 
-import org.easysql.ast.SqlDataType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 
 import scala.compiletime.ops.any.*
@@ -55,6 +55,9 @@ type Union[X <: Tuple, Y <: Tuple] <: Tuple = (X, Y) match {
 
 type UnionTo[A, B] = A match {
     case B => B
+    case SqlNumberType => B match {
+        case SqlNumberType => Number
+    }
     case _ => B match {
         case A => A
     }
