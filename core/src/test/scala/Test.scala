@@ -28,19 +28,19 @@ object Test extends App {
     val i = insert(testTable)
     println(i.toSql)
 
-    // val u = update(testTable, false)
-    // println(u.toSql)
+    val u = update(testTable, false)
+    println(u.toSql)
 
-    // val d = delete[TestTable](1)
-    // println(d.toSql)
+    val d = delete[TestTable]("1")
+    println(d.toSql)
 
-    // val sv = save[TestTable](testTable)
-    // println(sv.sql(DB.MYSQL))
-    // println(sv.sql(DB.PGSQL))
-    // println(sv.sql(DB.SQLITE))
+    val sv = save[TestTable](testTable)
+    println(sv.sql(DB.MYSQL))
+    println(sv.sql(DB.PGSQL))
+    println(sv.sql(DB.SQLITE))
 
-    // val f = find[TestTable](1)
-    // println(f.toSql)
+    val f = find[TestTable]("1")
+    println(f.toSql)
 
     // val s1 = select (post, post.id as "p1", post.name as "p2") from user join post on user.id === post.userId where user.id === 1
     // println(s1.toSql)
@@ -56,7 +56,7 @@ object Test extends App {
 
 @Table("test_table")
 case class TestTable(
-    @PrimaryKey("id", () => UUID.randomUUID().toString) id: String,
+    @PrimaryKey(generator = () => UUID.randomUUID().toString) id: String,
     @Column name: String
 )
 

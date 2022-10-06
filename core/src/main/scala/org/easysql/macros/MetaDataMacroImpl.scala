@@ -61,6 +61,7 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
 
                         val lambda = if (name == "PrimaryKey") {
                             args(1) match {
+                                case NamedArg(_, Block(l, _)) => createGeneratorLambda(l.head)
                                 case Block(l, _) => createGeneratorLambda(l.head)
                                 case _ => createLambda
                             }
