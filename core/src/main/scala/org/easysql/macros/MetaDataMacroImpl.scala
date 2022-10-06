@@ -51,9 +51,17 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
                             Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
                         }
 
+                        def createGeneratorLambda(s: Statement) = {
+                            val mtpe = MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Any])
+                            def rhsFn(sym: Symbol, paramRefs: List[Tree]): Tree = s match {
+                                case DefDef(_, _, _, t) => t.get
+                            }
+                            Lambda(field, mtpe, rhsFn).asExprOf[() => Any]
+                        }
+
                         val lambda = if (name == "PrimaryKey") {
                             args(1) match {
-                                case block: Block => block.asExprOf[() => Any]
+                                case Block(l, _) => createGeneratorLambda(l.head)
                                 case _ => createLambda
                             }
                         } else {

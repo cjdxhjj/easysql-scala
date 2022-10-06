@@ -25,7 +25,6 @@ object Test extends App {
 
 
     val testTable = TestTable("1", "x")
-    println(testTable)
     val i = insert(testTable)
     println(i.toSql)
 
@@ -57,7 +56,7 @@ object Test extends App {
 
 @Table("test_table")
 case class TestTable(
-    @PrimaryKey("id", () => UUID.randomUUID()) id: String,
+    @PrimaryKey("id", () => UUID.randomUUID().toString) id: String,
     @Column name: String
 )
 
