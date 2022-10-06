@@ -21,8 +21,12 @@ object Test extends App {
     // )
     // println(data)
 
-    val q = query[TestTable].map(t => t -> t)
+    given Logger = java.util.logging.Logger.getLogger("")
+
     val db: JdbcConnection = ???
+
+    val q = select(tt.id, tt.name) from tt
+
     val data = db.queryToList(q)
 }
 
