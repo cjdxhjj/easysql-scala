@@ -2,6 +2,7 @@ package org.easysql.dsl
 
 import org.easysql.ast.SqlDataType
 import org.easysql.ast.expr.SqlSubQueryPredicate
+import org.easysql.ast.statement.select.SqlSelect
 import org.easysql.database.DB
 import org.easysql.dsl.ConstExpr
 import org.easysql.query.delete.Delete
@@ -11,10 +12,12 @@ import org.easysql.query.select.{Select, SelectQuery, Query}
 import org.easysql.query.truncate.Truncate
 import org.easysql.query.update.Update
 import org.easysql.macros.*
+import org.easysql.visitor.outputVisitor.*
 
 import scala.annotation.targetName
 import scala.collection.mutable
 import scala.deriving.*
+import scala.annotation.experimental
 
 def const[T <: SqlDataType](v: T) = ConstExpr[T](v)
 
@@ -101,6 +104,20 @@ inline def delete[T <: Product](pk: SqlDataType | Tuple): Delete = Delete().dele
 def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
 
 inline def query[T <: Product](using m: Mirror.ProductOf[T]) = Query[T]
+
+extension (s: Select[_, _]) {
+    def toEsDsl = {
+        val visitor = new ESVisitor()
+        visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
+        visitor.dslBuilder.toString()
+    }
+
+    def toMongoDsl = {
+        val visitor = new MongoVisitor()
+        visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
+        visitor.dslBuilder.toString
+    }
+}
 
 extension (s: StringContext) {
     def sql(args: (SqlDataType | List[SqlDataType])*): String = {
