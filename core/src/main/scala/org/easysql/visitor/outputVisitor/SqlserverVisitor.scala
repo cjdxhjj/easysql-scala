@@ -19,7 +19,7 @@ class SqlserverVisitor extends SqlVisitor {
         sqlBuilder.append("SELECT ")
 
         if (select.selectList.isEmpty) {
-            throw SQLException("SELECT列表为空")
+            throw SQLException("select list is empty")
         }
 
         if (select.distinct) {
