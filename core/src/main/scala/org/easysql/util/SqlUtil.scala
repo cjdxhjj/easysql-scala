@@ -47,10 +47,10 @@ def anyToExpr(value: Any): Expr[_] = {
                     case f: Float => const(f)
                     case b: Boolean => const(b)
                     case d: Date => const(d)
-                    case _ => throw SQLException("实体类中存在无法转换为sql表达式的属性类型")
+                    case _ => throw SQLException("cannot convert to type of sql expression")
                 }
             }
         case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
-        case _ => throw SQLException("实体类中存在无法转换为sql表达式的属性类型")
+        case _ => throw SQLException("cannot convert to type of sql expression")
     }
 }

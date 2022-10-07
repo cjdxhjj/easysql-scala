@@ -78,7 +78,7 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
     }
 
     if (insertFieldExprs.size == 0) {
-        report.error(s"实体类${sym.name}中没有用来插入数据的字段")
+        report.error(s"entity ${sym.name} has no field for inserting data")
     }
 
     val insertFields = Expr.ofList(insertFieldExprs.toList)
@@ -149,11 +149,11 @@ def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
     }
 
     if (pkFieldExprs.size == 0) {
-        report.error(s"实体类${sym.name}中没有定义主键字段")
+        report.error(s"primary key field is not defined in entity ${sym.name}")
     }
 
     if (updateFieldExprs.size == 0) {
-        report.error(s"实体类${sym.name}中没有需要更新的字段")
+        report.error(s"entity ${sym.name} has no fields to update")
     }
 
     val pkFields = Expr.ofList(pkFieldExprs.toList)
@@ -228,15 +228,15 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
     }
 
     if (pkFieldExprs.size == 0) {
-        report.error(s"实体类${sym.name}中没有定义主键字段")
+        report.error(s"primary key field is not defined in entity ${sym.name}")
     }
 
     if (pkTypeNames.size != argTypeNames.size) {
-        report.error(s"参数类型与实体类${sym.name}中定义的主键类型不一致")
+        report.error(s"the parameter is inconsistent with the primary key type defined in entity class ${sym.name}")
     } else {
         pkTypeNames.zip(argTypeNames).foreach { (pt, at) =>
             if (pt != at) {
-                report.error(s"参数类型与实体类${sym.name}中定义的主键类型不一致")
+                report.error(s"the parameter is inconsistent with the primary key type defined in entity class ${sym.name}")
             }
         }
     }
