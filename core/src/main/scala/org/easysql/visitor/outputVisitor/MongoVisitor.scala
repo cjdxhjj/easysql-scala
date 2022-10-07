@@ -143,7 +143,7 @@ class MongoVisitor {
                 printExpr(e.left)
                 dslBuilder.append(s": {$operator: ")
                 printExpr(e.right)
-                dslBuilder.append("}")
+                dslBuilder.append("}}")
             }
             case _ =>
         }
