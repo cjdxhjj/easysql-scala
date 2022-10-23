@@ -9,13 +9,21 @@ import java.util.Date
 
 given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
 
-given numberToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
+given intToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
+
+given longToExpr: Conversion[Long, ConstExpr[Number]] = ConstExpr[Number](_)
+
+given doubleToExpr: Conversion[Double, ConstExpr[Number]] = ConstExpr[Number](_)
+
+given floatToExpr: Conversion[Float, ConstExpr[Number]] = ConstExpr[Number](_)
 
 given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_)
 
 given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
-given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
+given decimalToExpr: Conversion[BigDecimal, ConstExpr[Number]] = ConstExpr[Number](_)
+
+given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => ConstExpr[Date](Date(x))
 
 given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
 

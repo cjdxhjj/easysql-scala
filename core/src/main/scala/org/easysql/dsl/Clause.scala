@@ -1,6 +1,6 @@
 package org.easysql.dsl
 
-import org.easysql.ast.SqlDataType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.ast.expr.SqlSubQueryPredicate
 import org.easysql.ast.statement.select.SqlSelect
 import org.easysql.database.DB
