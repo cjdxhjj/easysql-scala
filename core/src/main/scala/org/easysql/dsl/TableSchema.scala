@@ -69,7 +69,7 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E]
     }
 }
 
-extension[E <: Product, T <: TableSchema[E]] (t: T) {
+extension [E <: Product, T <: TableSchema[E]] (t: T) {
     inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T = {
         val table = aliasMacro[E, T](t)
         table.aliasName = Some(aliasName)

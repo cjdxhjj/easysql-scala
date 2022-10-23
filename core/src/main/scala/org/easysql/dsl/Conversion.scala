@@ -82,6 +82,7 @@ type FindTypeByName[T <: Tuple, I <: Int, Name <: String] = I >= 0 match {
 type ElementType[T <: Tuple, N <: Tuple, Name <: String] = (T, N) match {
     case (t *: tt, n *: nt) => n == Name match {
         case true => t match {
+            case SqlNumberType => Number
             case SqlDataType => t 
             case _ => Nothing
         }
