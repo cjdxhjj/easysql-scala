@@ -1,7 +1,7 @@
 package org.easysql.visitor
 
 import org.easysql.ast.expr.*
-import org.easysql.ast.SqlDataType
+import org.easysql.ast.{SqlDataType, SqlNumberType}
 import org.easysql.ast.order.SqlOrderBy
 import org.easysql.dsl.*
 import org.easysql.query.select.SelectQuery
@@ -74,7 +74,7 @@ def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_, _]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)
-        case number: Number => SqlNumberExpr(number)
+        case number: SqlNumberType => SqlNumberExpr(number.asInstanceOf[Number])
         case boolean: Boolean => SqlBooleanExpr(boolean)
         case date: Date => SqlDateExpr(date)
         case expr: Expr[_] => visitExpr(expr)
