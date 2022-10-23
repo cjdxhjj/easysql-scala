@@ -9,19 +9,21 @@ import java.util.Date
 
 given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
 
-given intToExpr: Conversion[Int, ConstExpr[Int]] = ConstExpr[Int](_)
+given intToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
 
-given longToExpr: Conversion[Long, ConstExpr[Long]] = ConstExpr[Long](_)
+given longToExpr: Conversion[Long, ConstExpr[Number]] = ConstExpr[Number](_)
 
-given doubleToExpr: Conversion[Double, ConstExpr[Double]] = ConstExpr[Double](_)
+given doubleToExpr: Conversion[Double, ConstExpr[Number]] = ConstExpr[Number](_)
 
-given floatToExpr: Conversion[Float, ConstExpr[Float]] = ConstExpr[Float](_)
+given floatToExpr: Conversion[Float, ConstExpr[Number]] = ConstExpr[Number](_)
 
 given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_)
 
 given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
-given decimalToExpr: Conversion[BigDecimal, ConstExpr[BigDecimal]] = ConstExpr[BigDecimal](_)
+given decimalToExpr: Conversion[BigDecimal, ConstExpr[Number]] = ConstExpr[Number](_)
+
+given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => ConstExpr[Date](Date(x))
 
 given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
 
@@ -82,6 +84,7 @@ type FindTypeByName[T <: Tuple, I <: Int, Name <: String] = I >= 0 match {
 type ElementType[T <: Tuple, N <: Tuple, Name <: String] = (T, N) match {
     case (t *: tt, n *: nt) => n == Name match {
         case true => t match {
+            case SqlNumberType => Number
             case SqlDataType => t 
             case _ => Nothing
         }

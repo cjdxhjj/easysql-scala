@@ -16,6 +16,7 @@ import scala.collection.mutable.ListBuffer
 import scala.reflect.ClassTag
 import java.util.Random
 import java.util.UUID
+import scala.collection.immutable.LazyList.cons
 
 object Test extends App {
     given DB = DB.MYSQL
