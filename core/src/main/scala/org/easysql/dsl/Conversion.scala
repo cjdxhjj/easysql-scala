@@ -6,6 +6,10 @@ import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.*
 import java.util.Date
+import java.time.format.DateTimeFormatter
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.text.SimpleDateFormat
 
 given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
 
@@ -23,7 +27,10 @@ given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
 
 given decimalToExpr: Conversion[BigDecimal, ConstExpr[Number]] = ConstExpr[Number](_)
 
-given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => ConstExpr[Date](Date(x))
+given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => {
+    val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
+    ConstExpr[Date](fmt.parse(x))
+}
 
 given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
 
