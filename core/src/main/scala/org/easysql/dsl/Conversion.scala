@@ -9,13 +9,7 @@ import java.util.Date
 
 given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
 
-given intToExpr: Conversion[Int, ConstExpr[Int]] = ConstExpr[Int](_)
-
-given longToExpr: Conversion[Long, ConstExpr[Long]] = ConstExpr[Long](_)
-
-given doubleToExpr: Conversion[Double, ConstExpr[Double]] = ConstExpr[Double](_)
-
-given floatToExpr: Conversion[Float, ConstExpr[Float]] = ConstExpr[Float](_)
+given numberToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
 
 given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_)
 

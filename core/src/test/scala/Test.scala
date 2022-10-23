@@ -52,6 +52,10 @@ object Test extends App {
 
     // val s = select (sub.c1, sub.c2) from sub
     // println(s.toSql)
+
+    import org.easysql.visitor.*
+    val e = getExpr(1)
+    println(e)
 }
 
 @Table("test_table")

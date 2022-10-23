@@ -18,19 +18,6 @@ trait SelectItem[T]
 case class AliasExpr[T <: SqlDataType, Alias <: String](expr: Expr[T], name: Alias) extends SelectItem[T]
 
 sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
-    def ==[V <: T](value: V): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
-
-    def ==[V <: T](value: Option[V]): BinaryExpr[Boolean] = {
-        value match {
-            case Some(v) => BinaryExpr(this, SqlBinaryOperator.EQ, const(v))
-            case None => BinaryExpr(this, SqlBinaryOperator.EQ, const(null))
-        }
-    }
-
-    def ==[V <: T](expr: Expr[V]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, expr)
-
-    def ==[V <: T](subQuery: SelectQuery[Tuple1[V], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, SubQueryExpr(subQuery))
-
     def ===[V <: T](value: V): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
 
     def ===[V <: T](value: Option[V]): BinaryExpr[Boolean] = {
@@ -200,17 +187,7 @@ case class ColumnExpr[T <: SqlDataType](column: String) extends Expr[T]()
 
 case class TableColumnExpr[T <: SqlDataType](table: String,
                                              column: String,
-                                             schema: TableSchema[_]) extends Expr[T]() {
-    def primaryKey: PrimaryKeyColumnExpr[T] = {
-        PrimaryKeyColumnExpr(table, column, schema)
-    }
-}
-
-extension [T <: Int | Long] (t: TableColumnExpr[T]) {
-    def incr: PrimaryKeyColumnExpr[T] = {
-        PrimaryKeyColumnExpr[T](t.table, t.column, t.schema, true)
-    }
-}
+                                             schema: TableSchema[_]) extends Expr[T]()
 
 case class PrimaryKeyColumnExpr[T <: SqlDataType](table: String,
                                                   column: String,

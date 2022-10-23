@@ -74,11 +74,6 @@ def getExpr(value: SqlDataType | Expr[_] | SelectQuery[_, _]): SqlExpr = {
     value match {
         case null => SqlNullExpr()
         case string: String => SqlCharExpr(string)
-        case number: Int => SqlNumberExpr(number)
-        case number: Long => SqlNumberExpr(number)
-        case number: Float => SqlNumberExpr(number)
-        case number: Double => SqlNumberExpr(number)
-        case number: BigDecimal => SqlNumberExpr(number)
         case number: Number => SqlNumberExpr(number)
         case boolean: Boolean => SqlBooleanExpr(boolean)
         case date: Date => SqlDateExpr(date)

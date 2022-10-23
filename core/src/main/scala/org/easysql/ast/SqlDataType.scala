@@ -5,6 +5,6 @@ import org.easysql.ast.expr.{SqlBooleanExpr, SqlCharExpr, SqlExpr, SqlListExpr, 
 import java.util.Date
 import java.math.BigInteger
 
-type SqlNumberType = Int | Long | Double | Float | BigDecimal | Number
+type SqlNumberType = Number
 
 type SqlDataType = SqlNumberType | String | Boolean | Date

@@ -39,22 +39,6 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E]
         c
     }
 
-    def intColumn(name: String): TableColumnExpr[Int] = column[Int](name)
-
-    def varcharColumn(name: String): TableColumnExpr[String] = column[String](name)
-
-    def longColumn(name: String): TableColumnExpr[Long] = column[Long](name)
-
-    def floatColumn(name: String): TableColumnExpr[Float] = column[Float](name)
-
-    def doubleColumn(name: String): TableColumnExpr[Double] = column[Double](name)
-
-    def booleanColumn(name: String): TableColumnExpr[Boolean] = column[Boolean](name)
-
-    def dateColumn(name: String): TableColumnExpr[Date] = column[Date](name)
-
-    def decimalColumn(name: String): TableColumnExpr[BigDecimal] = column[BigDecimal](name)
-
     transparent inline def selectDynamic(inline name: String)(using m: Mirror.ProductOf[E]) = {
         inline exprMetaMacro[E](name) match {
             case ("pk", n) => PrimaryKeyColumnExpr[ElementType[m.MirroredElemTypes, m.MirroredElemLabels, name.type] & SqlDataType](tableName, n, this)

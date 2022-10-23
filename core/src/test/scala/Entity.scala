@@ -12,10 +12,3 @@ val user = asTable[User]
 case class Post(@IncrKey id: Int, @Column("user_id") userId: Int, @Column name: String)
 
 val post = asTable[Post]
-
-class NothingTable extends TableSchema() {
-    override val tableName: String = "n"
-    val id = intColumn("id").incr
-    val name = varcharColumn("name")
-    val * = (id, name)
-}
