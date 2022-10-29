@@ -11,17 +11,17 @@ trait DBOperater {
 
     inline def runAndReturnKey(query: Insert[_, _])(using logger: Logger): List[Long]
 
-    inline def queryToList(sql: String)(using logger: Logger): List[Map[String, Any]]
+    inline def query(sql: String)(using logger: Logger): List[Map[String, Any]]
 
-    inline def queryToList[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): List[EliminateTuple1[T]]
+    inline def query[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): List[ResultType[T]]
 
-    inline def queryToList[T](query: Query[T])(using logger: Logger): List[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
+    inline def query[T](query: Query[T])(using logger: Logger): List[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
 
-    inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): Option[EliminateTuple1[T]]
+    inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): Option[ResultType[T]]
 
     inline def find[T](query: Query[T])(using logger: Logger): Option[FlatType[FlatType[T, SqlDataType, Expr],Product,TableSchema]]
 
-    inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean)(using logger: Logger): Page[EliminateTuple1[T]]
+    inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean)(using logger: Logger): Page[ResultType[T]]
 
     inline def fetchCount(query: Select[_, _])(using logger: Logger): Long
 }

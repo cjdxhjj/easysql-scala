@@ -125,7 +125,12 @@ type Append[X, Y] <: Tuple = X match {
     case _ => X *: Y *: EmptyTuple
 }
 
-type EliminateTuple1[T <: Tuple] = T match {
+type ResultType[T <: Tuple] = T match {
     case Tuple1[t] => t
-    case _ => T
+    case _ => MapOption[T]
+}
+
+type MapOption[T <: Tuple] = T match {
+    case h *: t => Option[h] *: MapOption[t]
+    case EmptyTuple => EmptyTuple
 }

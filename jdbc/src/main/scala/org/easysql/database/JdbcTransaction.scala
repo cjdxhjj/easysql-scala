@@ -24,27 +24,27 @@ class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
         jdbcExecReturnKey(conn, sql)
     }
 
-    override inline def queryToList(sql: String)(using logger: Logger): List[Map[String, Any]] = {
+    override inline def query(sql: String)(using logger: Logger): List[Map[String, Any]] = {
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
         jdbcQuery(conn, sql)
     }
 
-    override inline def queryToList[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): List[EliminateTuple1[T]] = {
+    override inline def query[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): List[ResultType[T]] = {
         val sql = query.sql(db)
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
-        jdbcQueryToArray(conn, sql).map(i => bindSelect[EliminateTuple1[T]].apply(i))
+        jdbcQueryToArray(conn, sql).map(i => bindSelect[ResultType[T]].apply(i))
     }
 
-    override inline def queryToList[T](query: Query[T])(using logger: Logger): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = {
+    override inline def query[T](query: Query[T])(using logger: Logger): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = {
         val sql = query.sql(db)
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
         jdbcQueryToArray(conn, sql).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i))
     }
 
-    override inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): Option[EliminateTuple1[T]] = {
+    override inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): Option[ResultType[T]] = {
         val sql = query.sql(db)
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
-        jdbcQueryToArray(conn, sql).headOption.map(i => bindSelect[EliminateTuple1[T]].apply(i))
+        jdbcQueryToArray(conn, sql).headOption.map(i => bindSelect[ResultType[T]].apply(i))
     }
 
     override inline def find[T](query: Query[T])(using logger: Logger): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = {
@@ -53,13 +53,13 @@ class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
         jdbcQueryToArray(conn, sql).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i))
     }
 
-    override inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean)(using logger: Logger): Page[EliminateTuple1[T]] = {
+    override inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean)(using logger: Logger): Page[ResultType[T]] = {
         val data = if (pageSize == 0) {
-            List[EliminateTuple1[T]]()
+            List[ResultType[T]]()
         } else {
             val sql = query.pageSql(pageSize, pageNum)(db)
             logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
-            jdbcQueryToArray(conn, sql).map(i => bindSelect[EliminateTuple1[T]].apply(i))
+            jdbcQueryToArray(conn, sql).map(i => bindSelect[ResultType[T]].apply(i))
         }
 
         val count = if (needCount) {
@@ -78,7 +78,7 @@ class JdbcTransaction(db: DB, conn: Connection) extends DBTransaction(db) {
             }
         }
 
-        new Page[EliminateTuple1[T]](totalPage, count, data)
+        new Page[ResultType[T]](totalPage, count, data)
     }
 
     override inline def fetchCount(query: Select[_, _])(using logger: Logger): Long = {
