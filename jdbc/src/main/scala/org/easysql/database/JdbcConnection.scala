@@ -42,22 +42,10 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
         jdbcQueryToArray(conn, sql).map(i => bindSelect[ResultType[T]].apply(i))
     }
 
-    override inline def query[T](query: Query[T])(using logger: Logger): List[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = exec { conn =>
-        val sql = query.sql(db)
-        logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
-        jdbcQueryToArray(conn, sql).map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i))
-    }
-
     override inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger): Option[ResultType[T]] = exec { conn =>
         val sql = query.sql(db)
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
         jdbcQueryToArray(conn, sql).headOption.map(i => bindSelect[ResultType[T]].apply(i))
-    }
-
-    override inline def find[T](query: Query[T])(using logger: Logger): Option[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]] = exec { conn =>
-        val sql = query.sql(db)
-        logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
-        jdbcQueryToArray(conn, sql).headOption.map(i => bindSelect[FlatType[FlatType[T, SqlDataType, Expr], Product, TableSchema]].apply(i))
     }
 
     override inline def page[T <: Tuple](query: Select[T, _])(pageSize: Int, pageNum: Int, needCount: Boolean)(using logger: Logger): Page[ResultType[T]] = {

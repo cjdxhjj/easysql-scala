@@ -6,12 +6,19 @@ import org.easysql.dsl.*
 
 import scala.compiletime.*
 
-inline def bindQueryMacro[T](inline nextIndex: Int): (Int, Array[Any] => T) = ${ bindQueryMacroImpl[T]('nextIndex) }
+inline def bindEntityMacro[T](inline nextIndex: Int): (Int, Array[Any] => T) = ${ bindEntityMacroImpl[T]('nextIndex) }
 
-inline def bindSingleton[T](nextIndex: Int): (Int, Array[Any] => T) = {
+inline def bindOptionMacro[T](inline nextIndex: Int): (Int, Array[Any] => Option[T]) = ${ bindOptionMacroImpl[T]('nextIndex) }
+
+inline def bindSingleton[T](nextIndex: Int): (Int, Array[Any] => Any) = {
     inline erasedValue[T] match {
-        case _: Product => bindQueryMacro[T](nextIndex)
-
+        case _: Option[t] => {
+            inline erasedValue[t] match {
+                case _: Product => bindOptionMacro[t](nextIndex)
+                case _ => nextIndex + 1 -> { (data: Array[Any]) => if data(nextIndex) == null then None else Some(data(nextIndex)).asInstanceOf[Option[t]] }
+            }
+        }
+        case _: Product => bindEntityMacro[T](nextIndex)
         case _ => nextIndex + 1 -> { (data: Array[Any]) => data(nextIndex).asInstanceOf[T] }
     }
 }
