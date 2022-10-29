@@ -25,11 +25,11 @@ object Test extends App {
     // println(s.toSql)
 
 
-    val testTable = TestTable("1", "x")
+    val testTable = TestTable("1", None)
     val i = insert(testTable)
     println(i.toSql)
 
-    val u = update(testTable, false)
+    val u = update(testTable)
     println(u.toSql)
 
     val d = delete[TestTable]("1")
@@ -58,7 +58,7 @@ object Test extends App {
 @Table("test_table")
 case class TestTable(
     @PrimaryKey(generator = () => UUID.randomUUID().toString) id: String,
-    @Column name: String
+    @Column name: Option[String]
 )
 
 val tt = asTable[TestTable]

@@ -29,14 +29,14 @@ class Update extends ReviseQuery {
         sqlUpdate.table = Some(SqlIdentifierExpr(tableName))
         updateList.foreach { u =>
             val value = u._2.apply(entity)
-            if (!skipNull || value != null) {
+            if (!skipNull || value != null && value != None) {
                 val updatePair = getExpr(ColumnExpr(u._1)) -> getExpr(anyToExpr(value))
                 sqlUpdate.setList.addOne(updatePair)
             }
         }
 
         if (sqlUpdate.setList.size == 0) {
-            throw Exception("实体类中没有需要更新的字段")
+            throw Exception("no fields need to be updated in the entity class")
         }
 
         pkList.foreach { pk =>

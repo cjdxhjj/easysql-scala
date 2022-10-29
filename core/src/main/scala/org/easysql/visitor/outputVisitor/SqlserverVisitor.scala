@@ -19,14 +19,14 @@ class SqlserverVisitor extends SqlVisitor {
         sqlBuilder.append("SELECT ")
 
         if (select.selectList.isEmpty) {
-            throw SQLException("select list is empty")
-        }
+            sqlBuilder.append("*")
+        } else {
+            if (select.distinct) {
+                sqlBuilder.append("DISTINCT ")
+            }
 
-        if (select.distinct) {
-            sqlBuilder.append("DISTINCT ")
+            printList(select.selectList.toList, visitSqlSelectItem)
         }
-
-        printList(select.selectList.toList, visitSqlSelectItem)
 
         select.from.foreach { it =>
             sqlBuilder.append("\n")
