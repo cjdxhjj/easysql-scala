@@ -10,8 +10,8 @@ import scala.compiletime.{erasedValue, error}
 import scala.util.Random
 
 object Test extends App {
-    val bind = bindQueryMacro[TestTable](0)
-    val data = bind._2(Array[Any](1, null, Date()))
+    val bind = bindSelect[Tuple3[TestTable, TestTable, TestTable]]
+    val data = bind(Array[Any](1, null, Date(), null, null, null, 1, null, Date()))
     println(data)
 
     // given Logger = java.util.logging.Logger.getLogger("")

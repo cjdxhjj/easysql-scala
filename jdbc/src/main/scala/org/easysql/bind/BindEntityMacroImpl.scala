@@ -58,6 +58,6 @@ def bindQueryMacroImpl[T](nextIndex: Expr[Int])(using q: Quotes, tpe: Type[T]): 
                 New(Inferred(tpr)).select(ctor).appliedToArgs(terms).asExprOf[T]
             }
 
-        $next -> bindFunc
+        $next + $nextIndex -> bindFunc
     }
 }
