@@ -30,7 +30,7 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
             result.addOne(rowMap)
         }
     } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => throw e
     } finally {
         stmt.close()
         rs.close()
@@ -61,7 +61,7 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
             result.addOne(rowList)
         }
     } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => throw e
     } finally {
         stmt.close()
         rs.close()
@@ -80,7 +80,7 @@ def jdbcQueryCount(conn: Connection, sql: String): Int = {
         rs = stmt.executeQuery(sql)
         result = rs.getFetchSize
     } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => throw e
     } finally {
         stmt.close()
         rs.close()
@@ -97,7 +97,7 @@ def jdbcExec(conn: Connection, sql: String): Int = {
         stmt = conn.createStatement()
         result = stmt.executeUpdate(sql)
     } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => throw e
     } finally {
         stmt.close()
     }
@@ -117,7 +117,7 @@ def jdbcExecReturnKey(conn: Connection, sql: String): List[Long] = {
             result += resultSet.getLong(1)
         }
     } catch {
-        case e: Exception => e.printStackTrace()
+        case e: Exception => throw e
     } finally {
         stmt.close()
     }

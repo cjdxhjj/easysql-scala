@@ -92,8 +92,8 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
             conn.commit()
         } catch {
             case e: Exception => {
-                e.printStackTrace()
                 conn.rollback()
+                throw e
             }
         } finally {
             conn.setAutoCommit(true)
@@ -110,8 +110,8 @@ class JdbcConnection(db: DB, dataSource: DataSource) extends DBConnection(db) {
             conn.commit()
         } catch {
             case e: Exception => {
-                e.printStackTrace()
                 conn.rollback()
+                throw e
             }
         } finally {
             conn.setAutoCommit(true)
