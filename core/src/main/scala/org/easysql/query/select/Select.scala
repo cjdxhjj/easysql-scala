@@ -15,7 +15,7 @@ import java.sql.Connection
 import scala.collection.mutable.ListBuffer
 
 class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames] {
-    private val sqlSelect = SqlSelect(selectList = ListBuffer(SqlSelectItem(SqlAllColumnExpr())))
+    private val sqlSelect = SqlSelect()
 
     private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
 
@@ -50,10 +50,6 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     infix def select[U <: Tuple](items: U): Select[Tuple.Concat[T, RecursiveInverseMap[U]], Tuple.Concat[AliasNames, ExtractAliasNames[U]]] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
-        }
-
         def addExpr(column: Expr[_]): Unit = {
             sqlSelect.addSelectItem(visitExpr(column))
         }
@@ -82,30 +78,18 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     infix def select[I <: SqlDataType](item: Expr[I]): Select[Tuple.Concat[T, Tuple1[I]], AliasNames] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
-        }
-
         sqlSelect.addSelectItem(visitExpr(item))
 
         this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]], AliasNames]]
     }
 
     infix def select[I <: SqlDataType, N <: String](item: AliasExpr[I, N]): Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
-        }
-
         sqlSelect.addSelectItem(visitExpr(item.expr), Some(item.name))
 
         this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]]]
     }
 
     infix def select[P <: Product](table: TableSchema[P]): Select[Tuple.Concat[T, Tuple1[P]], AliasNames] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
-        }
-
         table._cols.foreach { c =>
             sqlSelect.addSelectItem(visitExpr(c))
         }
@@ -114,10 +98,6 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     infix def dynamicSelect(columns: Expr[_] | AliasExpr[_, _]*): Select[T, AliasNames] = {
-        if (this.sqlSelect.selectList.size == 1 && this.sqlSelect.selectList.head.expr.isInstanceOf[SqlAllColumnExpr]) {
-            this.sqlSelect.selectList.clear()
-        }
-
         columns.foreach { item =>
             item match {
                 case e: Expr[_] => sqlSelect.addSelectItem(visitExpr(e))
