@@ -32,12 +32,6 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E]
     var _aliasName: Option[String] = None
 
     val _cols: ListBuffer[TableColumnExpr[_]] = ListBuffer()
-    
-    def column[T <: SqlDataType](name: String): TableColumnExpr[T] = {
-        val c = TableColumnExpr[T](_aliasName.getOrElse(_tableName), name, this)
-        _cols.addOne(c)
-        c
-    }
 
     transparent inline def selectDynamic(inline name: String)(using m: Mirror.ProductOf[E]) = {
         inline exprMetaMacro[E](name) match {
