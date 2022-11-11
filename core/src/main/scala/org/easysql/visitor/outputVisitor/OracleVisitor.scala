@@ -12,7 +12,7 @@ class OracleVisitor extends SqlVisitor {
 
     override def visitSqlUpsert(sqlUpsert: SqlUpsert): Unit = {
         sqlBuilder.append("MERGE INTO ")
-        visitSqlExpr(sqlUpsert.table.get)
+        visitSqlTable(sqlUpsert.table.get)
         sqlBuilder.append(s" ${quote}t1$quote")
 
         sqlBuilder.append(" USING (")

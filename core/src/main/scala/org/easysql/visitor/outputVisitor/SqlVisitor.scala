@@ -11,7 +11,7 @@ import org.easysql.ast.statement.select.*
 import org.easysql.ast.statement.truncate.SqlTruncate
 import org.easysql.ast.statement.update.SqlUpdate
 import org.easysql.ast.statement.upsert.SqlUpsert
-import org.easysql.ast.table.{SqlIdentifierTableSource, SqlJoinTableSource, SqlSubQueryTableSource, SqlTableSource}
+import org.easysql.ast.table.*
 
 import java.sql.SQLException
 import scala.collection.mutable
@@ -83,7 +83,7 @@ abstract class SqlVisitor {
             sqlBuilder.append("\n")
             printSpace(spaceNum)
             sqlBuilder.append("FROM ")
-            visitSqlTableSource(it)
+            visitSqlTable(it)
         }
 
         select.where.foreach { it =>
@@ -172,7 +172,7 @@ abstract class SqlVisitor {
 
     def visitSqlDelete(sqlDelete: SqlDelete): Unit = {
         sqlBuilder.append("DELETE FROM ")
-        visitSqlExpr(sqlDelete.table.get)
+        visitSqlTable(sqlDelete.table.get)
 
         sqlDelete.where.foreach { it =>
             sqlBuilder.append(" WHERE ")
@@ -182,7 +182,7 @@ abstract class SqlVisitor {
 
     def visitSqlUpdate(sqlUpdate: SqlUpdate): Unit = {
         sqlBuilder.append("UPDATE ")
-        visitSqlExpr(sqlUpdate.table.get)
+        visitSqlTable(sqlUpdate.table.get)
         sqlBuilder.append(" SET ")
 
         for (i <- sqlUpdate.setList.indices) {
@@ -203,7 +203,7 @@ abstract class SqlVisitor {
 
     def visitSqlInsert(sqlInsert: SqlInsert): Unit = {
         sqlBuilder.append("INSERT INTO ")
-        visitSqlExpr(sqlInsert.table.get)
+        visitSqlTable(sqlInsert.table.get)
         if (sqlInsert.columns.nonEmpty) {
             sqlBuilder.append(" (")
             printList(sqlInsert.columns.toList, visitSqlExpr)
@@ -223,7 +223,7 @@ abstract class SqlVisitor {
 
     def visitSqlTruncate(sqlTruncate: SqlTruncate): Unit = {
         sqlBuilder.append("TRUNCATE ")
-        visitSqlExpr(sqlTruncate.table.get)
+        visitSqlTable(sqlTruncate.table.get)
     }
 
     def visitSqlLimit(sqlLimit: SqlLimit): Unit = {
@@ -316,7 +316,7 @@ abstract class SqlVisitor {
 
             case expr: SqlDateExpr => sqlBuilder.append(expr.toString)
 
-            case expr: SqlIdentifierExpr => sqlBuilder.append(s"$quote${expr.name}$quote")
+            case expr: SqlIdentExpr => sqlBuilder.append(s"$quote${expr.name}$quote")
 
             case expr: SqlPropertyExpr => sqlBuilder.append(s"$quote${expr.owner}$quote.$quote${expr.name}$quote")
 
@@ -431,11 +431,11 @@ abstract class SqlVisitor {
         sqlBuilder.append(")")
     }
 
-    def visitSqlTableSource(sqlTableSource: SqlTableSource): Unit = {
-        sqlTableSource match {
-            case table: SqlIdentifierTableSource => sqlBuilder.append(s"$quote${table.tableName}$quote")
+    def visitSqlTable(sqlTable: SqlTable): Unit = {
+        sqlTable match {
+            case table: SqlIdentTable => sqlBuilder.append(s"$quote${table.tableName}$quote")
 
-            case table: SqlSubQueryTableSource =>
+            case table: SqlSubQueryTable =>
                 if (table.isLateral) {
                     sqlBuilder.append("LATERAL ")
                 }
@@ -450,17 +450,17 @@ abstract class SqlVisitor {
                 printSpace(spaceNum)
                 sqlBuilder.append(")")
 
-            case table: SqlJoinTableSource =>
-                visitSqlTableSource(table.left)
+            case table: SqlJoinTable =>
+                visitSqlTable(table.left)
                 spaceNum += 4
                 sqlBuilder.append("\n")
                 printSpace(spaceNum)
                 sqlBuilder.append(s"${table.joinType.joinType} ")
-                if (table.right.isInstanceOf[SqlJoinTableSource]) {
+                if (table.right.isInstanceOf[SqlJoinTable]) {
                     sqlBuilder.append("(")
                 }
-                visitSqlTableSource(table.right)
-                if (table.right.isInstanceOf[SqlJoinTableSource]) {
+                visitSqlTable(table.right)
+                if (table.right.isInstanceOf[SqlJoinTable]) {
                     sqlBuilder.append(")")
                 }
 
@@ -473,11 +473,11 @@ abstract class SqlVisitor {
             case _ =>
         }
 
-        sqlTableSource.alias.foreach { it =>
+        sqlTable.alias.foreach { it =>
             sqlBuilder.append(s" $quote$it$quote")
-            if (sqlTableSource.columnAliasNames.nonEmpty) {
+            if (sqlTable.columnAliasNames.nonEmpty) {
                 sqlBuilder.append("(")
-                printList(sqlTableSource.columnAliasNames.map { alias => SqlIdentifierExpr(alias) }.toList
+                printList(sqlTable.columnAliasNames.map { alias => SqlIdentExpr(alias) }.toList
                     , { column => visitSqlExpr(column) })
                 sqlBuilder.append(")")
             }

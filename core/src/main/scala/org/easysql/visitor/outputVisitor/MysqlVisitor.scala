@@ -14,7 +14,7 @@ class MysqlVisitor extends SqlVisitor {
 
     override def visitSqlUpsert(sqlUpsert: SqlUpsert): Unit = {
         sqlBuilder.append("INSERT INTO ")
-        visitSqlExpr(sqlUpsert.table.get)
+        visitSqlTable(sqlUpsert.table.get)
 
         sqlBuilder.append(" (")
         printList(sqlUpsert.columns.toList, visitSqlExpr)

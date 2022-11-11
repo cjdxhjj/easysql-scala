@@ -1,8 +1,8 @@
 package org.easysql.query.insert
 
-import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.insert.SqlInsert
 import org.easysql.ast.SqlDataType
+import org.easysql.ast.table.SqlIdentTable
 import org.easysql.database.DB
 import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
@@ -20,7 +20,7 @@ class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
     inline def insert[T <: Product, SS >: S <: InsertEntity](entities: T*): Insert[_, InsertEntity] = {
         val insertMetaData = insertMacro[T]
 
-        sqlInsert.table = Some(SqlIdentifierExpr(insertMetaData._1))
+        sqlInsert.table = Some(SqlIdentTable(insertMetaData._1))
         val insertList = entities.toList map { entity =>
             insertMetaData._2 map { i =>
                 i._2 match {
@@ -39,7 +39,7 @@ class Insert[T <: Tuple, S <: InsertState] extends ReviseQuery {
         type ValueTypes = InverseMap[columns.type]
 
         val insert = new Insert[ValueTypes, Nothing]()
-        insert.sqlInsert.table = Some(SqlIdentifierExpr(table.tableName))
+        insert.sqlInsert.table = Some(SqlIdentTable(table.tableName))
         insert.sqlInsert.columns.addAll(columns.toArray.map {
             case t: TableColumnExpr[_] => getExpr(col(t.column))
             case p: PrimaryKeyColumnExpr[_] => getExpr(col(p.column))

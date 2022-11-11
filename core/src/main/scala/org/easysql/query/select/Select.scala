@@ -1,6 +1,6 @@
 package org.easysql.query.select
 
-import org.easysql.ast.expr.{SqlAllColumnExpr, SqlIdentifierExpr}
+import org.easysql.ast.expr.{SqlAllColumnExpr, SqlIdentExpr}
 import org.easysql.ast.limit.SqlLimit
 import org.easysql.ast.order.{SqlOrderBy, SqlOrderByOption}
 import org.easysql.ast.statement.select.{SqlSelect, SqlSelectItem, SqlSelectQuery}
@@ -17,11 +17,11 @@ import scala.collection.mutable.ListBuffer
 class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames] {
     private val sqlSelect = SqlSelect()
 
-    private var joinLeft: SqlTableSource = SqlIdentifierTableSource("")
+    private var joinLeft: SqlTable = SqlIdentTable("")
 
 
     infix def from[Table <: TableSchema[_]](table: Table): Select[T, AliasNames]  = {
-        val from = SqlIdentifierTableSource(table.tableName)
+        val from = SqlIdentTable(table.tableName)
         from.alias = table.aliasName
         joinLeft = from
         sqlSelect.from = Some(from)
@@ -30,7 +30,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     infix def from(table: SelectQuery[_, _]): Select[T, AliasNames]  = {
-        val from = SqlSubQueryTableSource(table.getSelect)
+        val from = SqlSubQueryTable(table.getSelect)
         from.alias = table.aliasName
 
         joinLeft = from
@@ -40,7 +40,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     infix def fromLateral(table: SelectQuery[_, _]): Select[T, AliasNames]  = {
-        val from = SqlSubQueryTableSource(table.getSelect, true)
+        val from = SqlSubQueryTable(table.getSelect, true)
         from.alias = table.aliasName
 
         joinLeft = from
@@ -177,9 +177,9 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     private def joinClause(table: TableSchema[_], joinType: SqlJoinType): Select[T, AliasNames] = {
-        val joinTable = SqlIdentifierTableSource(table.tableName)
+        val joinTable = SqlIdentTable(table.tableName)
         joinTable.alias = table.aliasName
-        val join = SqlJoinTableSource(joinLeft, joinType, joinTable)
+        val join = SqlJoinTable(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
         joinLeft = join
 
@@ -187,7 +187,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     private def joinClause(table: SelectQuery[_, _], joinType: SqlJoinType, isLateral: Boolean = false): Select[T, AliasNames] = {
-        val join = SqlJoinTableSource(joinLeft, joinType, SqlSubQueryTableSource(table.getSelect, isLateral = isLateral))
+        val join = SqlJoinTable(joinLeft, joinType, SqlSubQueryTable(table.getSelect, isLateral = isLateral))
         join.alias = table.aliasName
 
         sqlSelect.from = Some(join)
@@ -197,18 +197,18 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     private def joinClause(table: JoinTableSchema, joinType: SqlJoinType): Select[T, AliasNames] = {
-        def unapplyTable(t: AnyTable): SqlTableSource = {
+        def unapplyTable(t: AnyTable): SqlTable = {
             t match {
                 case table: TableSchema[_] =>
-                    val ts = SqlIdentifierTableSource(table.tableName)
+                    val ts = SqlIdentTable(table.tableName)
                     ts.alias = table.aliasName
                     ts
-                case j: JoinTableSchema => SqlJoinTableSource(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr))
+                case j: JoinTableSchema => SqlJoinTable(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr))
             }
         }
 
-        val joinTableSource = SqlJoinTableSource(unapplyTable(table.left), table.joinType, unapplyTable(table.right), table.onCondition.map(getExpr))
-        val join = SqlJoinTableSource(joinLeft, joinType, joinTableSource)
+        val joinTableSource = SqlJoinTable(unapplyTable(table.left), table.joinType, unapplyTable(table.right), table.onCondition.map(getExpr))
+        val join = SqlJoinTable(joinLeft, joinType, joinTableSource)
 
         sqlSelect.from = Some(join)
         joinLeft = join
@@ -219,7 +219,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     infix def on(onCondition: Expr[_]): Select[T, AliasNames] = {
         val from = this.sqlSelect.from.get
         from match {
-            case table: SqlJoinTableSource => table.on = Some(visitExpr(onCondition))
+            case table: SqlJoinTable => table.on = Some(visitExpr(onCondition))
             case _ =>
         }
 

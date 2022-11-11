@@ -74,6 +74,7 @@ def dynamicSelect(columns: Expr[_]*) = Select().dynamicSelect(columns: _*)
 
 def from[P <: Product](table: TableSchema[P]) = Select().select(table).from(table)
 
+// TODO 改名
 inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T], _] = {
     val (tableName, cols) = pkMacro[T, pk.type]
 

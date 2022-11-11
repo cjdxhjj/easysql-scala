@@ -11,7 +11,7 @@ sealed class SqlExpr extends SqlNode
 
 case class SqlBinaryExpr(left: SqlExpr, operator: SqlBinaryOperator, right: SqlExpr) extends SqlExpr
 
-case class SqlIdentifierExpr(name: String) extends SqlExpr
+case class SqlIdentExpr(name: String) extends SqlExpr
 
 case class SqlPropertyExpr(owner: String, name: String) extends SqlExpr
 
@@ -42,8 +42,13 @@ case class SqlBooleanExpr(boolean: Boolean) extends SqlExpr {
 
 case class SqlListExpr[T <: SqlExpr](items: List[T] = List()) extends SqlExpr
 
-case class SqlAggFunctionExpr(name: String, args: List[SqlExpr] = List(), distinct: Boolean = false, attributes: Map[String, SqlExpr] = Map(),
-                              orderBy: List[SqlOrderBy] = List()) extends SqlExpr
+case class SqlAggFunctionExpr(
+    name: String, 
+    args: List[SqlExpr] = List(), 
+    distinct: Boolean = false, 
+    attributes: Map[String, SqlExpr] = Map(),
+    orderBy: List[SqlOrderBy] = List()
+) extends SqlExpr
 
 case class SqlExprFunctionExpr(name: String, var args: List[SqlExpr] = List()) extends SqlExpr
 
