@@ -4,4 +4,4 @@ import org.easysql.query.ReviseQuery
 import org.easysql.query.insert.Insert
 import org.easysql.query.select.{Select, SelectQuery}
 
-trait DBTransaction(db: DB) extends DBOperater
+abstract class DBTransaction(override val db: DB) extends DBOperater(db)
