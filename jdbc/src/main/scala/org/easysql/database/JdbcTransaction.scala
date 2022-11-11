@@ -22,3 +22,17 @@ class JdbcTransaction(override val db: DB, conn: Connection) extends DBTransacti
 
     private[database] override def querySqlCount(sql: String): Long = jdbcQueryCount(conn, sql)
 }
+
+inline def run(query: ReviseQuery)(using logger: Logger, t: JdbcTransaction): Int = t.run(query)
+
+inline def runAndReturnKey(query: Insert[_, _])(using logger: Logger, t: JdbcTransaction): List[Long] = t.runAndReturnKey(query)
+
+inline def query(sql: String)(using logger: Logger, t: JdbcTransaction): List[Map[String, Any]] = t.query(sql)
+
+inline def query[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger, t: JdbcTransaction): List[ResultType[T]] = t.query(query)
+
+inline def find[T <: Tuple](query: SelectQuery[T, _])(using logger: Logger, t: JdbcTransaction): Option[ResultType[T]] = t.find(query)
+
+inline def page[T <: Tuple](query: SelectQuery[T, _])(pageSize: Int, pageNum: Int, queryCount: Boolean)(using logger: Logger, t: JdbcTransaction): Page[ResultType[T]] = t.page(query)(pageSize, pageNum, queryCount)
+
+inline def fetchCount(query: SelectQuery[_, _])(using logger: Logger, t: JdbcTransaction): Long = t.fetchCount(query)

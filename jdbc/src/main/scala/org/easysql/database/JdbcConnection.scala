@@ -29,13 +29,14 @@ class JdbcConnection(override val db: DB, dataSource: DataSource) extends DBConn
 
     private[database] override def querySqlCount(sql: String): Long = exec(jdbcQueryCount(_, sql))
 
-    def transaction[T](isolation: Int)(query: JdbcTransaction => T): T = {
+    def transactionIsolation[T](isolation: Int)(query: JdbcTransaction ?=> T): T = {
         val conn = getConnection
         conn.setAutoCommit(false)
         conn.setTransactionIsolation(isolation)
        
         try {
-            val result = query(new JdbcTransaction(db, conn))
+            given t: JdbcTransaction = new JdbcTransaction(db, conn)
+            val result = query
             conn.commit()
             result
         } catch {
@@ -49,12 +50,13 @@ class JdbcConnection(override val db: DB, dataSource: DataSource) extends DBConn
         }
     }
    
-    def transaction[T](query: JdbcTransaction => T): T = {
+    def transaction[T](query: JdbcTransaction ?=> T): T = {
         val conn = getConnection
         conn.setAutoCommit(false)
        
         try {
-            val result = query(new JdbcTransaction(db, conn))
+            given t: JdbcTransaction = new JdbcTransaction(db, conn)
+            val result = query
             conn.commit()
             result
         } catch {

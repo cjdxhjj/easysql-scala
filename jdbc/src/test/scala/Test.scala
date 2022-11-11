@@ -27,6 +27,13 @@ object Test extends App {
 
     val data = db.query(q)
     val data1 = db.find(q)
+
+
+    val result = db.transaction {
+        val testTable = TestTable(1, None, None)
+        
+        run(insert(testTable))
+    }
 }
 
 @Table("test_table")
