@@ -16,7 +16,7 @@ def aliasMacroImpl[E <: Product, T <: TableSchema[E]](table: Expr[T])(using quot
         tree.asExprOf[T]
     } else '{
         new TableSchema[E] {
-            override val tableName: String = $table.tableName
+            override val _tableName: String = $table._tableName
             override val _cols = $table._cols
         }.asInstanceOf[T]
     }

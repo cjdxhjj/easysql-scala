@@ -19,7 +19,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
         def addSelectItem(r: Any): Unit = r match {
             case e: Expr[_] => s.select(e)
             case ts: TableSchema[_] => {
-                val cols = ts._cols.map(e => col(s"${ts.aliasName.get}.${e.column}")).toArray
+                val cols = ts._cols.map(e => col(s"${ts._aliasName.get}.${e.column}")).toArray
                 s.dynamicSelect(cols: _*)
             }
             case t: Tuple => {
@@ -46,7 +46,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable._tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).join(joinTable)
 
         val jt = inline this.t match {
@@ -62,7 +62,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable._tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).leftJoin(joinTable)
 
         val jt = inline this.t match {
@@ -78,7 +78,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable._tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).rightJoin(joinTable)
 
         val jt = inline this.t match {
@@ -94,7 +94,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable._tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).fullJoin(joinTable)
 
         val jt = inline this.t match {
@@ -110,7 +110,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
     ): Query[Append[T, TableSchema[E]]] = {
         tableNum += 1
         val joinTable = asTable[E].unsafeAs(s"t$tableNum")
-        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable.tableName, n, joinTable))
+        val cols = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(joinTable._tableName, n, joinTable))
         val s = this.s.dynamicSelect(cols: _*).crossJoin(joinTable)
 
         val jt = inline this.t match {
@@ -211,7 +211,7 @@ class Query[T](val t: T, val s: Select[_, _]) {
 object Query {
     inline def apply[T <: Product](using m: Mirror.ProductOf[T]): Query[TableSchema[T]] = {
         val table = asTable[T].as("t1")
-        val cols = fieldNamesMacro[T].toArray.map(n => TableColumnExpr(table.tableName, n, table))
+        val cols = fieldNamesMacro[T].toArray.map(n => TableColumnExpr(table._tableName, n, table))
         val s = dynamicSelect(cols: _*).from(table)
         new Query[TableSchema[T]](table, s)
     }

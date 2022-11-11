@@ -17,7 +17,7 @@ class Delete extends ReviseQuery {
     private val sqlDelete = SqlDelete()
 
     infix def deleteFrom(table: TableSchema[_]): Delete = {
-        this.sqlDelete.table = Some(SqlIdentTable(table.tableName))
+        this.sqlDelete.table = Some(SqlIdentTable(table._tableName))
         this
     }
 

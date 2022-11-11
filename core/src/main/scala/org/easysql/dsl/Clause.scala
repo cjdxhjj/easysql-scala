@@ -40,15 +40,15 @@ def some[T <: SqlDataType](select: SelectQuery[Tuple1[T], _]) = SubQueryPredicat
 def cast[T <: SqlDataType](expr: Expr[_], castType: String) = CastExpr[T](expr, castType)
 
 def table(name: String) = new TableSchema() {
-    override val tableName: String = name
+    override val _tableName: String = name
 }
 
 inline def asTable[T <: Product] = new TableSchema[T] {
-    override val tableName: String = fetchTableNameMacro[T]
+    override val _tableName: String = fetchTableNameMacro[T]
 
     override val _cols: mutable.ListBuffer[TableColumnExpr[?]] = {
         val cols = mutable.ListBuffer[TableColumnExpr[_]]()
-        val colList = fieldNamesMacro[T].map(n => TableColumnExpr(tableName, n, this))
+        val colList = fieldNamesMacro[T].map(n => TableColumnExpr(_tableName, n, this))
         cols.addAll(colList)
         cols
     }
@@ -74,8 +74,7 @@ def dynamicSelect(columns: Expr[_]*) = Select().dynamicSelect(columns: _*)
 
 def from[P <: Product](table: TableSchema[P]) = Select().select(table).from(table)
 
-// TODO 改名
-inline def find[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T], _] = {
+inline def findQuery[T <: Product](pk: SqlDataType | Tuple): Select[Tuple1[T], _] = {
     val (tableName, cols) = pkMacro[T, pk.type]
 
     val select = Select()
@@ -109,12 +108,14 @@ def truncate(table: TableSchema[_]): Truncate = Truncate().truncate(table)
 inline def query[T <: Product](using m: Mirror.ProductOf[T]) = Query[T]
 
 extension (s: Select[_, _]) {
+    @experimental
     def toEsDsl = {
         val visitor = new ESVisitor()
         visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
         visitor.dslBuilder.toString()
     }
 
+    @experimental
     def toMongoDsl = {
         val visitor = new MongoVisitor()
         visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
