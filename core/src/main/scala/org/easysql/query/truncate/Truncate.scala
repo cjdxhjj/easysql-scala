@@ -1,9 +1,9 @@
 package org.easysql.query.truncate
 
-import org.easysql.ast.expr.SqlIdentifierExpr
 import org.easysql.ast.statement.truncate.SqlTruncate
 import org.easysql.database.DB
 import org.easysql.dsl.TableSchema
+import org.easysql.ast.table.SqlIdentTable
 import org.easysql.query.ReviseQuery
 import org.easysql.util.toSqlString
 
@@ -13,7 +13,7 @@ class Truncate extends ReviseQuery {
     private val sqlTruncate = SqlTruncate()
 
     infix def truncate(table: TableSchema[_]): Truncate = {
-        this.sqlTruncate.table = Some(SqlIdentifierExpr(table.tableName))
+        this.sqlTruncate.table = Some(SqlIdentTable(table.tableName))
 
         this
     }

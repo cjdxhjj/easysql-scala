@@ -1,7 +1,8 @@
 package org.easysql.query.save
 
-import org.easysql.ast.expr.SqlIdentifierExpr
+import org.easysql.ast.expr.SqlIdentExpr
 import org.easysql.database.DB
+import org.easysql.ast.table.SqlIdentTable
 import org.easysql.query.ReviseQuery
 import org.easysql.ast.statement.upsert.SqlUpsert
 import org.easysql.dsl.*
@@ -17,17 +18,17 @@ class Save extends ReviseQuery {
     inline def save[T <: Product](entity: T): Save = {
         val (tableName, pkList, colList) = updateMacro[T]
 
-        sqlUpsert.table = Some(SqlIdentifierExpr(tableName))
+        sqlUpsert.table = Some(SqlIdentTable(tableName))
 
         pkList.foreach { pk =>
-            sqlUpsert.primaryColumns.addOne(SqlIdentifierExpr(pk._1))
-            sqlUpsert.columns.addOne(SqlIdentifierExpr(pk._1))
+            sqlUpsert.primaryColumns.addOne(SqlIdentExpr(pk._1))
+            sqlUpsert.columns.addOne(SqlIdentExpr(pk._1))
             sqlUpsert.value.addOne(visitExpr(anyToExpr(pk._2.apply(entity))))
         }
 
         colList.foreach { col =>
-            sqlUpsert.columns.addOne(SqlIdentifierExpr(col._1))
-            sqlUpsert.updateColumns.addOne(SqlIdentifierExpr(col._1))
+            sqlUpsert.columns.addOne(SqlIdentExpr(col._1))
+            sqlUpsert.updateColumns.addOne(SqlIdentExpr(col._1))
             sqlUpsert.value.addOne(visitExpr(anyToExpr(col._2.apply(entity))))
         }
 

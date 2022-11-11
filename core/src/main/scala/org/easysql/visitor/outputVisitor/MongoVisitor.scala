@@ -14,7 +14,7 @@ class MongoVisitor {
 
     def visitSqlSelect(s: SqlSelect) = {
         s.from match {
-            case Some(SqlIdentifierTableSource(t)) => dslBuilder.append(s"db.$t.find(")
+            case Some(SqlIdentTable(t)) => dslBuilder.append(s"db.$t.find(")
             case _ =>
         }
         s.where match {
@@ -34,13 +34,13 @@ class MongoVisitor {
             dslBuilder.append("{")
             val selectItems = s.selectList.filter { item =>
                 item.expr match {
-                    case _: SqlIdentifierExpr => true
+                    case _: SqlIdentExpr => true
                     case _: SqlPropertyExpr => true
                     case _ => false 
                 }
             }.map { item =>
                 item.expr match {
-                    case SqlIdentifierExpr(name) => s"\"$name\": 1"
+                    case SqlIdentExpr(name) => s"\"$name\": 1"
                     case SqlPropertyExpr(_, name) => s"\"$name\": 1"
                     case _ => ""
                 }
@@ -71,7 +71,7 @@ class MongoVisitor {
 
     def printExpr(e: SqlExpr): Unit = {
         e match {
-            case SqlIdentifierExpr(name) => dslBuilder.append(s"\"$name\"")
+            case SqlIdentExpr(name) => dslBuilder.append(s"\"$name\"")
             case SqlPropertyExpr(_, name) => dslBuilder.append(s"\"$name\"")
             case SqlNumberExpr(n) => dslBuilder.append(n.toString())
             case SqlCharExpr(c) => dslBuilder.append(s"\"$c\"")

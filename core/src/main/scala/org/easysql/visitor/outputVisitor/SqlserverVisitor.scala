@@ -32,7 +32,7 @@ class SqlserverVisitor extends SqlVisitor {
             sqlBuilder.append("\n")
             printSpace(spaceNum)
             sqlBuilder.append("FROM ")
-            visitSqlTableSource(it)
+            visitSqlTable(it)
         }
 
         if (select.forUpdate) {
@@ -79,7 +79,7 @@ class SqlserverVisitor extends SqlVisitor {
 
     override def visitSqlUpsert(sqlUpsert: SqlUpsert): Unit = {
         sqlBuilder.append("MERGE INTO ")
-        visitSqlExpr(sqlUpsert.table.get)
+        visitSqlTable(sqlUpsert.table.get)
         sqlBuilder.append(s" ${quote}t1$quote")
 
         sqlBuilder.append(" USING (")

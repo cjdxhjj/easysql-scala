@@ -1,6 +1,6 @@
 package org.easysql.query.select
 
-import org.easysql.ast.expr.SqlIdentifierExpr
+import org.easysql.ast.expr.SqlIdentExpr
 import org.easysql.ast.statement.select.{SqlSelectQuery, SqlWithItem, SqlWithSelect}
 import org.easysql.database.DB
 import org.easysql.visitor.getExpr
@@ -21,7 +21,7 @@ class WithSelect extends SelectQuery[EmptyTuple, EmptyTuple] {
         val withItem = SqlWithItem(
             getExpr(col(query.aliasName.get)),
             query.getSelect,
-            columns.map(it => SqlIdentifierExpr(it))
+            columns.map(it => SqlIdentExpr(it))
         )
 
         this.sqlWithSelect.withList.addOne(withItem)

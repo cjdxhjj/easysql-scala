@@ -3,7 +3,7 @@ package org.easysql.visitor.outputVisitor
 import org.easysql.ast.statement.select.SqlSelect
 import org.easysql.ast.expr.*
 import org.easysql.ast.statement.select.SqlSelectItem
-import org.easysql.ast.table.SqlIdentifierTableSource
+import org.easysql.ast.table.*
 import org.easysql.ast.limit.SqlLimit
 
 import scala.collection.mutable
@@ -15,7 +15,7 @@ class ESVisitor {
     
     def visitSqlSelect(s: SqlSelect) = {
         s.from match {
-            case Some(SqlIdentifierTableSource(t)) => dslBuilder.append(s"GET /$t/_search")
+            case Some(SqlIdentTable(t)) => dslBuilder.append(s"GET /$t/_search")
             case _ =>
         }
         dslBuilder.append(" {\n")
@@ -47,7 +47,7 @@ class ESVisitor {
                 printSource(s.selectList.toList)
                 dslBuilder.append("\n")
             }
-            case SqlSelectItem(SqlIdentifierExpr(_), _) :: xs => {
+            case SqlSelectItem(SqlIdentExpr(_), _) :: xs => {
                 printSpace
                 dslBuilder.append("\"_source\": ")
                 spaceNum += 4
@@ -98,7 +98,7 @@ class ESVisitor {
 
     def printExpr(e: SqlExpr) = {
         e match {
-            case SqlIdentifierExpr(name) => dslBuilder.append(s"\"$name\"")
+            case SqlIdentExpr(name) => dslBuilder.append(s"\"$name\"")
             case SqlPropertyExpr(_, name) => dslBuilder.append(s"\"$name\"")
             case SqlNumberExpr(n) => dslBuilder.append(n.toString())
             case SqlCharExpr(c) => dslBuilder.append(s"\"$c\"")
@@ -232,13 +232,13 @@ class ESVisitor {
     def printSource(l: List[SqlSelectItem]) = {
         val sourceList = l filter { i => 
             i match {
-                case SqlSelectItem(SqlIdentifierExpr(_), _) => true
+                case SqlSelectItem(SqlIdentExpr(_), _) => true
                 case SqlSelectItem(SqlPropertyExpr(_, _), _) => true
                 case _ => false
             }
         } map { i => 
             i match {
-                case SqlSelectItem(SqlIdentifierExpr(name), _) => name
+                case SqlSelectItem(SqlIdentExpr(name), _) => name
                 case SqlSelectItem(SqlPropertyExpr(_, name), _) => name
                 case _ => ""
             }
@@ -316,7 +316,7 @@ class ESVisitor {
     }
 
     def getGroupName(e: SqlExpr): String = e match {
-        case SqlIdentifierExpr(name) => name + "_group"
+        case SqlIdentExpr(name) => name + "_group"
         case SqlPropertyExpr(_, name) => name + "_group"
         case _ => ""
     }

@@ -27,6 +27,7 @@ sealed trait AnyTable {
 }
 
 trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E] {
+    // todo 改名
     val tableName: String
 
     var aliasName: Option[String] = None

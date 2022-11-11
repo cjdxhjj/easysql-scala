@@ -1,8 +1,9 @@
 package org.easysql.query.update
 
 import org.easysql.ast.SqlDataType
-import org.easysql.ast.expr.{SqlIdentifierExpr, SqlPropertyExpr}
+import org.easysql.ast.expr.{SqlIdentExpr, SqlPropertyExpr}
 import org.easysql.ast.statement.update.SqlUpdate
+import org.easysql.ast.table.SqlIdentTable
 import org.easysql.database.DB
 import org.easysql.dsl.*
 import org.easysql.query.ReviseQuery
@@ -19,14 +20,14 @@ class Update extends ReviseQuery {
     private val sqlUpdate = SqlUpdate()
 
     def update(table: TableSchema[_]): Update = {
-        this.sqlUpdate.table = Some(SqlIdentifierExpr(table.tableName))
+        this.sqlUpdate.table = Some(SqlIdentTable(table.tableName))
         this
     }
 
     inline def update[T <: Product](entity: T, skipNull: Boolean = true): Update = {
         val (tableName, pkList, updateList) = updateMacro[T]
 
-        sqlUpdate.table = Some(SqlIdentifierExpr(tableName))
+        sqlUpdate.table = Some(SqlIdentTable(tableName))
         updateList.foreach { u =>
             val value = u._2.apply(entity)
             if (!skipNull || value != null && value != None) {
