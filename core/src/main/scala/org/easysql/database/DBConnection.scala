@@ -7,4 +7,4 @@ import org.easysql.query.save.Save
 import org.easysql.query.select.*
 import org.easysql.query.update.Update
 
-trait DBConnection(db: DB) extends DBOperater
+abstract class DBConnection(override val db: DB) extends DBOperater(db)

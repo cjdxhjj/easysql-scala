@@ -1,4 +1,4 @@
-package org.easysql.bind
+package org.easysql.macros
 
 import org.easysql.dsl.{TableSchema, PrimaryKeyColumnExpr, TableColumnExpr}
 
