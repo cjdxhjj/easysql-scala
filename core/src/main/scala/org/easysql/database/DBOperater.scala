@@ -91,7 +91,10 @@ abstract class  DBOperater(val db: DB) {
     }
 
     inline def fetchCount(query: SelectQuery[_, _])(using logger: Logger): Long = {
-        val sql = query.sql(db)
+        val sql = inline query match {
+            case s: Select[?, ?] => s.countSql(db)
+            case _ => select(*).from(query.as("_q1")).countSql(db)
+        }
         logger.info(s"execute sql: ${sql.replaceAll("\n", " ")}")
         
         querySqlCount(sql)
