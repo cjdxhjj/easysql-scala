@@ -21,8 +21,8 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
 
 
     infix def from[Table <: TableSchema[_]](table: Table): Select[T, AliasNames]  = {
-        val from = SqlIdentTable(table.tableName)
-        from.alias = table.aliasName
+        val from = SqlIdentTable(table._tableName)
+        from.alias = table._aliasName
         joinLeft = from
         sqlSelect.from = Some(from)
 
@@ -177,8 +177,8 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
     }
 
     private def joinClause(table: TableSchema[_], joinType: SqlJoinType): Select[T, AliasNames] = {
-        val joinTable = SqlIdentTable(table.tableName)
-        joinTable.alias = table.aliasName
+        val joinTable = SqlIdentTable(table._tableName)
+        joinTable.alias = table._aliasName
         val join = SqlJoinTable(joinLeft, joinType, joinTable)
         sqlSelect.from = Some(join)
         joinLeft = join
@@ -200,8 +200,8 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
         def unapplyTable(t: AnyTable): SqlTable = {
             t match {
                 case table: TableSchema[_] =>
-                    val ts = SqlIdentTable(table.tableName)
-                    ts.alias = table.aliasName
+                    val ts = SqlIdentTable(table._tableName)
+                    ts.alias = table._aliasName
                     ts
                 case j: JoinTableSchema => SqlJoinTable(unapplyTable(j.left), j.joinType, unapplyTable(j.right), j.onCondition.map(getExpr))
             }

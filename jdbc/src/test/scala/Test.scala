@@ -1,4 +1,3 @@
-import org.easysql.bind.*
 import org.easysql.dsl.*
 import org.easysql.ast.SqlDataType
 import org.easysql.query.select.Query
@@ -29,11 +28,13 @@ object Test extends App {
     val data1 = db.find(q)
 
 
-    val result = db.transaction {
-        val testTable = TestTable(1, None, None)
-        
-        run(insert(testTable))
-    }
+    val result = try {
+        db.transaction {
+            val testTable = TestTable(1, None, None)
+
+            run(insert(testTable))
+        }
+    } catch case e: Exception => -1
 }
 
 @Table("test_table")

@@ -13,7 +13,7 @@ class Truncate extends ReviseQuery {
     private val sqlTruncate = SqlTruncate()
 
     infix def truncate(table: TableSchema[_]): Truncate = {
-        this.sqlTruncate.table = Some(SqlIdentTable(table.tableName))
+        this.sqlTruncate.table = Some(SqlIdentTable(table._tableName))
 
         this
     }

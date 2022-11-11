@@ -5,11 +5,9 @@ import org.easysql.query.insert.Insert
 import org.easysql.query.select.{Select, SelectQuery, Query}
 import org.easysql.jdbc.*
 import org.easysql.dsl.*
-import org.easysql.bind.*
 import org.easysql.ast.SqlDataType
 
 import java.sql.Connection
-import reflect.Selectable.reflectiveSelectable
 
 class JdbcTransaction(override val db: DB, conn: Connection) extends DBTransaction(db) {
     private[database] override def runSql(sql: String): Int = jdbcExec(conn, sql)

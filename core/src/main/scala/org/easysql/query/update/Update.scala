@@ -20,7 +20,7 @@ class Update extends ReviseQuery {
     private val sqlUpdate = SqlUpdate()
 
     def update(table: TableSchema[_]): Update = {
-        this.sqlUpdate.table = Some(SqlIdentTable(table.tableName))
+        this.sqlUpdate.table = Some(SqlIdentTable(table._tableName))
         this
     }
 
