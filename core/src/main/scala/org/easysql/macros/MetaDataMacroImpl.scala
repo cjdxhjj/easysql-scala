@@ -2,6 +2,7 @@ package org.easysql.macros
 
 import org.easysql.dsl.TableSchema
 import org.easysql.ast.SqlDataType
+import org.easysql.util.*
 
 import scala.quoted.{Expr, Quotes, Type}
 import scala.collection.mutable.*
@@ -11,69 +12,67 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
     import q.reflect.*
 
     val sym = TypeTree.of[T].symbol
-    var tableName = sym.name
     val insertFieldExprs = ListBuffer[Expr[String]]()
     val insertFunctionExprs = ListBuffer[Expr[(T => Any) | (() => Any)]]()
 
-    if (sym.annotations.size > 0) {
-        val annotation = sym.annotations(1)
-        annotation match {
-            case Apply(Select(New(TypeIdent(name)), _), args) =>
-                if (name == "Table") {
-                    args match {
-                        case Literal(v) :: Nil => tableName = v.value.toString()
-                        case _ =>
-                    }
-                }
-
-            case _ =>
-        }
+    val tableName = sym.annotations.map {
+        case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
+        case _ => ""
+    }.find(_ != "") match {
+        case None => camlToSnake(sym.name)
+        case Some(value) => value
     }
 
     val fields = sym.declaredFields
     fields.foreach { field =>
-        if (field.annotations.size > 0) {
-            val annotation = field.annotations.head
-            annotation match {
-                case Apply(Select(New(TypeIdent(name)), _), args) =>
-                    if (name == "PrimaryKey" || name == "Column") {
-                        val insertName = args match {
-                            case Literal(v) :: _ => v.value.toString()
-                            case _ => field.name
-                        }
-
-                        def createLambda = {
-                            val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
-                            def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                                val x = paramRefs.head.asExprOf[T].asTerm
-                                Select.unique(x, field.name)
-                            }
-                            Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
-                        }
-
-                        def createGeneratorLambda(s: Statement) = {
-                            val mtpe = MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Any])
-                            def rhsFn(sym: Symbol, paramRefs: List[Tree]): Tree = s match {
-                                case DefDef(_, _, _, t) => t.get
-                            }
-                            Lambda(field, mtpe, rhsFn).asExprOf[() => Any]
-                        }
-
-                        val lambda = if (name == "PrimaryKey") {
-                            args(1) match {
-                                case NamedArg(_, Block(l, _)) => createGeneratorLambda(l.head)
-                                case Block(l, _) => createGeneratorLambda(l.head)
-                                case _ => createLambda
-                            }
-                        } else {
-                            createLambda
-                        }
-                        
-                        insertFieldExprs.addOne(Expr.apply(insertName))
-                        insertFunctionExprs.addOne(lambda)
+        val annoInfo = field.annotations.map { a =>
+            a match {
+                case Apply(Select(New(TypeIdent(name)), _), args) if name == "PrimaryKey" || name == "Column" || name == "IncrKey" =>
+                    args match {
+                        case Literal(v) :: arg => (name, v.value.toString(), args)
+                        case _ => (name, "", args)
                     }
-                case _ =>
+                case _ => ("", "", Nil)
             }
+        }
+        
+        val insertName = annoInfo.find(_._2 != "") match {
+            case None => camlToSnake(field.name)
+            case Some(_, value, _) => value
+        }
+
+        def createLambda = {
+            val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
+            def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
+                val x = paramRefs.head.asExprOf[T].asTerm
+                Select.unique(x, field.name)
+            }
+            Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
+        }
+
+        def createGeneratorLambda(s: Statement) = {
+            val mtpe = MethodType(Nil)(_ => Nil, _ => TypeRepr.of[Any])
+            def rhsFn(sym: Symbol, paramRefs: List[Tree]): Tree = s match {
+                case DefDef(_, _, _, t) => t.get
+            }
+            Lambda(field, mtpe, rhsFn).asExprOf[() => Any]
+        }
+
+        val lambda = annoInfo.find(_._1 != "") match {
+            case Some("PrimaryKey", _, args) => args match {
+                case _ :: NamedArg(_, Block(l, _)) :: _ => createGeneratorLambda(l.head)
+                case _ :: Block(l, _) :: _ => createGeneratorLambda(l.head)
+                case _ => createLambda
+            }
+            case _ => createLambda
+        }
+
+        annoInfo.find(_._1 == "IncrKey") match {
+            case None => {
+                insertFieldExprs.addOne(Expr.apply(insertName))
+                insertFunctionExprs.addOne(lambda)
+            }
+            case _ =>
         }
     }
 
@@ -88,62 +87,62 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
     '{ 
         val insertList = $insertFields.zip($insertFunctions)
         $tableNameExpr -> insertList
-     }
+    }
 }
 
 def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, List[(String, T => Any)], List[(String, T => Any)])] = {
     import q.reflect.*
 
     val sym = TypeTree.of[T].symbol
-    var tableName = sym.name
     val pkFieldExprs = ListBuffer[Expr[String]]()
     val pkFunctionExprs = ListBuffer[Expr[T => Any]]()
     val updateFieldExprs = ListBuffer[Expr[String]]()
     val updateFunctionExprs = ListBuffer[Expr[T => Any]]()
 
-    if (sym.annotations.size > 0) {
-        val annotation = sym.annotations(1)
-        annotation match {
-            case Apply(Select(New(TypeIdent(name)), _), args) =>
-                if (name == "Table") {
-                    args match {
-                        case Literal(v) :: Nil => tableName = v.value.toString()
-                        case _ =>
-                    }
-                }
-
-            case _ =>
-        }
+    val tableName = sym.annotations.map {
+        case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
+        case _ => ""
+    }.find(_ != "") match {
+        case None => camlToSnake(sym.name)
+        case Some(value) => value
     }
 
     val fields = sym.declaredFields
     fields.foreach { field =>
-        if (field.annotations.size > 0) {
-            val annotation = field.annotations.head
-            annotation match {
-                case Apply(Select(New(TypeIdent(name)), _), args) =>
-                    if (name == "PrimaryKey" || name == "IncrKey" || name == "Column") {
-                        val fieldName = args match {
-                            case Literal(v) :: _ => v.value.toString()
-                            case _ => field.name
-                        }
-
-                        val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
-                        def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
-                            val x = paramRefs.head.asExprOf[T].asTerm
-                            Select.unique(x, field.name)
-                        }
-                        val lambda = Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
-
-                        if (name == "PrimaryKey" || name == "IncrKey") {
-                            pkFieldExprs.addOne(Expr.apply(fieldName))
-                            pkFunctionExprs.addOne(lambda)
-                        } else {
-                            updateFieldExprs.addOne(Expr.apply(fieldName))
-                            updateFunctionExprs.addOne(lambda)
-                        }
+        val annoInfo = field.annotations.map { a =>
+            a match {
+                case Apply(Select(New(TypeIdent(name)), _), args) if name == "PrimaryKey" || name == "Column" || name == "IncrKey" =>
+                    args match {
+                        case Literal(v) :: _ => name -> v.value.toString()
+                        case _ => name -> ""
                     }
-                case _ =>
+                case _ => "" -> ""
+            }
+        }
+
+        val fieldName = annoInfo.find(_._2 != "") match {
+            case None => camlToSnake(field.name)
+            case Some(_, value) => value
+        }
+
+        val mtpe = MethodType(List("x"))(_ => List(TypeRepr.of[T]), _ => TypeRepr.of[Any])
+        def rhsFn(sym: Symbol, paramRefs: List[Tree]) = {
+            val x = paramRefs.head.asExprOf[T].asTerm
+            Select.unique(x, field.name)
+        }
+        val lambda = Lambda(field, mtpe, rhsFn).asExprOf[T => Any]
+
+        annoInfo.find {
+            case (name, _) if name == "PrimaryKey" || name == "IncrKey" => true
+            case _ => false
+        } match {
+            case None => {
+                updateFieldExprs.addOne(Expr.apply(fieldName))
+                updateFunctionExprs.addOne(lambda)
+            }
+            case _ => {
+                pkFieldExprs.addOne(Expr.apply(fieldName))
+                pkFunctionExprs.addOne(lambda)
             }
         }
     }
@@ -166,7 +165,7 @@ def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
         val pkList = $pkFields.zip($pkFunctions)
         val updateList = $updateFields.zip($updateFunctions)
         ($tableNameExpr, pkList, updateList)
-     }
+    }
 }
 
 @experimental
@@ -174,22 +173,14 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
     import q.reflect.*
 
     val sym = TypeTree.of[T].symbol
-    var tableName = sym.name
     val pkFieldExprs = ListBuffer[Expr[String]]()
 
-    if (sym.annotations.size > 0) {
-        val annotation = sym.annotations(1)
-        annotation match {
-            case Apply(Select(New(TypeIdent(name)), _), args) =>
-                if (name == "Table") {
-                    args match {
-                        case Literal(v) :: Nil => tableName = v.value.toString()
-                        case _ =>
-                    }
-                }
-
-            case _ =>
-        }
+    val tableName = sym.annotations.map {
+        case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
+        case _ => ""
+    }.find(_ != "") match {
+        case None => camlToSnake(sym.name)
+        case Some(value) => value
     }
 
     val fields = sym.declaredFields
@@ -206,24 +197,23 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
     }
 
     val pkTypeNames = ListBuffer[String]()
-    
+
     fields.foreach { field =>
-        if (field.annotations.size > 0) {
-            val annotation = field.annotations.head
-            annotation match {
-                case Apply(Select(New(TypeIdent(name)), _), args) =>
-                    if (name == "PrimaryKey" || name == "IncrKey") {
-                        val fieldName = args match {
-                            case Literal(v) :: _ => v.value.toString()
-                            case _ => field.name
-                        }
-                        pkFieldExprs.addOne(Expr.apply(fieldName))
-                        field.tree match {
-                            case vd: ValDef => pkTypeNames.addOne(vd.tpt.tpe.typeSymbol.name)
-                        }
-                    }
-                case _ =>
+        field.annotations.find {
+            case Apply(Select(New(TypeIdent(name)), _), _) if name == "PrimaryKey" || name == "IncrKey" => true
+            case _ => false
+        } match {
+            case Some(Apply(_, args)) => {
+                val fieldName = args match {
+                    case Literal(v) :: _ => v.value.toString()
+                    case _ =>  camlToSnake(field.name)
+                }
+                pkFieldExprs.addOne(Expr.apply(fieldName))
+                field.tree match {
+                    case vd: ValDef => pkTypeNames.addOne(vd.tpt.tpe.typeSymbol.name)
+                }
             }
+            case _ =>
         }
     }
 
