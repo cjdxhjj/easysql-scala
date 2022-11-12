@@ -45,10 +45,8 @@ object Test extends App {
     println(f.toSql)
 
     println(tt.id)
-    println(tt.name)
+    println(tt.name.equal("x"))
 
-    
-    
     // val s = from (tt) where tt.id === "x" || tt.name === "y"
     // println(s.toSql)
 

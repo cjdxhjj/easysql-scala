@@ -4,18 +4,17 @@ import org.easysql.ast.statement.SqlStatement
 import org.easysql.database.DB
 import org.easysql.dsl.{Expr, ListExpr, const}
 import org.easysql.visitor.outputVisitor.*
+import org.easysql.ast.SqlDataType
 
 import java.sql.SQLException
 import java.util.Date
 
-def getOutPutVisitor(db: DB): SqlVisitor = {
-    db match {
-        case DB.MYSQL => MysqlVisitor()
-        case DB.PGSQL => PgsqlVisitor()
-        case DB.SQLSERVER => SqlserverVisitor()
-        case DB.SQLITE => SqliteVisitor()
-        case DB.ORACLE => OracleVisitor()
-    }
+def getOutPutVisitor(db: DB): SqlVisitor = db match {
+    case DB.MYSQL => MysqlVisitor()
+    case DB.PGSQL => PgsqlVisitor()
+    case DB.SQLSERVER => SqlserverVisitor()
+    case DB.SQLITE => SqliteVisitor()
+    case DB.ORACLE => OracleVisitor()
 }
 
 def toSqlString(sqlStatement: SqlStatement, db: DB): String = {
@@ -24,35 +23,13 @@ def toSqlString(sqlStatement: SqlStatement, db: DB): String = {
     visitor.sql()
 }
 
-def anyToExpr(value: Any): Expr[_] = {
-    value match {
-        case null => const(null)
-        case s: String => const(s)
-        case i: Int => const(i)
-        case l: Long => const(l)
-        case d: Double => const(d)
-        case f: Float => const(f)
-        case b: Boolean => const(b)
-        case d: Date => const(d)
-        case dc: BigDecimal => const(dc)
-        case o: Option[_] =>
-            if (o.isEmpty) {
-                const(null)
-            } else {
-                o.get match {
-                    case s: String => const(s)
-                    case i: Int => const(i)
-                    case l: Long => const(l)
-                    case d: Double => const(d)
-                    case f: Float => const(f)
-                    case b: Boolean => const(b)
-                    case d: Date => const(d)
-                    case _ => throw SQLException("cannot convert to type of sql expression")
-                }
-            }
-        case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
-        case _ => throw SQLException("cannot convert to type of sql expression")
+def anyToExpr[T](value: T): Expr[_] = value match {
+    case s: SqlDataType => const(s)
+    case o: Option[_] => o match {
+        case None => const(null)
+        case Some(value) => anyToExpr(value)
     }
+    case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
 }
 
 def camelToSnake(s: List[Char]): List[Char] = s match {
