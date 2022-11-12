@@ -31,7 +31,7 @@ def fetchTableNameMacroImpl[T <: Product](using quotes: Quotes, tpe: Type[T]): E
         case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
         case _ => ""
     }.find(_ != "") match {
-        case None => camlToSnake(sym.name)
+        case None => camelToSnake(sym.name)
         case Some(value) => value
     }
 
@@ -51,7 +51,7 @@ def exprMetaMacroImpl[T](name: Expr[String])(using q: Quotes, t: Type[T]): Expr[
     val ele = sym.declaredField(name.value.get)
 
     var eleTag = "column"
-    var eleName = camlToSnake(name.value.get)
+    var eleName = camelToSnake(name.value.get)
 
     ele.annotations.find {
         case Apply(Select(New(TypeIdent(name)), _), _) if name == "PrimaryKey" || name == "IncrKey" || name == "Column" => true
@@ -81,7 +81,7 @@ def fieldNamesMacroImpl[T](using q: Quotes, t: Type[T]): Expr[List[String]] = {
 
     val sym = TypeTree.of[T].symbol
     val fields = sym.declaredFields.map { f =>
-        var fieldName = camlToSnake(f.name)
+        var fieldName = camelToSnake(f.name)
 
         f.annotations.find {
             case Apply(Select(New(TypeIdent(name)), _), _) if name == "PrimaryKey" || name == "IncrKey" || name == "Column" => true
