@@ -9,14 +9,12 @@ import org.easysql.ast.SqlDataType
 import java.sql.SQLException
 import java.util.Date
 
-def getOutPutVisitor(db: DB): SqlVisitor = {
-    db match {
-        case DB.MYSQL => MysqlVisitor()
-        case DB.PGSQL => PgsqlVisitor()
-        case DB.SQLSERVER => SqlserverVisitor()
-        case DB.SQLITE => SqliteVisitor()
-        case DB.ORACLE => OracleVisitor()
-    }
+def getOutPutVisitor(db: DB): SqlVisitor = db match {
+    case DB.MYSQL => MysqlVisitor()
+    case DB.PGSQL => PgsqlVisitor()
+    case DB.SQLSERVER => SqlserverVisitor()
+    case DB.SQLITE => SqliteVisitor()
+    case DB.ORACLE => OracleVisitor()
 }
 
 def toSqlString(sqlStatement: SqlStatement, db: DB): String = {
@@ -25,16 +23,13 @@ def toSqlString(sqlStatement: SqlStatement, db: DB): String = {
     visitor.sql()
 }
 
-def anyToExpr(value: Any): Expr[_] = {
-    value match {
-        case s: SqlDataType => const(s)
-        case o: Option[_] => o match {
-            case None => const(null)
-            case Some(value) => anyToExpr(value)
-        }
-        case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
-        case _ => throw SQLException("this type cannot be converted to sql expression")
+def anyToExpr[T](value: T): Expr[_] = value match {
+    case s: SqlDataType => const(s)
+    case o: Option[_] => o match {
+        case None => const(null)
+        case Some(value) => anyToExpr(value)
     }
+    case list: List[_] => ListExpr(list.map(it => anyToExpr(it)))
 }
 
 def camelToSnake(s: List[Char]): List[Char] = s match {
