@@ -55,10 +55,10 @@ def anyToExpr(value: Any): Expr[_] = {
     }
 }
 
-def camlToSnake(s: List[Char]): List[Char] = s match {
-    case x :: y :: t if y.isUpper => x.toLower :: '_' :: camlToSnake(y :: t)
-    case h :: t => h.toLower :: camlToSnake(t)
+def camelToSnake(s: List[Char]): List[Char] = s match {
+    case x :: y :: t if y.isUpper => x.toLower :: '_' :: camelToSnake(y :: t)
+    case h :: t => h.toLower :: camelToSnake(t)
     case Nil => Nil
 }
 
-def camlToSnake(s: String): String = camlToSnake(s.toList).mkString
+def camelToSnake(s: String): String = camelToSnake(s.toList).mkString

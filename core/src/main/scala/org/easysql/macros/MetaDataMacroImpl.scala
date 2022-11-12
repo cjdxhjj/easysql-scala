@@ -19,7 +19,7 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
         case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
         case _ => ""
     }.find(_ != "") match {
-        case None => camlToSnake(sym.name)
+        case None => camelToSnake(sym.name)
         case Some(value) => value
     }
 
@@ -37,7 +37,7 @@ def insertMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
         }
         
         val insertName = annoInfo.find(_._2 != "") match {
-            case None => camlToSnake(field.name)
+            case None => camelToSnake(field.name)
             case Some(_, value, _) => value
         }
 
@@ -103,7 +103,7 @@ def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
         case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
         case _ => ""
     }.find(_ != "") match {
-        case None => camlToSnake(sym.name)
+        case None => camelToSnake(sym.name)
         case Some(value) => value
     }
 
@@ -121,7 +121,7 @@ def updateMacroImpl[T <: Product](using q: Quotes, tpe: Type[T]): Expr[(String, 
         }
 
         val fieldName = annoInfo.find(_._2 != "") match {
-            case None => camlToSnake(field.name)
+            case None => camelToSnake(field.name)
             case Some(_, value) => value
         }
 
@@ -179,7 +179,7 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
         case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
         case _ => ""
     }.find(_ != "") match {
-        case None => camlToSnake(sym.name)
+        case None => camelToSnake(sym.name)
         case Some(value) => value
     }
 
@@ -206,7 +206,7 @@ def pkMacroImpl[T <: Product, PK <: SqlDataType | Tuple](using q: Quotes, t: Typ
             case Some(Apply(_, args)) => {
                 val fieldName = args match {
                     case Literal(v) :: _ => v.value.toString()
-                    case _ =>  camlToSnake(field.name)
+                    case _ =>  camelToSnake(field.name)
                 }
                 pkFieldExprs.addOne(Expr.apply(fieldName))
                 field.tree match {
