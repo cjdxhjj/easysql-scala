@@ -9,6 +9,8 @@ import scala.compiletime.{erasedValue, error}
 import scala.util.Random
 import scala.compiletime.ops.int
 
+given Logger = java.util.logging.Logger.getLogger("")
+
 object Test extends App {
     // val bind = bindSelect[Tuple3[TestTable, TestTable, TestTable]]
     // val data = bind(Array[Any](1, null, Date(), null, null, null, 1, null, Date()))
@@ -18,23 +20,14 @@ object Test extends App {
     // val data = bind(Array[Any](1, "x", Date(), null, null, null, 1, null, Date()))
     // println(data)
 
-    given Logger = java.util.logging.Logger.getLogger("")
+    
 
     val db: JdbcConnection = ???
 
     val q = select (tt) from tt
 
     val data = db.query(q)
-    val data1 = db.find(q)
-
-
-    val result = try {
-        db.transaction {
-            val testTable = TestTable(1, None, None)
-
-            run(insert(testTable))
-        }
-    } catch case e: Exception => -1
+    val data1 = db.find(q) 
 }
 
 @Table("test_table")

@@ -1,6 +1,7 @@
 package org.easysql.macros
 
 import org.easysql.dsl.{TableColumnExpr, TableSchema}
+import org.easysql.util.*
 
 import scala.quoted.{Expr, Quotes, Type}
 import scala.annotation.experimental
@@ -26,20 +27,12 @@ def fetchTableNameMacroImpl[T <: Product](using quotes: Quotes, tpe: Type[T]): E
     import quotes.reflect.*
 
     val sym = TypeTree.of[T].symbol
-    var tableName = sym.name
-
-    if (sym.annotations.size > 0) {
-        val annotation = sym.annotations(1)
-        annotation match {
-            case Apply(Select(New(TypeIdent(name)), _), args) =>
-                if (name == "Table") {
-                    args match {
-                        case Literal(v) :: Nil => tableName = v.value.toString
-                        case _ =>
-                    }
-                }
-            case _ =>
-        }
+    val tableName = sym.annotations.map {
+        case Apply(Select(New(TypeIdent(name)), _), Literal(v) :: Nil) if name == "Table" => v.value.toString()
+        case _ => ""
+    }.find(_ != "") match {
+        case None => camlToSnake(sym.name)
+        case Some(value) => value
     }
 
     Expr(tableName)
@@ -58,23 +51,26 @@ def exprMetaMacroImpl[T](name: Expr[String])(using q: Quotes, t: Type[T]): Expr[
     val ele = sym.declaredField(name.value.get)
 
     var eleTag = "column"
-    var eleName = name.value.get
+    var eleName = camlToSnake(name.value.get)
 
-    if (ele.annotations.size > 0) {
-        val annotation = ele.annotations.head
-        annotation match {
-            case Apply(Select(New(TypeIdent(name)), _), args) =>
-                name match {
-                    case "PrimaryKey" => eleTag = "pk"
-                    case "IncrKey" => eleTag = "incr"
-                    case _ =>
-                }
+    ele.annotations.find {
+        case Apply(Select(New(TypeIdent(name)), _), _) if name == "PrimaryKey" || name == "IncrKey" || name == "Column" => true
+        case _ => false
+    } match {
+        case Some(Apply(Select(New(TypeIdent(name)), _), args)) => {
+            name match {
+                case "PrimaryKey" => eleTag = "pk"
+                case "IncrKey" => eleTag = "incr"
+                case _ =>
+            }
 
-                args match {
-                    case Literal(v) :: _ => eleName = v.value.toString
-                    case _ =>
-                }
+            args match {
+                case Literal(v) :: _ => eleName = v.value.toString
+                case _ =>
+            }
         }
+
+        case _ =>
     }
 
     Expr(eleTag *: eleName *: EmptyTuple)
@@ -85,16 +81,20 @@ def fieldNamesMacroImpl[T](using q: Quotes, t: Type[T]): Expr[List[String]] = {
 
     val sym = TypeTree.of[T].symbol
     val fields = sym.declaredFields.map { f =>
-        var fieldName = f.name
-        if (f.annotations.size > 0) {
-            val annotation = f.annotations.head
-            annotation match {
-                case Apply(Select(New(TypeIdent(name)), _), args) =>
-                    args match {
-                        case Literal(v) :: _ => fieldName = v.value.toString
-                        case _ =>
-                    }
+        var fieldName = camlToSnake(f.name)
+
+        f.annotations.find {
+            case Apply(Select(New(TypeIdent(name)), _), _) if name == "PrimaryKey" || name == "IncrKey" || name == "Column" => true
+            case _ => false
+        } match {
+            case Some(Apply(_, args)) => {
+                args match {
+                    case Literal(v) :: _ => fieldName = v.value.toString
+                    case _ =>
+                }
             }
+
+            case _ =>
         }
 
         Expr(fieldName)

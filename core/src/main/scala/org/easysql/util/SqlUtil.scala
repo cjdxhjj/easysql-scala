@@ -54,3 +54,11 @@ def anyToExpr(value: Any): Expr[_] = {
         case _ => throw SQLException("cannot convert to type of sql expression")
     }
 }
+
+def camlToSnake(s: List[Char]): List[Char] = s match {
+    case x :: y :: t if y.isUpper => x.toLower :: '_' :: camlToSnake(y :: t)
+    case h :: t => h.toLower :: camlToSnake(t)
+    case Nil => Nil
+}
+
+def camlToSnake(s: String): String = camlToSnake(s.toList).mkString
