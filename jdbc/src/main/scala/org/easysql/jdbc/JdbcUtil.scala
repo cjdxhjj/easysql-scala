@@ -2,7 +2,7 @@ package org.easysql.jdbc
 
 import java.sql.{Connection, Statement, ResultSet}
 import java.util.Date
-import java.time.{LocalDateTime, ZoneId}
+import java.time.*
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.unsafeNulls
@@ -20,10 +20,11 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
 
         while (rs.next()) {
             val rowMap = (1 to metadata.getColumnCount()).map { it =>
-                var data = rs.getObject(it)
-                data match {
-                    case b: java.math.BigDecimal => data = BigDecimal(b)
-                    case _ =>
+                val data = rs.getObject(it) match {
+                    case b: java.math.BigDecimal => BigDecimal(b)
+                    case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
+                    case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
+                    case d @ _ => d
                 }
                 metadata.getColumnLabel(it) -> data
             }.toMap
@@ -51,10 +52,11 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
 
         while (rs.next()) {
             val rowList = (1 to metadata.getColumnCount()).toArray.map { it =>
-                var data = rs.getObject(it)
-                data match {
-                    case b: java.math.BigDecimal => data = BigDecimal(b)
-                    case _ =>
+                val data = rs.getObject(it) match {
+                    case b: java.math.BigDecimal => BigDecimal(b)
+                    case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
+                    case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
+                    case d @ _ => d
                 }
                 data.asInstanceOf[Any]
             }
