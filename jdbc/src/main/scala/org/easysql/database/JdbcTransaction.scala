@@ -18,7 +18,7 @@ class JdbcTransaction(override val db: DB, conn: Connection) extends DBTransacti
 
     private[database] override def querySqlToMap(sql: String): List[Map[String, Any]] = jdbcQuery(conn, sql)
 
-    private[database] override def querySqlCount(sql: String): Long = jdbcQueryToArray(conn, sql).headOption.headOption.map(_.asInstanceOf[Long]).getOrElse(0L)
+    private[database] override def querySqlCount(sql: String): Long = jdbcQueryToArray(conn, sql).head.head.toString().toLong
 }
 
 inline def run(query: ReviseQuery)(using logger: Logger, t: JdbcTransaction): Int = t.run(query)

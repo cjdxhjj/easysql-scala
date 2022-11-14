@@ -25,7 +25,7 @@ class JdbcConnection(override val db: DB, dataSource: DataSource) extends DBConn
 
     private[database] override def querySqlToMap(sql: String): List[Map[String, Any]] = exec(jdbcQuery(_, sql))
 
-    private[database] override def querySqlCount(sql: String): Long = exec(jdbcQueryToArray(_, sql).headOption.headOption.map(_.asInstanceOf[Long]).getOrElse(0L))
+    private[database] override def querySqlCount(sql: String): Long = exec(jdbcQueryToArray(_, sql).head.head.toString().toLong)
 
     def transactionIsolation[T](isolation: Int)(query: JdbcTransaction ?=> T): T = {
         val conn = getConnection
