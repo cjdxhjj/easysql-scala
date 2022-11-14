@@ -18,6 +18,7 @@ import scala.reflect.ClassTag
 import java.util.Random
 import java.util.UUID
 import scala.collection.immutable.LazyList.cons
+import scala.math.ScalaNumber
 
 object Test extends App {
     given DB = DB.MYSQL
