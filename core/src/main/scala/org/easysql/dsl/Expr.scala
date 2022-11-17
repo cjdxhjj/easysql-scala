@@ -180,9 +180,8 @@ case class BinaryExpr[T <: SqlDataType](
     operator: SqlBinaryOperator,
     right: Expr[_]
 ) extends Expr[T]() {
-    def thenIs[TV <: SqlDataType](thenValue: TV | Expr[TV] | SelectQuery[Tuple1[TV], _]): CaseBranch[TV] = {
+    def thenIs[TV <: SqlDataType](thenValue: TV | Expr[TV] | SelectQuery[Tuple1[TV], _]): CaseBranch[TV] =
         CaseBranch(this, thenValue)
-    }
 }
 
 case class ColumnExpr[T <: SqlDataType](column: String) extends Expr[T]()
@@ -197,7 +196,7 @@ case class PrimaryKeyColumnExpr[T <: SqlDataType](
     table: String,
     column: String,
     schema: TableSchema[_],
-    var isIncr: Boolean = false
+    isIncr: Boolean = false
 ) extends Expr[T]()
 
 case class SubQueryExpr[T <: SqlDataType](selectQuery: SelectQuery[Tuple1[T], _]) extends Expr[T]()
@@ -216,15 +215,10 @@ case class AggFunctionExpr[T <: SqlDataType](
 
 case class CaseExpr[T <: SqlDataType](
     conditions: List[CaseBranch[T]],
-    var default: T | Expr[T] | SelectQuery[Tuple1[T], _] = null
+    default: T | Expr[T] | SelectQuery[Tuple1[T], _] = null
 ) extends Expr[T]() {
-    infix def elseIs(value: T | Expr[T] | SelectQuery[Tuple1[T], _]): CaseExpr[T] = {
-        if (value != null) {
-            CaseExpr(this.conditions, value)
-        } else {
-            this
-        }
-    }
+    infix def elseIs(value: T | Expr[T] | SelectQuery[Tuple1[T], _]): CaseExpr[T] =
+        if value != null then CaseExpr(this.conditions, value) else this
 }
 
 case class ListExpr[T <: SqlDataType](list: List[T | Expr[_] | SelectQuery[_, _]]) extends Expr[T]()
