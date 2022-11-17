@@ -66,6 +66,8 @@ object Test extends App {
 
     val s = select (user) from user where true && user.createTime.between("2020-01-01", "2022-01-01") && user.id > 1 || true
     println(s.toSql)
+
+    val n = !(user.id === 1)
 }
 
 @Table

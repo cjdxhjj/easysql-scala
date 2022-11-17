@@ -70,20 +70,6 @@ trait ExprOperator[T <: SqlDataType] {
         def <=(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
             BinaryExpr(e, SqlBinaryOperator.LE, SubQueryExpr(subQuery))
 
-        def &&(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, query)
-
-        def &&(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, const(v))
-
-        def ||(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, query)
-
-        def ||(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, const(v))
-
-        def ^(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, query)
-
-        def ^(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, const(v))
-
-        def unary_! : NormalFunctionExpr[Boolean] = NormalFunctionExpr("NOT", List(e))
-
         infix def in(list: List[T | Expr[T] | SelectQuery[Tuple1[T], _]]): Expr[Boolean] =
             if list.isEmpty then const(false) else InListExpr(e, list)
 
@@ -127,12 +113,6 @@ trait ExprOperator[T <: SqlDataType] {
         def <(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
 
         def <=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
-
-        def &&(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.AND, query)
-
-        def ||(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.OR, query)
-
-        def ^(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.XOR, query)
 
         infix def in(list: List[Expr[T]]): Expr[Boolean] =
             if list.isEmpty then const(false) else InListExpr(const(v), list)
@@ -283,7 +263,31 @@ object Expr {
         }
     }
 
-    given boolOperator: ExprOperator[Boolean] with {}
+    given boolOperator: ExprOperator[Boolean] with {
+        extension (e: Expr[Boolean]) {
+            def &&(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, query)
+
+            def &&(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, const(v))
+
+            def ||(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, query)
+
+            def ||(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, const(v))
+
+            def ^(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, query)
+
+            def ^(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, const(v))
+
+            def unary_! : NormalFunctionExpr[Boolean] = NormalFunctionExpr("NOT", List(e))
+        }
+
+        extension (v: Boolean) {
+            def &&(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.AND, query)
+
+            def ||(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.OR, query)
+
+            def ^(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.XOR, query)
+        }
+    }
 
     given dateOperator: ExprOperator[Date] with {
         extension (e: Expr[Date]) {
