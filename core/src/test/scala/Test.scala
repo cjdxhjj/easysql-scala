@@ -61,6 +61,9 @@ object Test extends App {
 
     // val s = select (sub.c1, sub.c2) from sub
     // println(s.toSql)
+
+    val s = select (user) from user where user.createTime.between("2020-01-01", "2022-01-01") || user.id.between(1, 2)
+    println(s.toSql)
 }
 
 @Table

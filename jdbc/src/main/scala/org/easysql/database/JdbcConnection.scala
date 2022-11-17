@@ -9,7 +9,6 @@ import org.easysql.query.update.Update
 import org.easysql.jdbc.*
 import org.easysql.dsl.*
 import org.easysql.ast.SqlDataType
-import org.easysql.dsl.FlatType
 
 import java.sql.Connection
 import javax.sql.DataSource
