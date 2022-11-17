@@ -1,6 +1,5 @@
 import org.easysql.dsl.*
 import org.easysql.ast.SqlDataType
-import org.easysql.query.select.Query
 import org.easysql.dsl.TableSchema
 import org.easysql.database.*
 
