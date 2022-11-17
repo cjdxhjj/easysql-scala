@@ -1,6 +1,5 @@
 package org.easysql.macros
 
-import org.easysql.query.select.Query
 import org.easysql.ast.SqlDataType
 import org.easysql.dsl.*
 
