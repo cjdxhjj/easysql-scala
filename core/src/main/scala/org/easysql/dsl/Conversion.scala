@@ -6,29 +6,6 @@ import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.*
 
-// given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
-
-// given intToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
-
-// given longToExpr: Conversion[Long, ConstExpr[Number]] = ConstExpr[Number](_)
-
-// given doubleToExpr: Conversion[Double, ConstExpr[Number]] = ConstExpr[Number](_)
-
-// given floatToExpr: Conversion[Float, ConstExpr[Number]] = ConstExpr[Number](_)
-
-// given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_)
-
-// given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
-
-// given decimalToExpr: Conversion[BigDecimal, ConstExpr[Number]] = ConstExpr[Number](_)
-
-// given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => {
-//     val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-//     ConstExpr[Date](fmt.parse(x))
-// }
-
-// given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
-
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case SelectItem[x] *: t => x *: InverseMap[t]
     case EmptyTuple => EmptyTuple
