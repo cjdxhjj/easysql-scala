@@ -72,9 +72,15 @@ trait ExprOperator[T <: SqlDataType] {
 
         def &&(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, query)
 
+        def &&(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.AND, const(v))
+
         def ||(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, query)
 
+        def ||(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.OR, const(v))
+
         def ^(query: Expr[_]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, query)
+
+        def ^(v: Boolean): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.XOR, const(v))
 
         def unary_! : NormalFunctionExpr[Boolean] = NormalFunctionExpr("NOT", List(e))
 

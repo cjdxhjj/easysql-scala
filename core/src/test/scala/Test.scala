@@ -64,7 +64,7 @@ object Test extends App {
     val x = 1 + user.id
     println(x)
 
-    val s = select (user) from user where true && user.createTime.between("2020-01-01", "2022-01-01")
+    val s = select (user) from user where true && user.createTime.between("2020-01-01", "2022-01-01") && user.id > 1 || true
     println(s.toSql)
 }
 
