@@ -28,9 +28,6 @@ trait ExprOperator[T <: SqlDataType] {
 
         def ===(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, expr)
 
-        def ===(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
-            BinaryExpr(e, SqlBinaryOperator.EQ, SubQueryExpr(subQuery))
-
         def <>(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, const(value))
 
         def <>(value: Option[T]): BinaryExpr[Boolean] = value match {
@@ -40,56 +37,42 @@ trait ExprOperator[T <: SqlDataType] {
 
         def <>(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, expr)
 
-        def <>(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
-            BinaryExpr(e, SqlBinaryOperator.NE, SubQueryExpr(subQuery))
-
         def >(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, const(value))
 
         def >(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, expr)
-
-        def >(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
-            BinaryExpr(e, SqlBinaryOperator.GT, SubQueryExpr(subQuery))
 
         def >=(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, const(value))
 
         def >=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, expr)
 
-        def >=(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
-            BinaryExpr(e, SqlBinaryOperator.GE, SubQueryExpr(subQuery))
-
         def <(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, const(value))
 
         def <(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, expr)
-
-        def <(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, SubQueryExpr(subQuery))
 
         def <=(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, const(value))
 
         def <=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, expr)
 
-        def <=(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = 
-            BinaryExpr(e, SqlBinaryOperator.LE, SubQueryExpr(subQuery))
-
-        infix def in(list: List[T | Expr[T] | SelectQuery[Tuple1[T], _]]): Expr[Boolean] =
+        infix def in(list: List[T | Expr[T]]): Expr[Boolean] =
             if list.isEmpty then const(false) else InListExpr(e, list)
 
-        infix def in(list: (T | Expr[T] | SelectQuery[Tuple1[T], _])*): Expr[Boolean] =
+        infix def in(list: (T | Expr[T])*): Expr[Boolean] =
             InListExpr(e, list.toList)
 
-        infix def notIn(list: List[T | Expr[T] | SelectQuery[Tuple1[T], _]]): Expr[Boolean] =
+        infix def notIn(list: List[T | Expr[T]]): Expr[Boolean] =
             if list.isEmpty then const(true) else InListExpr(e, list, true)
 
-        infix def notIn(list: (T | Expr[T] | SelectQuery[Tuple1[T], _])*): Expr[Boolean] =
+        infix def notIn(list: (T | Expr[T])*): Expr[Boolean] =
             InListExpr(e, list.toList, true)
 
         infix def in(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery)
 
         infix def notIn(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery, true)
 
-        infix def between(start: T | Expr[T] | SelectQuery[Tuple1[T], _], end: T | Expr[T] | SelectQuery[Tuple1[T], _]): Expr[Boolean] =
+        infix def between(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
             BetweenExpr(e, start, end)
 
-        infix def notBetween(start: T | Expr[T] | SelectQuery[Tuple1[T], _], end: T | Expr[T] | SelectQuery[Tuple1[T], _]): Expr[Boolean] =
+        infix def notBetween(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
             BetweenExpr(e, start, end, true)
 
         def asc: OrderBy = OrderBy(e, SqlOrderByOption.ASC)
@@ -138,64 +121,226 @@ trait ExprOperator[T <: SqlDataType] {
     }
 }
 
-trait NumberExprOperator[T <: SqlNumberType] extends ExprOperator[T] {
-    extension (e: Expr[T]) {
-        def +(value: T): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-        def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
-
-        def +(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
-
-        def -(value: T): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-        def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-        def -(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
-
-        def *(value: T): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-        def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-        def *(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
-
-        def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-        def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-        def /(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
-
-        def %(value: T): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-        def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
-
-        def %(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MOD, SubQueryExpr(subQuery))
-    }
-
-    extension (v: T) {
-        def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
-
-        def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
-
-        def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
-
-        def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
-
-        def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
-    }
-}
-
 sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
     def equal(expr: Any): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, anyToExpr(expr))
 }
 
 object Expr {
-    given intOperator: NumberExprOperator[Int] with {}
+    given intOperator: ExprOperator[Int] with {
+        extension [T <: Int | Long | Float | Double] (e: Expr[Int]) {
+            def +(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
 
-    given longOperator: NumberExprOperator[Long] with {}
+            def +(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
 
-    given floatOperator: NumberExprOperator[Float] with {}
+            def +(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
 
-    given doubleOperator: NumberExprOperator[Double] with {}
+            def +(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+
+            def -(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
+
+            def *(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
+
+            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
+
+            def %(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+        }
+
+        extension [T <: Int | Long | Float | Double] (v: Int) {
+            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+
+            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+
+            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+
+            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+        }
+    }
+
+    given longOperator: ExprOperator[Long] with {
+        extension [T <: Int | Long | Float | Double] (e: Expr[Long]) {
+            def +(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+
+            def -(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
+
+            def *(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
+
+            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
+
+            def %(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+        }
+
+        extension [T <: Int | Long | Float | Double] (v: Long) {
+            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+
+            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+
+            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+
+            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+        }
+    }
+
+    given floatOperator: ExprOperator[Float] with {
+        extension [T <: Int | Long | Float | Double] (e: Expr[Float]) {
+            def +(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+
+            def -(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
+
+            def *(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
+
+            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
+
+            def %(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+        }
+
+        extension [T <: Int | Long | Float | Double] (v: Float) {
+            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+
+            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+
+            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+
+            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+        }
+    }
+
+    given doubleOperator: ExprOperator[Double] with {
+        extension [T <: Int | Long | Float | Double] (e: Expr[Double]) {
+            def +(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+
+            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+
+            def -(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+
+            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
+
+            def *(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
+
+            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
+
+            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
+
+            def %(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
+
+            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+        }
+
+        extension [T <: Int | Long | Float | Double] (v: Double) {
+            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+
+            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+
+            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+
+            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+
+            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+        }
+    }
 
     given decimalOperator: ExprOperator[BigDecimal] with {
         extension [T <: SqlNumberType] (e: Expr[BigDecimal]) {
@@ -203,31 +348,21 @@ object Expr {
 
             def +(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
 
-            def +(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, SubQueryExpr(subQuery))
-
             def -(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
 
             def -(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def -(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, SubQueryExpr(subQuery))
 
             def *(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
 
             def *(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
 
-            def *(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, SubQueryExpr(subQuery))
-
             def /(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
 
             def /(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
 
-            def /(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, SubQueryExpr(subQuery))
-
             def %(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
 
             def %(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
-
-            def %(subQuery: SelectQuery[Tuple1[T], _]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, SubQueryExpr(subQuery))
         }
 
         extension [T <: SqlNumberType] (v: T) {

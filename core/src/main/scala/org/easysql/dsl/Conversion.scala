@@ -87,3 +87,13 @@ type MapOption[T <: Tuple] = T match {
     case h *: t => Option[h] *: MapOption[t]
     case EmptyTuple => EmptyTuple
 }
+
+type NumberOperationType[T, R] <: SqlNumberType = (T, R) match {
+    case (Double, _) => Double
+    case (_, Double) => Double
+    case (Float, _) => Float
+    case (_, Float) => Float
+    case (Long, _) => Long
+    case (_, Long) => Long
+    case _ => Int
+}

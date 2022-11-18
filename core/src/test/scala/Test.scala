@@ -60,14 +60,12 @@ object Test extends App {
     // val s = select (sub.c1, sub.c2) from sub
     // println(s.toSql)
 
-    
-    val x = 1 + user.id
-    println(x)
-
     val s = select (user) from user where true && user.createTime.between("2020-01-01", "2022-01-01") && user.id > 1 || true
     println(s.toSql)
 
     val n = !(user.id === 1)
+
+    val plus = 1.0 + user.id * user.longCol
 }
 
 @Table
