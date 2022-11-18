@@ -94,3 +94,9 @@ trait SelectQuery[T <: Tuple, AliasNames <: Tuple] extends BasedQuery with Dynam
         col[FindTypeByName[Tuple.Zip[T, AliasNames], Tuple.Size[T] - 1, name.type] & SqlDataType](s"${aliasName.get}.$item")
     }
 }
+
+object SelectQuery {
+    extension [T <: SqlDataType] (x: SelectQuery[Tuple1[T], _]) {
+        def toExpr = SubQueryExpr(x)
+    }
+}
