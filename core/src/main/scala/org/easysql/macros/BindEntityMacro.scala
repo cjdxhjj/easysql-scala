@@ -14,10 +14,12 @@ inline def bindSingleton[T](nextIndex: Int): (Int, Array[Any] => Any) = {
         case _: Option[t] => {
             inline erasedValue[t] match {
                 case _: Product => bindOptionMacro[t](nextIndex)
+                case _: BigDecimal => nextIndex + 1 -> { (data: Array[Any]) => if data(nextIndex) == null then None else Some(BigDecimal(data(nextIndex).toString())) }
                 case _ => nextIndex + 1 -> { (data: Array[Any]) => if data(nextIndex) == null then None else Some(data(nextIndex)).asInstanceOf[Option[t]] }
             }
         }
         case _: Product => bindEntityMacro[T](nextIndex)
+        case _: BigDecimal => nextIndex + 1 -> { (data: Array[Any]) => BigDecimal(data(nextIndex).toString()) }
         case _ => nextIndex + 1 -> { (data: Array[Any]) => data(nextIndex).asInstanceOf[T] }
     }
 }
