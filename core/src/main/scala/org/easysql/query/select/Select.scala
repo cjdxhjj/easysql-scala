@@ -85,6 +85,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
 
     infix def select[I <: SqlDataType, N <: String](item: AliasExpr[I, N]): Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]] = {
         sqlSelect.addSelectItem(visitExpr(item.expr), Some(item.name))
+        selectItems.addOne(item.name)
 
         this.asInstanceOf[Select[Tuple.Concat[T, Tuple1[I]], Tuple.Concat[AliasNames, Tuple1[N]]]]
     }
