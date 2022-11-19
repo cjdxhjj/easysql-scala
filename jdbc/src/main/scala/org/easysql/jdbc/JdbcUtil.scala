@@ -22,6 +22,7 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
             val rowMap = (1 to metadata.getColumnCount()).map { it =>
                 val data = rs.getObject(it) match {
                     case b: java.math.BigDecimal => BigDecimal(b)
+                    case l: java.math.BigInteger => l.longValue()
                     case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
                     case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
                     case d @ _ => d
@@ -54,6 +55,7 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
             val rowList = (1 to metadata.getColumnCount()).toArray.map { it =>
                 val data = rs.getObject(it) match {
                     case b: java.math.BigDecimal => BigDecimal(b)
+                    case l: java.math.BigInteger => l.longValue()
                     case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
                     case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
                     case d @ _ => d

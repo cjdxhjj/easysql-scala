@@ -1,6 +1,5 @@
 import org.easysql.dsl.*
 import org.easysql.ast.SqlDataType
-import org.easysql.query.select.Query
 import org.easysql.dsl.TableSchema
 import org.easysql.database.*
 
@@ -27,7 +26,7 @@ object Test extends App {
     val q = select (tt) from tt
 
     val data = db.query(q)
-    val data1 = db.find(q) 
+    val data1 = db.find(q)
 }
 
 @Table("test_table")

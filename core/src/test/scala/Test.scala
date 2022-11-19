@@ -19,6 +19,7 @@ import java.util.Random
 import java.util.UUID
 import scala.collection.immutable.LazyList.cons
 import scala.math.ScalaNumber
+import scala.util.FromDigits.Decimal
 
 object Test extends App {
     given DB = DB.MYSQL
@@ -45,9 +46,6 @@ object Test extends App {
     val f = findQuery[TestTable]("1")
     println(f.toSql)
 
-    println(tt.id)
-    println(tt.name.equal("x"))
-
     // val s = from (tt) where tt.id === "x" || tt.name === "y"
     // println(s.toSql)
 
@@ -61,6 +59,24 @@ object Test extends App {
 
     // val s = select (sub.c1, sub.c2) from sub
     // println(s.toSql)
+
+    val s = (
+        select (user) 
+        from user 
+        where true 
+            && user.createTime.between("2020-01-01", "2022-01-01") 
+            && user.id + 1.0 > 2.3 
+            || false
+    )
+
+    println(s.toSql)
+
+    val sub = select (user.id as "c1", user.name as "c2") from user as "q1"
+
+    val s1 = select (sub.c1 as "x1", sub.c2 as "x2") from sub
+    println(s1.toSql)
+
+    val plus = 1.0 + user.id * user.longCol
 }
 
 @Table

@@ -5,34 +5,6 @@ import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.*
-import java.util.Date
-import java.time.format.DateTimeFormatter
-import java.time.LocalDate
-import java.time.LocalDateTime
-import java.text.SimpleDateFormat
-
-given stringToExpr: Conversion[String, ConstExpr[String]] = ConstExpr[String](_)
-
-given intToExpr: Conversion[Int, ConstExpr[Number]] = ConstExpr[Number](_)
-
-given longToExpr: Conversion[Long, ConstExpr[Number]] = ConstExpr[Number](_)
-
-given doubleToExpr: Conversion[Double, ConstExpr[Number]] = ConstExpr[Number](_)
-
-given floatToExpr: Conversion[Float, ConstExpr[Number]] = ConstExpr[Number](_)
-
-given boolToExpr: Conversion[Boolean, ConstExpr[Boolean]] = ConstExpr[Boolean](_)
-
-given dateToExpr: Conversion[Date, ConstExpr[Date]] = ConstExpr[Date](_)
-
-given decimalToExpr: Conversion[BigDecimal, ConstExpr[Number]] = ConstExpr[Number](_)
-
-given stringToDateExpr: Conversion[String, ConstExpr[Date]] = x => {
-    val fmt = SimpleDateFormat("yyyy-MM-dd HH:mm:ss")
-    ConstExpr[Date](fmt.parse(x))
-}
-
-given queryToExpr[T <: SqlDataType]: Conversion[SelectQuery[Tuple1[T], _], SubQueryExpr[T]] = SubQueryExpr(_)
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case SelectItem[x] *: t => x *: InverseMap[t]
@@ -91,10 +63,8 @@ type FindTypeByName[T <: Tuple, I <: Int, Name <: String] = I >= 0 match {
 type ElementType[T <: Tuple, N <: Tuple, Name <: String] = (T, N) match {
     case (t *: tt, n *: nt) => n == Name match {
         case true => t match {
-            case SqlNumberType => Number
             case SqlDataType => t
             case Option[o] => o match {
-                case SqlNumberType => Number
                 case SqlDataType => o
             }
         }
@@ -108,25 +78,8 @@ type ExprType[T <: Tuple] = T match {
     case EmptyTuple => EmptyTuple
 }
 
-type FlatType[T, Bound, F[_ <: Bound]] = T match {
-    case x *: xs => x match {
-        case F[t] => t *: FlatType[xs, Bound, F]
-        case Tuple => FlatType[x, Bound, F] *: FlatType[xs, Bound, F]
-        case _ => x *: FlatType[xs, Bound, F]
-    }
-    case EmptyTuple => EmptyTuple
-    case F[t] => t
-    case _ => T
-}
-
-type Append[X, Y] <: Tuple = X match {
-    case x *: xs => x *: Append[xs, Y]
-    case EmptyTuple => Y *: EmptyTuple
-    case _ => X *: Y *: EmptyTuple
-}
-
 type ResultType[T <: Tuple] = T match {
-    case Tuple1[t] => t
+    case Tuple1[t] => Option[t]
     case _ => MapOption[T]
 }
 
