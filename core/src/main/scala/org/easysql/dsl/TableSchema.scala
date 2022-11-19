@@ -45,20 +45,17 @@ trait TableSchema[E <: Product] extends AnyTable with Dynamic with SelectItem[E]
         val fields = fieldNamesMacro[E].toArray.map(n => TableColumnExpr(_tableName, n, this))
         Tuple.fromArray(fields).asInstanceOf[ExprType[m.MirroredElemTypes]]
     }
-}
 
-extension [E <: Product, T <: TableSchema[E]] (t: T) {
-    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any): T = {
-        val table = aliasMacro[E, T](t)
+    inline infix def unsafeAs(aliasName: String) = {
+        val table = aliasMacro[E, this.type](this)
         table._aliasName = Some(aliasName)
+        val cols = table._cols.map(i => i.copy(schema = table))
+        table._cols.clear()
+        table._cols.addAll(cols)
         table
     }
 
-    inline infix def unsafeAs(aliasName: String): T = {
-        val table = aliasMacro[E, T](t)
-        table._aliasName = Some(aliasName)
-        table
-    }
+    inline infix def as(aliasName: String)(using NonEmpty[aliasName.type] =:= Any) = unsafeAs(aliasName)
 }
 
 case class JoinTableSchema(

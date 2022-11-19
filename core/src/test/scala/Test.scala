@@ -71,6 +71,11 @@ object Test extends App {
 
     println(s.toSql)
 
+    val t1 = user as "t1"
+    val t2 = user as "t2"
+    val s1 = select(t1, t2) from t1 join t2
+    println(s1.toSql)
+
     val plus = 1.0 + user.id * user.longCol
 }
 
