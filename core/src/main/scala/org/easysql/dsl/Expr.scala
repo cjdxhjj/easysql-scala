@@ -65,6 +65,8 @@ sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
 
     def ===(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, expr)
 
+    def ===(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, SubQueryExpr(q))
+
     def <>(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.NE, const(value))
 
     def <>(value: Option[T]): BinaryExpr[Boolean] = value match {
@@ -74,21 +76,31 @@ sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
 
     def <>(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.NE, expr)
 
+    def <>(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.NE, SubQueryExpr(q))
+
     def >(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GT, const(value))
 
     def >(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GT, expr)
+
+    def >(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GT, SubQueryExpr(q))
 
     def >=(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GE, const(value))
 
     def >=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GE, expr)
 
+    def >=(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GE, SubQueryExpr(q))
+
     def <(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LT, const(value))
 
     def <(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LT, expr)
 
+    def <(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LT, SubQueryExpr(q))
+
     def <=(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LE, const(value))
 
     def <=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LE, expr)
+
+    def <=(q: SelectQuery[Tuple1[T], _]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LE, SubQueryExpr(q))
 
     infix def in(list: List[T | Expr[T]]): Expr[Boolean] =
         if list.isEmpty then const(false) else InListExpr(this, list)
@@ -106,10 +118,10 @@ sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
 
     infix def notIn(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(this, subQuery, true)
 
-    infix def between(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
+    infix def between(start: T | Expr[T] | SelectQuery[Tuple1[T], _], end: T | Expr[T] | SelectQuery[Tuple1[T], _]): Expr[Boolean] =
         BetweenExpr(this, start, end)
 
-    infix def notBetween(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
+    infix def notBetween(start: T | Expr[T] | SelectQuery[Tuple1[T], _], end: T | Expr[T] | SelectQuery[Tuple1[T], _]): Expr[Boolean] =
         BetweenExpr(this, start, end, true)
 
     def equal(expr: Any): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, anyToExpr(expr))
