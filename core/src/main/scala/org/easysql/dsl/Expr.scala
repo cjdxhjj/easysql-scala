@@ -136,255 +136,87 @@ sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
 }
 
 object Expr {
-    given intOperator: ExprOperator[Int] with {
-        extension [T <: Int | Long | Float | Double] (e: Expr[Int]) {
-            def +(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+    given numberOperator[T <: SqlNumberType]: ExprOperator[T] with {
+        extension [R <: SqlNumberType] (e: Expr[T]) {
+            def +(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
 
-            def +(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
 
-            def +(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+            def -(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
 
-            def +(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
 
-            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
+            def *(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
 
-            def -(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
 
-            def -(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+            def /(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
 
-            def -(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
 
-            def -(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
+            def %(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
 
-            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def *(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-            def %(value: Int): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Long): BinaryExpr[Int] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
         }
 
-        extension [T <: Int | Long | Float | Double] (v: Int) {
-            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+        extension [R <: SqlNumberType] (v: Int) {
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
 
-            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
 
-            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
 
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
-            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
-        }
-    }
-
-    given longOperator: ExprOperator[Long] with {
-        extension [T <: Int | Long | Float | Double] (e: Expr[Long]) {
-            def +(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
-
-            def -(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def *(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-            def %(value: Int): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Long): BinaryExpr[Long] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Float): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Double): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(expr: Expr[T]): BinaryExpr[NumberOperationType[Long, T]] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
         }
 
-        extension [T <: Int | Long | Float | Double] (v: Long) {
-            def +(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+        extension [R <: SqlNumberType] (v: Long) {
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
 
-            def -(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
 
-            def *(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
 
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
-            def %(expr: Expr[T]): BinaryExpr[T] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
-        }
-    }
-
-    given floatOperator: ExprOperator[Float] with {
-        extension [T <: Int | Long | Float | Double] (e: Expr[Float]) {
-            def +(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
-
-            def -(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def *(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-            def %(value: Int): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Long): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Float): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(value: Double): BinaryExpr[Float] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(expr: Expr[T]): BinaryExpr[NumberOperationType[Float, T]] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
         }
 
-        extension [T <: Int | Long | Float | Double] (v: Float) {
-            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+        extension [R <: SqlNumberType] (v: Float) {
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
 
-            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
 
-            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
 
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
-            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
-        }
-    }
-
-    given doubleOperator: ExprOperator[Double] with {
-        extension [T <: Int | Long | Float | Double] (e: Expr[Double]) {
-            def +(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
-
-            def -(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def *(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-            def /(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-            def %(value: T): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
         }
 
-        extension [T <: Int | Long | Float | Double] (v: Double) {
-            def +(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+        extension [R <: SqlNumberType] (v: Double) {
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
 
-            def -(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
 
-            def *(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
 
-            def /(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
-            def %(expr: Expr[T]): BinaryExpr[Double] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
-        }
-    }
-
-    given decimalOperator: ExprOperator[BigDecimal] with {
-        extension [T <: SqlNumberType] (e: Expr[BigDecimal]) {
-            def +(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, const(value))
-
-            def +(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.ADD, expr)
-
-            def -(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, const(value))
-
-            def -(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.SUB, expr)
-
-            def *(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, const(value))
-
-            def *(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MUL, expr)
-
-            def /(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, const(value))
-
-            def /(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.DIV, expr)
-
-            def %(value: T): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
-
-            def %(expr: Expr[T]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
         }
 
-        extension [T <: SqlNumberType] (v: T) {
-            def +(expr: Expr[BigDecimal]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
+        extension [R <: SqlNumberType] (v: BigDecimal) {
+            def +(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.ADD, expr)
 
-            def -(expr: Expr[BigDecimal]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
+            def -(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.SUB, expr)
 
-            def *(expr: Expr[BigDecimal]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
+            def *(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MUL, expr)
 
-            def /(expr: Expr[BigDecimal]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
+            def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
-            def %(expr: Expr[BigDecimal]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+            def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
         }
     }
 
