@@ -79,21 +79,11 @@ type ExprType[T <: Tuple] = T match {
 }
 
 type ResultType[T <: Tuple] = T match {
-    case Tuple1[t] => t
+    case Tuple1[t] => Option[t]
     case _ => MapOption[T]
 }
 
 type MapOption[T <: Tuple] = T match {
     case h *: t => Option[h] *: MapOption[t]
     case EmptyTuple => EmptyTuple
-}
-
-type NumberOperationType[T, R] <: SqlNumberType = (T, R) match {
-    case (Double, _) => Double
-    case (_, Double) => Double
-    case (Float, _) => Float
-    case (_, Float) => Float
-    case (Long, _) => Long
-    case (_, Long) => Long
-    case _ => Int
 }
