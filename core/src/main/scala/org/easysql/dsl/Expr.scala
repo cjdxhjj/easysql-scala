@@ -18,72 +18,6 @@ trait SelectItem[T]
 case class AliasExpr[T <: SqlDataType, Alias <: String](expr: Expr[T], name: Alias) extends SelectItem[T]
 
 trait ExprOperator[T <: SqlDataType] {
-    extension (e: Expr[T]) {
-        def ===(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, const(value))
-
-        def ===(value: Option[T]): BinaryExpr[Boolean] = value match {
-            case Some(v) => BinaryExpr(e, SqlBinaryOperator.EQ, const(v))
-            case None => BinaryExpr(e, SqlBinaryOperator.EQ, const(null))
-        }
-
-        def ===(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, expr)
-
-        def <>(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, const(value))
-
-        def <>(value: Option[T]): BinaryExpr[Boolean] = value match {
-            case Some(v) => BinaryExpr(e, SqlBinaryOperator.NE, const(v))
-            case None => BinaryExpr(e, SqlBinaryOperator.NE, const(null))
-        }
-
-        def <>(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, expr)
-
-        def >(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, const(value))
-
-        def >(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, expr)
-
-        def >=(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, const(value))
-
-        def >=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, expr)
-
-        def <(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, const(value))
-
-        def <(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, expr)
-
-        def <=(value: T): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, const(value))
-
-        def <=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, expr)
-
-        infix def in(list: List[T | Expr[T]]): Expr[Boolean] =
-            if list.isEmpty then const(false) else InListExpr(e, list)
-
-        infix def in(list: (T | Expr[T])*): Expr[Boolean] =
-            InListExpr(e, list.toList)
-
-        infix def notIn(list: List[T | Expr[T]]): Expr[Boolean] =
-            if list.isEmpty then const(true) else InListExpr(e, list, true)
-
-        infix def notIn(list: (T | Expr[T])*): Expr[Boolean] =
-            InListExpr(e, list.toList, true)
-
-        infix def in(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery)
-
-        infix def notIn(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery, true)
-
-        infix def between(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
-            BetweenExpr(e, start, end)
-
-        infix def notBetween(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
-            BetweenExpr(e, start, end, true)
-
-        def asc: OrderBy = OrderBy(e, SqlOrderByOption.ASC)
-
-        def desc: OrderBy = OrderBy(e, SqlOrderByOption.DESC)
-
-        inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[T, name.type](e, name)
-
-        infix def unsafeAs(name: String) = AliasExpr[T, name.type](e, name)
-    }
-
     extension (v: T) {
         def ===(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
 
@@ -122,7 +56,71 @@ trait ExprOperator[T <: SqlDataType] {
 }
 
 sealed trait Expr[T <: SqlDataType] extends SelectItem[T] {
+    def ===(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, const(value))
+
+    def ===(value: Option[T]): BinaryExpr[Boolean] = value match {
+        case Some(v) => BinaryExpr(this, SqlBinaryOperator.EQ, const(v))
+        case None => BinaryExpr(this, SqlBinaryOperator.EQ, const(null))
+    }
+
+    def ===(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, expr)
+
+    def <>(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.NE, const(value))
+
+    def <>(value: Option[T]): BinaryExpr[Boolean] = value match {
+        case Some(v) => BinaryExpr(this, SqlBinaryOperator.NE, const(v))
+        case None => BinaryExpr(this, SqlBinaryOperator.NE, const(null))
+    }
+
+    def <>(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.NE, expr)
+
+    def >(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GT, const(value))
+
+    def >(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GT, expr)
+
+    def >=(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GE, const(value))
+
+    def >=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.GE, expr)
+
+    def <(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LT, const(value))
+
+    def <(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LT, expr)
+
+    def <=(value: T): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LE, const(value))
+
+    def <=(expr: Expr[T]): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.LE, expr)
+
+    infix def in(list: List[T | Expr[T]]): Expr[Boolean] =
+        if list.isEmpty then const(false) else InListExpr(this, list)
+
+    infix def in(list: (T | Expr[T])*): Expr[Boolean] =
+        InListExpr(this, list.toList)
+
+    infix def notIn(list: List[T | Expr[T]]): Expr[Boolean] =
+        if list.isEmpty then const(true) else InListExpr(this, list, true)
+
+    infix def notIn(list: (T | Expr[T])*): Expr[Boolean] =
+        InListExpr(this, list.toList, true)
+
+    infix def in(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(this, subQuery)
+
+    infix def notIn(subQuery: SelectQuery[Tuple1[T], _]): Expr[Boolean] = InSubQueryExpr(this, subQuery, true)
+
+    infix def between(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
+        BetweenExpr(this, start, end)
+
+    infix def notBetween(start: T | Expr[T], end: T | Expr[T]): Expr[Boolean] =
+        BetweenExpr(this, start, end, true)
+
     def equal(expr: Any): BinaryExpr[Boolean] = BinaryExpr(this, SqlBinaryOperator.EQ, anyToExpr(expr))
+
+    def asc: OrderBy = OrderBy(this, SqlOrderByOption.ASC)
+
+    def desc: OrderBy = OrderBy(this, SqlOrderByOption.DESC)
+
+    inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[T, name.type](this, name)
+
+    infix def unsafeAs(name: String) = AliasExpr[T, name.type](this, name)
 }
 
 object Expr {
