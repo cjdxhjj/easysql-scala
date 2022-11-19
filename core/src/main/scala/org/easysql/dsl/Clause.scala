@@ -93,6 +93,8 @@ def insertInto(table: TableSchema[_])(columns: Tuple) = Insert().insertInto(tabl
 
 inline def insert[T <: Product](entities: T*) = Insert().insert(entities: _*)
 
+inline def insert[T <: Product](eneityList: List[T]) = Insert().insert(eneityList: _*)
+
 inline def save[T <: Product](entity: T): Save = Save().save(entity)
 
 def update(table: TableSchema[_]): Update = Update().update(table)
