@@ -111,14 +111,14 @@ extension (s: Select[_, _]) {
     @experimental
     def toEsDsl = {
         val visitor = new ESVisitor()
-        visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
+        visitor.visitSqlSelect(s.getSelect)
         visitor.dslBuilder.toString()
     }
 
     @experimental
     def toMongoDsl = {
         val visitor = new MongoVisitor()
-        visitor.visitSqlSelect(s.getSelect.asInstanceOf[SqlSelect])
+        visitor.visitSqlSelect(s.getSelect)
         visitor.dslBuilder.toString
     }
 }
