@@ -19,7 +19,6 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
 
     private var joinLeft: SqlTable = SqlIdentTable("")
 
-
     infix def from[Table <: TableSchema[_]](table: Table): Select[T, AliasNames]  = {
         val from = SqlIdentTable(table._tableName)
         from.alias = table._aliasName
