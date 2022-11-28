@@ -297,7 +297,7 @@ class Select[T <: Tuple, AliasNames <: Tuple] extends SelectQuery[T, AliasNames]
         this
     }
 
-    override def getSelect: SqlSelectQuery = sqlSelect
+    override def getSelect: SqlSelect = sqlSelect
 
     override def sql(db: DB): String = toSqlString(sqlSelect, db)
 
