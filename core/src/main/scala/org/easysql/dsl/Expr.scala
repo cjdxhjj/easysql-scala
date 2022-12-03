@@ -157,6 +157,74 @@ object Expr {
             def %(value: R): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, const(value))
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(e, SqlBinaryOperator.MOD, expr)
+
+            def ===(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, const(value))
+
+            def ===(value: Option[R]): BinaryExpr[Boolean] = value match {
+                case Some(v) => BinaryExpr(e, SqlBinaryOperator.EQ, const(v))
+                case None => BinaryExpr(e, SqlBinaryOperator.EQ, const(null))
+            }
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, expr)
+
+            def ===(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.EQ, SubQueryExpr(q))
+
+            def <>(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, const(value))
+
+            def <>(value: Option[R]): BinaryExpr[Boolean] = value match {
+                case Some(v) => BinaryExpr(e, SqlBinaryOperator.NE, const(v))
+                case None => BinaryExpr(e, SqlBinaryOperator.NE, const(null))
+            }
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, expr)
+
+            def <>(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.NE, SubQueryExpr(q))
+
+            def >(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, const(value))
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, expr)
+
+            def >(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GT, SubQueryExpr(q))
+
+            def >=(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, const(value))
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, expr)
+
+            def >=(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.GE, SubQueryExpr(q))
+
+            def <(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, const(value))
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, expr)
+
+            def <(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LT, SubQueryExpr(q))
+
+            def <=(value: R): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, const(value))
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, expr)
+
+            def <=(q: SelectQuery[Tuple1[R], _]): BinaryExpr[Boolean] = BinaryExpr(e, SqlBinaryOperator.LE, SubQueryExpr(q))
+
+            infix def in(list: List[R | Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(e, list)
+
+            infix def in(list: (R | Expr[R])*): Expr[Boolean] =
+                InListExpr(e, list.toList)
+
+            infix def notIn(list: List[R | Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(e, list, true)
+
+            infix def notIn(list: (R | Expr[R])*): Expr[Boolean] =
+                InListExpr(e, list.toList, true)
+
+            infix def in(subQuery: SelectQuery[Tuple1[R], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery)
+
+            infix def notIn(subQuery: SelectQuery[Tuple1[R], _]): Expr[Boolean] = InSubQueryExpr(e, subQuery, true)
+
+            infix def between(start: R | Expr[R] | SelectQuery[Tuple1[R], _], end: R | Expr[R] | SelectQuery[Tuple1[R], _]): Expr[Boolean] =
+                BetweenExpr(e, start, end)
+
+            infix def notBetween(start: R | Expr[R] | SelectQuery[Tuple1[R], _], end: R | Expr[R] | SelectQuery[Tuple1[R], _]): Expr[Boolean] =
+                BetweenExpr(e, start, end, true)
         }
 
         extension [R <: SqlNumberType] (v: Int) {
@@ -169,6 +237,36 @@ object Expr {
             def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.NE, expr)
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GT, expr)
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GE, expr)
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
+
+            infix def in(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(const(v), list)
+
+            infix def in(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList)
+
+            infix def notIn(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(const(v), list, true)
+
+            infix def notIn(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList, true)
+
+            infix def between(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end)
+
+            infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end, true)
         }
 
         extension [R <: SqlNumberType] (v: Long) {
@@ -181,6 +279,36 @@ object Expr {
             def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.NE, expr)
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GT, expr)
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GE, expr)
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
+
+            infix def in(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(const(v), list)
+
+            infix def in(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList)
+
+            infix def notIn(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(const(v), list, true)
+
+            infix def notIn(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList, true)
+
+            infix def between(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end)
+
+            infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end, true)
         }
 
         extension [R <: SqlNumberType] (v: Float) {
@@ -193,6 +321,36 @@ object Expr {
             def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.NE, expr)
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GT, expr)
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GE, expr)
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
+
+            infix def in(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(const(v), list)
+
+            infix def in(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList)
+
+            infix def notIn(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(const(v), list, true)
+
+            infix def notIn(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList, true)
+
+            infix def between(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end)
+
+            infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end, true)
         }
 
         extension [R <: SqlNumberType] (v: Double) {
@@ -205,6 +363,36 @@ object Expr {
             def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.NE, expr)
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GT, expr)
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GE, expr)
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
+
+            infix def in(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(const(v), list)
+
+            infix def in(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList)
+
+            infix def notIn(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(const(v), list, true)
+
+            infix def notIn(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList, true)
+
+            infix def between(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end)
+
+            infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end, true)
         }
 
         extension [R <: SqlNumberType] (v: BigDecimal) {
@@ -217,6 +405,36 @@ object Expr {
             def /(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.DIV, expr)
 
             def %(expr: Expr[R]): BinaryExpr[BigDecimal] = BinaryExpr(const(v), SqlBinaryOperator.MOD, expr)
+
+            def ===(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.EQ, expr)
+
+            def <>(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.NE, expr)
+
+            def >(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GT, expr)
+
+            def >=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.GE, expr)
+
+            def <(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LT, expr)
+
+            def <=(expr: Expr[R]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.LE, expr)
+
+            infix def in(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(false) else InListExpr(const(v), list)
+
+            infix def in(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList)
+
+            infix def notIn(list: List[Expr[R]]): Expr[Boolean] =
+                if list.isEmpty then const(true) else InListExpr(const(v), list, true)
+
+            infix def notIn(list: (Expr[R])*): Expr[Boolean] =
+                InListExpr(const(v), list.toList, true)
+
+            infix def between(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end)
+
+            infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
+                BetweenExpr(const(v), start, end, true)
         }
     }
 
