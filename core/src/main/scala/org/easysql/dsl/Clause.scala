@@ -18,6 +18,7 @@ import scala.annotation.targetName
 import scala.collection.mutable
 import scala.deriving.*
 import scala.annotation.experimental
+import java.util.Date
 
 def const[T <: SqlDataType](v: T) = ConstExpr[T](v)
 
@@ -55,7 +56,7 @@ inline def asTable[T <: Product] = new TableSchema[T] {
 }
 
 extension [T <: SqlDataType] (e: TableColumnExpr[T] | ColumnExpr[T]) {
-    def to[V <: T](value: V | Expr[V] | SelectQuery[Tuple1[V], _]) = (e, value)
+    def to[V <: UpdateType[T]](value: V | Expr[V] | SelectQuery[Tuple1[V], _]) = (e, value)
 }
 
 object AllColumn {

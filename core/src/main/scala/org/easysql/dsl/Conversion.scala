@@ -5,6 +5,7 @@ import org.easysql.query.select.{SelectQuery, ValuesSelect, Select}
 
 import scala.compiletime.ops.any.*
 import scala.compiletime.ops.int.*
+import java.util.Date
 
 type InverseMap[X <: Tuple] <: Tuple = X match {
     case SelectItem[x] *: t => x *: InverseMap[t]
@@ -86,4 +87,11 @@ type ResultType[T <: Tuple] = T match {
 type MapOption[T <: Tuple] = T match {
     case h *: t => Option[h] *: MapOption[t]
     case EmptyTuple => EmptyTuple
+}
+
+type UpdateType[T <: SqlDataType] <: SqlDataType = T match {
+    case SqlNumberType => SqlNumberType
+    case String => String
+    case Boolean => Boolean
+    case Date => Date | String
 }
