@@ -2,7 +2,6 @@ package org.easysql.jdbc
 
 import java.sql.{Connection, Statement, ResultSet}
 import java.util.Date
-import java.time.*
 import scala.collection.mutable
 import scala.collection.mutable.ListBuffer
 import scala.language.unsafeNulls
@@ -21,11 +20,18 @@ def jdbcQuery(conn: Connection, sql: String): List[Map[String, Any]] = {
         while (rs.next()) {
             val rowMap = (1 to metadata.getColumnCount()).map { it =>
                 val data = rs.getObject(it) match {
+                    case null => null
                     case b: java.math.BigDecimal => BigDecimal(b)
                     case l: java.math.BigInteger => l.longValue()
-                    case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
-                    case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
-                    case d @ _ => d
+                    case l: java.time.LocalDateTime => Date.from(l.atZone(java.time.ZoneId.systemDefault()).toInstant())
+                    case l: java.time.LocalDate => Date.from(l.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                    case i: java.lang.Integer => i
+                    case l: java.lang.Long => l
+                    case f: java.lang.Float => f
+                    case d: java.lang.Double => d
+                    case b: java.lang.Boolean => b
+                    case d: java.util.Date => d
+                    case d @ _ => d.toString()
                 }
                 metadata.getColumnLabel(it) -> data
             }.toMap
@@ -54,11 +60,18 @@ def jdbcQueryToArray(conn: Connection, sql: String): List[Array[Any]] = {
         while (rs.next()) {
             val rowList = (1 to metadata.getColumnCount()).toArray.map { it =>
                 val data = rs.getObject(it) match {
+                    case null => null
                     case b: java.math.BigDecimal => BigDecimal(b)
                     case l: java.math.BigInteger => l.longValue()
-                    case l: LocalDateTime => Date.from(l.atZone(ZoneId.systemDefault()).toInstant())
-                    case l: LocalDate => Date.from(l.atStartOfDay().atZone(ZoneId.systemDefault()).toInstant())
-                    case d @ _ => d
+                    case l: java.time.LocalDateTime => Date.from(l.atZone(java.time.ZoneId.systemDefault()).toInstant())
+                    case l: java.time.LocalDate => Date.from(l.atStartOfDay().atZone(java.time.ZoneId.systemDefault()).toInstant())
+                    case i: java.lang.Integer => i
+                    case l: java.lang.Long => l
+                    case f: java.lang.Float => f
+                    case d: java.lang.Double => d
+                    case b: java.lang.Boolean => b
+                    case d: java.util.Date => d
+                    case d @ _ => d.toString()
                 }
                 data.asInstanceOf[Any]
             }
