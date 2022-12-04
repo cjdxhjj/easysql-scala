@@ -440,21 +440,25 @@ object Expr {
 
     given stringOperator: ExprOperator[String] with {
         extension (e: Expr[String]) {
-            infix def like(value: String): BinaryExpr[Boolean] = {
+            infix def like(value: String): BinaryExpr[Boolean] =
                 BinaryExpr(e, SqlBinaryOperator.LIKE, const(value))
-            }
 
-            infix def like(expr: Expr[String]): BinaryExpr[Boolean] = {
+            infix def like(expr: Expr[String]): BinaryExpr[Boolean] =
                 BinaryExpr(e, SqlBinaryOperator.LIKE, expr)
-            }
 
-            infix def notLike(value: String): BinaryExpr[Boolean] = {
+            infix def notLike(value: String): BinaryExpr[Boolean] =
                 BinaryExpr(e, SqlBinaryOperator.NOT_LIKE, const(value))
-            }
 
-            infix def notLike(expr: Expr[String]): BinaryExpr[Boolean] = {
+            infix def notLike(expr: Expr[String]): BinaryExpr[Boolean] =
                 BinaryExpr(e, SqlBinaryOperator.NOT_LIKE, expr)
-            }
+
+            def ->(json: Int): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT, const(json))
+
+            def ->(json: String): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT, const(json))
+
+            def ->>(json: Int): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT_GT, const(json))
+
+            def ->>(json: String): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT_GT, const(json))
         }
     }
 
