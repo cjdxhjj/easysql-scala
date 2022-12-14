@@ -48,10 +48,6 @@ trait ExprOperator[T <: SqlDataType] {
 
         infix def notBetween(start: Expr[T], end: Expr[T]): Expr[Boolean] =
             BetweenExpr(const(v), start, end, true)
-
-        inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[T, name.type](const(v), name)
-
-        infix def unsafeAs(name: String) = AliasExpr[T, name.type](const(v), name)
     }
 }
 
@@ -267,6 +263,10 @@ object Expr {
 
             infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
                 BetweenExpr(const(v), start, end, true)
+
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[BigDecimal, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[BigDecimal, name.type](const(v), name)
         }
 
         extension [R <: SqlNumberType] (v: Long) {
@@ -309,6 +309,10 @@ object Expr {
 
             infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
                 BetweenExpr(const(v), start, end, true)
+            
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[BigDecimal, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[BigDecimal, name.type](const(v), name)
         }
 
         extension [R <: SqlNumberType] (v: Float) {
@@ -351,6 +355,10 @@ object Expr {
 
             infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
                 BetweenExpr(const(v), start, end, true)
+
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[BigDecimal, name.type](const(v.toDouble), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[BigDecimal, name.type](const(v.toDouble), name)
         }
 
         extension [R <: SqlNumberType] (v: Double) {
@@ -393,6 +401,10 @@ object Expr {
 
             infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
                 BetweenExpr(const(v), start, end, true)
+
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[BigDecimal, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[BigDecimal, name.type](const(v), name)
         }
 
         extension [R <: SqlNumberType] (v: BigDecimal) {
@@ -435,6 +447,10 @@ object Expr {
 
             infix def notBetween(start: Expr[R], end: Expr[R]): Expr[Boolean] =
                 BetweenExpr(const(v), start, end, true)
+            
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[BigDecimal, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[BigDecimal, name.type](const(v), name)
         }
     }
 
@@ -459,6 +475,12 @@ object Expr {
             def ->>(json: Int): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT_GT, const(json))
 
             def ->>(json: String): BinaryExpr[String] = BinaryExpr(e, SqlBinaryOperator.SUB_GT_GT, const(json))
+        }
+
+        extension (v: String) {
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[String, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[String, name.type](const(v), name)
         }
     }
 
@@ -485,6 +507,10 @@ object Expr {
             def ||(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.OR, query)
 
             def ^(query: Expr[Boolean]): BinaryExpr[Boolean] = BinaryExpr(const(v), SqlBinaryOperator.XOR, query)
+
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[Boolean, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[Boolean, name.type](const(v), name)
         }
     }
 
@@ -507,6 +533,12 @@ object Expr {
 
             infix def notBetween(start: String, end: String): Expr[Boolean] =
                 BetweenExpr(e, start, end, true)
+        }
+
+        extension (v: Date) {
+            inline infix def as(inline name: String)(using NonEmpty[name.type] =:= Any) = AliasExpr[Date, name.type](const(v), name)
+
+            infix def unsafeAs(name: String) = AliasExpr[Date, name.type](const(v), name)
         }
     }
 }
